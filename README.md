@@ -18,7 +18,7 @@ Sample `docker-compose.yml`file:
 version: "3"
 services:
   signal-cli-rest-api:
-    build: "."
+    image: bbernhard/signal-cli-rest-api:latest
     ports:
       - "8080:8080" #map docker port 8080 to host port 8080.
     network_mode: "host"
