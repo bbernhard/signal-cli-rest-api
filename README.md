@@ -1,6 +1,6 @@
 # Dockerized signal-cli REST API
 
-This project creates a small dockerized REST API around signal-cli(https://github.com/AsamK/signal-cli).
+This project creates a small dockerized REST API around [signal-cli](https://github.com/AsamK/signal-cli).
 
 
 At the moment, the following functionality is exposed via REST: 
@@ -30,7 +30,8 @@ services:
 Sample REST API calls:
 
 * Register a number (with SMS verification)
-```curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/register/<number>'```
+
+   ```curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/register/<number>'```
 
 e.g:
 ```curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/register/+431212131491291'```
