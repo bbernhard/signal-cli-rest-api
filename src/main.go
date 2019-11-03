@@ -83,7 +83,7 @@ func main() {
 		}
 
 		
-		err := runSignalCli([]string{"--config", *signalCliConfig, "-u", number, "token", "verify", token})
+		err := runSignalCli([]string{"--config", *signalCliConfig, "-u", number, "verify", token})
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
