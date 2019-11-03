@@ -35,6 +35,7 @@ In order to send signal messages to other users, you first need to register your
 e.g: 
 
 This registers the number `+431212131491291` to the Signal network.
+
 ```curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/register/+431212131491291'```
 
 After you've sent the registration request, you will receive a token via SMS for verfication. In order to complete the registration process you need to send the verification token back via the following REST request: 
