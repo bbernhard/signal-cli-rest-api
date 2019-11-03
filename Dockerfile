@@ -4,9 +4,9 @@ RUN apt-get update \
 	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git \
 	&& rm -rf /var/lib/apt/lists/* 
 
-RUN wget -P /tmp/ https://github.com/AsamK/signal-cli/releases/download/v0.6.2/signal-cli-0.6.2.tar.gz \
-    && tar -C /usr/bin -xzf /tmp/signal-cli-0.6.2.tar.gz \
-    && rm -rf /tmp/signal-cli-0.6.2.tar.gz
+RUN wget -P /tmp/ https://github.com/AsamK/signal-cli/releases/download/v0.6.4/signal-cli-0.6.4.tar.gz \
+    && tar -C /usr/bin -xzf /tmp/signal-cli-0.6.4.tar.gz \
+    && rm -rf /tmp/signal-cli-0.6.4.tar.gz
 
 
 RUN mkdir -p /signal-cli-config/
