@@ -1,4 +1,4 @@
-# Dockerized signal-cli REST API
+# Dockerized Signal Messenger REST API
 
 This project creates a small dockerized REST API around [signal-cli](https://github.com/AsamK/signal-cli).
 
