@@ -129,7 +129,6 @@ func main() {
 			}
 
 			attachmentTmpPath := *attachmentTmpDir + u.String() + "." + fType.Extension
-			log.Info("attchment tmp path = ", attachmentTmpPath)
 
     		f, err := os.Create(attachmentTmpPath)
     		if err != nil {
