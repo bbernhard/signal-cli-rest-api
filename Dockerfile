@@ -1,10 +1,12 @@
-FROM ubuntu:latest
+FROM golang:1.13-buster
 
-RUN apt-get update && apt-get install -y wget default-jre software-properties-common git
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git \
+	&& rm -rf /var/lib/apt/lists/* 
 
-RUN add-apt-repository ppa:gophers/archive
-RUN apt-get update
-RUN apt-get install -y golang-1.11-go
+#RUN add-apt-repository ppa:gophers/archive
+#RUN apt-get update
+#RUN apt-get install -y golang-1.11-go
 
 
 # ARM
@@ -16,7 +18,7 @@ RUN apt-get install -y golang-1.11-go
 #    && tar -C /user/local -xzf /tmp/go1.12.5.linux-amd64.tar.gz \
 #    && rm -rf /tmp/go1.12.5.linux-amd64.tar.gz
 
-ENV PATH /usr/lib/go-1.11/bin/:$PATH
+#ENV PATH /usr/lib/go-1.11/bin/:$PATH
 
 
 RUN wget -P /tmp/ https://github.com/AsamK/signal-cli/releases/download/v0.6.2/signal-cli-0.6.2.tar.gz \
