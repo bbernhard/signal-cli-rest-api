@@ -50,7 +50,7 @@ func main() {
 	flag.Parse()
 
 	router := gin.Default()
-	log.Info("Starting...")
+	log.Info("Started Signal Messenger REST API")
 
 	router.POST("/v1/register/:number", func(c *gin.Context) {
 		number := c.Param("number")

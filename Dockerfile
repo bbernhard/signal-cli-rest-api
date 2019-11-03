@@ -2,6 +2,8 @@ FROM golang:1.13-buster
 
 ARG SIGNAL_CLI_VERSION=0.6.4
 
+ENV GIN_MODE=release
+
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git \
 	&& rm -rf /var/lib/apt/lists/* 
