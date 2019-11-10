@@ -4,7 +4,7 @@ This document describes how to use the Signal Messenger REST API together with H
 
 prerequisites:
 * docker + docker-compose
-* a phone number to spare
+* a phone number to send signal notifications
 
 ## Set up the docker container
 
