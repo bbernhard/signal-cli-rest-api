@@ -8,10 +8,14 @@ RUN apt-get update \
 	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git \
 	&& rm -rf /var/lib/apt/lists/* 
 
-RUN wget -P /tmp/ https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}.tar.gz \
-    && tar -C /usr/bin -xzf /tmp/signal-cli-${SIGNAL_CLI_VERSION}.tar.gz \
-    && rm -rf /tmp/signal-cli-${SIGNAL_CLI_VERSION}.tar.gz
-
+RUN cd /tmp/ \
+	&& wget -P /tmp/ https://github.com/AsamK/signal-cli/archive/v${SIGNAL_CLI_VERSION}.tar.gz \
+	&& tar -xvf /tmp/v${SIGNAL_CLI_VERSION}.tar.gz \
+	&& cd signal-cli-${SIGNAL_CLI_VERSION} \
+	&& ./gradlew build \
+	&& ./gradlew installDist \
+	&& ln -s /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/bin/signal-cli /usr/bin/signal-cli \
+	&& rm -rf /tmp/v${SIGNAL_CLI_VERSION}.tar.gz
 
 RUN mkdir -p /signal-cli-config/
 RUN mkdir -p /home/.local/share/signal-cli
