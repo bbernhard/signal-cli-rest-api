@@ -21,8 +21,15 @@ echo ""
 read -r -p "Are you sure? [y/N] " response
 case "$response" in
     [yY][eE][sS]|[yY])
-        docker buildx build --platform linux/amd64,linux/arm64 -t bbernhard/signal-cli-rest-api:$VERSION .
-		docker buildx build --platform linux/amd64,linux/arm64 -t bbernhard/signal-cli-rest-api:latest .
+        docker buildx rm multibuilder
+		
+		docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+		
+		docker buildx create --name multibuilder
+		docker buildx use multibuilder
+
+		docker buildx build --platform linux/amd64,linux/arm64 -t bbernhard/signal-cli-rest-api:$VERSION . --push
+		docker buildx build --platform linux/amd64,linux/arm64 -t bbernhard/signal-cli-rest-api:latest . --push
         ;;
     *)
         echo "Aborting"
