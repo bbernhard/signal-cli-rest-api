@@ -28,8 +28,8 @@ case "$response" in
 		docker buildx create --name multibuilder
 		docker buildx use multibuilder
 
-		docker buildx build --platform linux/amd64,linux/arm64 -t bbernhard/signal-cli-rest-api:$VERSION . --push
-		docker buildx build --platform linux/amd64,linux/arm64 -t bbernhard/signal-cli-rest-api:latest . --push
+		docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:$VERSION . --push
+		docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:latest . --push
         ;;
     *)
         echo "Aborting"
