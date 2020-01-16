@@ -47,4 +47,4 @@ e.g:
 ```curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/register/+431212131491291/verify/123-456'```
 
 # Troubleshooting
-In case you've problems getting the `signal-cli-rest-api` container to run, have a look [here](TROUBLESHOOTING.md)
+In case you've problems with the `signal-cli-rest-api` container, have a look [here](TROUBLESHOOTING.md)
