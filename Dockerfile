@@ -5,8 +5,14 @@ ARG SIGNAL_CLI_VERSION=0.6.5
 ENV GIN_MODE=release
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git \
+	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git locales \
 	&& rm -rf /var/lib/apt/lists/* 
+
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    dpkg-reconfigure --frontend=noninteractive locales && \
+    update-locale LANG=en_US.UTF-8
+
+ENV LANG en_US.UTF-8 
 
 RUN cd /tmp/ \
 	&& wget -P /tmp/ https://github.com/AsamK/signal-cli/archive/v${SIGNAL_CLI_VERSION}.tar.gz \
