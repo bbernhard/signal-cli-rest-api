@@ -37,7 +37,15 @@ Sample REST API calls:
    
    ```curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/register/+431212131491291'```
 
-* Verify the number using the code received via SMS
+* Register a number (with voice verification)
+
+```curl -X POST -H "Content-Type: application/json" --data '{"use_voice": true}' 'http://127.0.0.1:8080/v1/register/<number>'```
+
+   e.g:
+   
+   ```curl -X POST -H "Content-Type: application/json" --data '{"use_voice": true}' 'http://127.0.0.1:8080/v1/register/+431212131491291'```
+
+* Verify the number using the code received via SMS/voice
 
    ```curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/register/<number>/verify/<verification code>'```
 

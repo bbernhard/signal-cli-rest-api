@@ -12,7 +12,7 @@ import (
 	"bytes"
 	"os"
 	"encoding/base64"
-	//"strings"
+	"encoding/json"
 )
 
 func runSignalCli(args []string) error {
@@ -55,12 +55,37 @@ func main() {
 	router.POST("/v1/register/:number", func(c *gin.Context) {
 		number := c.Param("number")
 
+		type Request struct{
+			UseVoice bool `json:"use_voice"`
+		}
+
+		var req Request
+
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(c.Request.Body)
+		if buf.String() != "" {
+			err := json.Unmarshal(buf.Bytes(), &req)
+			if err != nil {
+				log.Error("Couldn't register number: ", err.Error())
+				c.JSON(400, "Couldn't process request - invalid request.")
+				return
+			}
+		} else {
+			req.UseVoice = false
+		}
+
 		if number == "" {
 			c.JSON(400, "Please provide a number")
 			return
 		}
 
-		err := runSignalCli([]string{"--config", *signalCliConfig, "-u", number, "register"})
+		command := []string{"--config", *signalCliConfig, "-u", number, "register"}
+
+		if req.UseVoice == true {
+			command = append(command, "--voice")
+		}
+
+		err := runSignalCli(command)
 		if err != nil {
 			c.JSON(400, err.Error())
 			return
