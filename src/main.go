@@ -13,6 +13,7 @@ import (
 	"os"
 	"encoding/base64"
 	"encoding/json"
+	"strings"
 )
 
 func cleanupTmpFiles(paths []string) {
@@ -76,7 +77,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 		cmd = append(cmd , attachmentTmpPaths...)
 	}
 
-	err := runSignalCli(cmd)
+	_, err := runSignalCli(cmd)
 	if err != nil {
 		cleanupTmpFiles(attachmentTmpPaths)
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -85,14 +86,16 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 	c.JSON(201, nil)
 }
 
-func runSignalCli(args []string) error {
+func runSignalCli(args []string) (string, error) {
 	cmd := exec.Command("signal-cli", args...)
 	var errBuffer bytes.Buffer
+	var outBuffer bytes.Buffer
 	cmd.Stderr = &errBuffer
+	cmd.Stdout = &outBuffer
 
 	err := cmd.Start()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	done := make(chan error, 1)
@@ -103,15 +106,15 @@ func runSignalCli(args []string) error {
 	case <-time.After(60 * time.Second):
 		err := cmd.Process.Kill()
 		if err != nil {
-			return err
+			return "", err
 		}
-		return errors.New("process killed as timeout reached")
+		return "", errors.New("process killed as timeout reached")
 	case err := <-done:
 		if err != nil {
-			return errors.New(errBuffer.String())
+			return "", errors.New(errBuffer.String())
 		}
 	}
-	return nil
+	return outBuffer.String(), nil
 }
 
 func main() {
@@ -164,7 +167,7 @@ func main() {
 			command = append(command, "--voice")
 		}
 
-		err := runSignalCli(command)
+		_, err := runSignalCli(command)
 		if err != nil {
 			c.JSON(400, err.Error())
 			return
@@ -187,7 +190,7 @@ func main() {
 		}
 
 		
-		err := runSignalCli([]string{"--config", *signalCliConfig, "-u", number, "verify", token})
+		_, err := runSignalCli([]string{"--config", *signalCliConfig, "-u", number, "verify", token})
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
@@ -233,6 +236,31 @@ func main() {
 		}
 
 		send(c, *attachmentTmpDir, *signalCliConfig, req.Number, req.Message, req.Recipients, req.Base64Attachments)
+	})
+
+	router.GET("/v1/receive/:number", func(c *gin.Context) {
+		number := c.Param("number")
+
+		command := []string{"--config", *signalCliConfig, "-u", number, "receive", "-t", "1", "--json"}
+		out, err := runSignalCli(command)
+		if err != nil {
+			c.JSON(400, err.Error())
+			return
+		}
+		
+		out = strings.Trim(out, "\n")
+		lines := strings.Split(out, "\n")
+		
+		jsonStr := "["
+		for i, line := range lines {
+			jsonStr += line
+			if i != (len(lines) - 1) {
+				jsonStr += ","
+			}
+		}
+		jsonStr += "]"
+
+		c.String(200, jsonStr)
 	})
 
 	router.Run()

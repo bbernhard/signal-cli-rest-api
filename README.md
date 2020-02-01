@@ -65,4 +65,14 @@ Sample REST API calls:
 
   ```curl -X POST -H "Content-Type: application/json" -d '{"message": "<message>", "base64_attachment": "<base64 encoded attachment>", "number": "<number>", "recipients": ["<recipient1>", "<recipient2>"]}' 'http://127.0.0.1:8080/v1/send'```
 
-In case you need more functionality, please **create a pull request**
+* Receive messages
+
+  Fetch all new messages in the inbox of the specified number.
+
+   ```curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/receive/<number>'```
+
+   e.g:
+
+   ```curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/receive/+431212131491291'```
+
+In case you need more functionality, please **file a ticket** or **create a PR**
