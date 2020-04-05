@@ -75,4 +75,40 @@ Sample REST API calls:
 
    ```curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/receive/+431212131491291'```
 
+* Create a new group
+
+  Create a new group with the specified name and members.  
+
+  ```curl -X POST -H "Content-Type: application/json" -d '{"name": "<group name>", "members": ["<member1>", "<member2>"]}' 'http://127.0.0.1:8080/v1/groups/<number>'``` 
+
+  e.g:
+
+  ```curl -X POST -H "Content-Type: application/json" -d '{"name": "my group", "members": ["+4354546464654", "+4912812812121"]}' 'http://127.0.0.1:8080/v1/groups/+431212131491291'```
+
+* List groups
+
+  ```curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/<number>'```
+
+  e.g:
+
+  ```curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/+431212131491291'```
+
+* Delete a group
+
+  Delete the group with the given group id. The group id can be obtained via the "List groups" REST call. 
+
+  ```curl -X DELETE -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/<number>/<group id>'```
+
+  e.g: 
+
+  ```curl -X DELETE -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/+431212131491291/ckRzaEd4VmRzNnJaASAEsasa'```
+
+* Send a message to a group
+
+  ```curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "<number>", "group_id": "<group id>"}' 'http://127.0.0.1:8080/v1/send'```
+
+  e.g:
+
+  ```curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "+431212131491291", "group_id": "ckRzaEd4VmRzNnJaASAEsasa"}' 'http://127.0.0.1:8080/v1/send'```
+
 In case you need more functionality, please **file a ticket** or **create a PR**
