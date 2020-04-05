@@ -1,29 +1,28 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
-	"github.com/satori/go.uuid"
-	"github.com/gin-gonic/gin"
-	"github.com/h2non/filetype"
-	"os/exec"
-	"time"
-	"errors"
-	"flag"
 	"bytes"
-	"os"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"flag"
+	"github.com/gin-gonic/gin"
+	"github.com/h2non/filetype"
+	"github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
+	"os"
+	"os/exec"
 	"strings"
+	"time"
 )
 
-
-type GroupEntry struct{
-	Name string `json:"name"`
-	Id string `json:"id"`
-	InternalId string `json:"internal_id"`
-	Members []string `json:"members"`
-	Active bool `json:"active"`
-	Blocked bool `json:"blocked"`
+type GroupEntry struct {
+	Name       string   `json:"name"`
+	Id         string   `json:"id"`
+	InternalId string   `json:"internal_id"`
+	Members    []string `json:"members"`
+	Active     bool     `json:"active"`
+	Blocked    bool     `json:"blocked"`
 }
 
 func cleanupTmpFiles(paths []string) {
@@ -32,10 +31,10 @@ func cleanupTmpFiles(paths []string) {
 	}
 }
 
-func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, number string, message string, 
-		recipients []string, base64Attachments []string, base64EncodedGroupId string) {
+func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, number string, message string,
+	recipients []string, base64Attachments []string, base64EncodedGroupId string) {
 	cmd := []string{"--config", signalCliConfig, "-u", number, "send", "-m", message}
-	
+
 	if base64EncodedGroupId != "" && len(recipients) > 0 {
 		c.JSON(400, gin.H{"error": "Please specify either a group id or recipient(s) - but not both"})
 		return
@@ -49,10 +48,9 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 			c.JSON(400, gin.H{"error": "Invalid group id"})
 			return
 		}
-		
+
 		cmd = append(cmd, []string{"-g", string(groupId)}...)
 	}
-	
 
 	attachmentTmpPaths := []string{}
 	for _, base64Attachment := range base64Attachments {
@@ -61,7 +59,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
-		
+
 		dec, err := base64.StdEncoding.DecodeString(base64Attachment)
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
@@ -100,7 +98,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 
 	if len(attachmentTmpPaths) > 0 {
 		cmd = append(cmd, "-a")
-		cmd = append(cmd , attachmentTmpPaths...)
+		cmd = append(cmd, attachmentTmpPaths...)
 	}
 
 	_, err := runSignalCli(cmd)
@@ -126,7 +124,7 @@ func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
 		if line == "" {
 			continue
 		}
-		
+
 		idIdx := strings.Index(line, " Name: ")
 		idPair := line[:idIdx]
 		groupEntry.InternalId = strings.TrimPrefix(idPair, "Id: ")
@@ -223,7 +221,7 @@ func main() {
 	router.POST("/v1/register/:number", func(c *gin.Context) {
 		number := c.Param("number")
 
-		type Request struct{
+		type Request struct {
 			UseVoice bool `json:"use_voice"`
 		}
 
@@ -275,7 +273,6 @@ func main() {
 			return
 		}
 
-		
 		_, err := runSignalCli([]string{"--config", *signalCliConfig, "-u", number, "verify", token})
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
@@ -285,12 +282,12 @@ func main() {
 	})
 
 	router.POST("/v1/send", func(c *gin.Context) {
-		type Request struct{
-			Number string `json:"number"`
-			Recipients []string `json:"recipients"`
-			Message string `json:"message"`
-			Base64Attachment string `json:"base64_attachment"`
-			GroupId string `json:"group_id"`
+		type Request struct {
+			Number           string   `json:"number"`
+			Recipients       []string `json:"recipients"`
+			Message          string   `json:"message"`
+			Base64Attachment string   `json:"base64_attachment"`
+			GroupId          string   `json:"group_id"`
 		}
 		var req Request
 		err := c.BindJSON(&req)
@@ -308,12 +305,12 @@ func main() {
 	})
 
 	router.POST("/v2/send", func(c *gin.Context) {
-		type Request struct{
-			Number string `json:"number"`
-			Recipients []string `json:"recipients"`
-			Message string `json:"message"`
+		type Request struct {
+			Number            string   `json:"number"`
+			Recipients        []string `json:"recipients"`
+			Message           string   `json:"message"`
 			Base64Attachments []string `json:"base64_attachments"`
-			GroupId string `json:"group_id"`
+			GroupId           string   `json:"group_id"`
 		}
 		var req Request
 		err := c.BindJSON(&req)
@@ -335,10 +332,10 @@ func main() {
 			c.JSON(400, err.Error())
 			return
 		}
-		
+
 		out = strings.Trim(out, "\n")
 		lines := strings.Split(out, "\n")
-		
+
 		jsonStr := "["
 		for i, line := range lines {
 			jsonStr += line
@@ -353,9 +350,9 @@ func main() {
 
 	router.POST("/v1/groups/:number", func(c *gin.Context) {
 		number := c.Param("number")
-		
-		type Request struct{
-			Name string `json:"name"`
+
+		type Request struct {
+			Name    string   `json:"name"`
 			Members []string `json:"members"`
 		}
 
@@ -366,7 +363,6 @@ func main() {
 			log.Error(err.Error())
 			return
 		}
-
 
 		cmd := []string{"--config", *signalCliConfig, "-u", number, "updateGroup", "-n", req.Name, "-m"}
 		cmd = append(cmd, req.Members...)
@@ -381,9 +377,9 @@ func main() {
 
 	})
 
-	router.GET("/v1/groups/:number", func(c *gin.Context) { 
+	router.GET("/v1/groups/:number", func(c *gin.Context) {
 		number := c.Param("number")
-		
+
 		groups, err := getGroups(number, *signalCliConfig)
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
@@ -392,7 +388,6 @@ func main() {
 
 		c.JSON(200, groups)
 	})
-
 
 	router.DELETE("/v1/groups/:number/:groupid", func(c *gin.Context) {
 		base64EncodedGroupId := c.Param("groupid")
