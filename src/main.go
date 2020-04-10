@@ -212,9 +212,10 @@ func main() {
 	router.GET("/v1/about", func(c *gin.Context) {
 		type About struct {
 			SupportedApiVersions []string `json:"versions"`
+			BuildNr int `json:"build"`
 		}
 
-		about := About{SupportedApiVersions: []string{"v1", "v2"}}
+		about := About{SupportedApiVersions: []string{"v1", "v2"}, BuildNr: 2}
 		c.JSON(200, about)
 	})
 
