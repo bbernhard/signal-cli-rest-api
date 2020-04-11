@@ -32,18 +32,23 @@ func cleanupTmpFiles(paths []string) {
 }
 
 func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, number string, message string,
-	recipients []string, base64Attachments []string, base64EncodedGroupId string) {
+	recipients []string, base64Attachments []string, isGroup bool) {
 	cmd := []string{"--config", signalCliConfig, "-u", number, "send", "-m", message}
 
-	if base64EncodedGroupId != "" && len(recipients) > 0 {
-		c.JSON(400, gin.H{"error": "Please specify either a group id or recipient(s) - but not both"})
+	if len(recipients) == 0 {
+		c.JSON(400, gin.H{"error": "Please specify at least one recipient"})
 		return
 	}
 
-	if len(recipients) > 0 {
+	if !isGroup {
 		cmd = append(cmd, recipients...)
 	} else {
-		groupId, err := base64.StdEncoding.DecodeString(base64EncodedGroupId)
+		if len(recipients) > 1 {
+			c.JSON(400, gin.H{"error": "More than one recipient is currently not allowed"})
+			return
+		}
+
+		groupId, err := base64.StdEncoding.DecodeString(recipients[0])
 		if err != nil {
 			c.JSON(400, gin.H{"error": "Invalid group id"})
 			return
@@ -212,7 +217,7 @@ func main() {
 	router.GET("/v1/about", func(c *gin.Context) {
 		type About struct {
 			SupportedApiVersions []string `json:"versions"`
-			BuildNr int `json:"build"`
+			BuildNr              int      `json:"build"`
 		}
 
 		about := About{SupportedApiVersions: []string{"v1", "v2"}, BuildNr: 2}
@@ -288,7 +293,7 @@ func main() {
 			Recipients       []string `json:"recipients"`
 			Message          string   `json:"message"`
 			Base64Attachment string   `json:"base64_attachment"`
-			GroupId          string   `json:"group_id"`
+			IsGroup          bool     `json:"is_group"`
 		}
 		var req Request
 		err := c.BindJSON(&req)
@@ -302,7 +307,7 @@ func main() {
 			base64Attachments = append(base64Attachments, req.Base64Attachment)
 		}
 
-		send(c, *signalCliConfig, *signalCliConfig, req.Number, req.Message, req.Recipients, base64Attachments, req.GroupId)
+		send(c, *signalCliConfig, *signalCliConfig, req.Number, req.Message, req.Recipients, base64Attachments, req.IsGroup)
 	})
 
 	router.POST("/v2/send", func(c *gin.Context) {
@@ -311,7 +316,7 @@ func main() {
 			Recipients        []string `json:"recipients"`
 			Message           string   `json:"message"`
 			Base64Attachments []string `json:"base64_attachments"`
-			GroupId           string   `json:"group_id"`
+			IsGroup           bool     `json:"is_group"`
 		}
 		var req Request
 		err := c.BindJSON(&req)
@@ -321,7 +326,7 @@ func main() {
 			return
 		}
 
-		send(c, *attachmentTmpDir, *signalCliConfig, req.Number, req.Message, req.Recipients, req.Base64Attachments, req.GroupId)
+		send(c, *attachmentTmpDir, *signalCliConfig, req.Number, req.Message, req.Recipients, req.Base64Attachments, req.IsGroup)
 	})
 
 	router.GET("/v1/receive/:number", func(c *gin.Context) {

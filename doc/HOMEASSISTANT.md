@@ -46,5 +46,33 @@ e.g:
 
 ```curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/register/+431212131491291/verify/123-456'```
 
+
+## Sending messages to Signal Messenger groups
+
+The `signal-cli-rest-api` docker container is also capable of sending messages to a Signal Messenger group.
+
+Requirements: 
+
+  * Home Assistant Version >= 0.109
+  * signal-cli-rest-api build-nr >= 2
+    The build number can be checked with: `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/about`
+  * your phone number needs to be properly registered (see the "Register phone number" section above on how to do that)
+
+A new Signal Messenger group can be created with the following REST API request:
+
+```curl -X POST -H "Content-Type: application/json" -d '{"name": "<name of the group>", "members": ["<member1>", "<member2>"]}' 'http://127.0.0.1:8080/v1/groups/<number>'```
+
+e.g:
+
+This creates a new Signal Messenger group called `my group` with the members `+4354546464654` and `+4912812812121`.
+
+```curl -X POST -H "Content-Type: application/json" -d '{"name": "my group", "members": ["+4354546464654", "+4912812812121"]}' 'http://127.0.0.1:8080/v1/groups/+431212131491291'```
+
+Next, use the following endpoint to obtain the group id: 
+
+```curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/<number>'```
+
+The group id then needs to be added to the Home Assistant `configuration.yaml` file (see [here](https://www.home-assistant.io/integrations/signal_messenger/) for details)
+
 # Troubleshooting
 In case you've problems with the `signal-cli-rest-api` container, have a look [here](TROUBLESHOOTING.md)

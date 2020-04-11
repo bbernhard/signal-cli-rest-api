@@ -105,10 +105,10 @@ Sample REST API calls:
 
 * Send a message to a group
 
-  ```curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "<number>", "group_id": "<group id>"}' 'http://127.0.0.1:8080/v1/send'```
+  ```curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "<number>", "recipients": ["<group id>"], "is_group": true}' 'http://127.0.0.1:8080/v1/send'```
 
   e.g:
 
-  ```curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "+431212131491291", "group_id": "ckRzaEd4VmRzNnJaASAEsasa"}' 'http://127.0.0.1:8080/v1/send'```
+  ```curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "+431212131491291", "recipients": ["ckRzaEd4VmRzNnJaASAEsasa"], "is_group": true}' 'http://127.0.0.1:8080/v1/send'```
 
 In case you need more functionality, please **file a ticket** or **create a PR**
