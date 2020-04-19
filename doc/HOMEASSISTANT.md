@@ -55,7 +55,7 @@ Requirements:
 
   * Home Assistant Version >= 0.109
   * signal-cli-rest-api build-nr >= 2
-    The build number can be checked with: `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/about`
+    The build number can be checked with: `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/about'`
   * your phone number needs to be properly registered (see the "Register phone number" section above on how to do that)
 
 A new Signal Messenger group can be created with the following REST API request:
