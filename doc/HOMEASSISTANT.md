@@ -53,7 +53,7 @@ The `signal-cli-rest-api` docker container is also capable of sending messages t
 
 Requirements: 
 
-  * Home Assistant Version >= 0.109
+  * Home Assistant Version >= 0.110
   * signal-cli-rest-api build-nr >= 2
     The build number can be checked with: `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/about'`
   * your phone number needs to be properly registered (see the "Register phone number" section above on how to do that)
@@ -72,7 +72,7 @@ Next, use the following endpoint to obtain the group id:
 
 ```curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/<number>'```
 
-The group id then needs to be added to the Home Assistant `configuration.yaml` file (see [here](https://www.home-assistant.io/integrations/signal_messenger/) for details)
+The group id then needs to be added to the Signal Messenger's `recipients` list in the `configuration.yaml`. (see [here](https://www.home-assistant.io/integrations/signal_messenger/) for details)
 
 # Troubleshooting
 In case you've problems with the `signal-cli-rest-api` container, have a look [here](TROUBLESHOOTING.md)
