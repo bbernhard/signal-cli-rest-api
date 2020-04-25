@@ -53,17 +53,27 @@ Sample REST API calls:
    
    ```curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/register/+431212131491291/verify/123-456'```
 
-* Send message to multiple recipients
+* Send a message to multiple recipients
 
-   ```curl -X POST -H "Content-Type: application/json" -d '{"message": "<message>", "number": "<number>", "recipients": ["<recipient1>", "<recipient2>"]}' 'http://127.0.0.1:8080/v1/send'```
+   ```curl -X POST -H "Content-Type: application/json" -d '{"message": "<message>", "number": "<number>", "recipients": ["<recipient1>", "<recipient2>"]}' 'http://127.0.0.1:8080/v2/send'```
 
    e.g:
 
-   ```curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "+431212131491291", "recipients": ["+4354546464654", "+4912812812121"]}' 'http://127.0.0.1:8080/v1/send'```
+   ```curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "+431212131491291", "recipients": ["+4354546464654", "+4912812812121"]}' 'http://127.0.0.1:8080/v2/send'```
 
 * Send a message (+ base64 encoded attachment) to multiple recipients 
 
-  ```curl -X POST -H "Content-Type: application/json" -d '{"message": "<message>", "base64_attachment": "<base64 encoded attachment>", "number": "<number>", "recipients": ["<recipient1>", "<recipient2>"]}' 'http://127.0.0.1:8080/v1/send'```
+  ```curl -X POST -H "Content-Type: application/json" -d '{"message": "<message>", "base64_attachments": ["<base64 encoded attachment>"], "number": "<number>", "recipients": ["<recipient1>", "<recipient2>"]}' 'http://127.0.0.1:8080/v2/send'```
+
+* Send a message to a group
+
+The group id can be obtained via the "List groups" REST call. 
+
+ ```curl -X POST -H "Content-Type: application/json" -d '{"message": "<message>", "number": "<number>", "recipients": ["<group id>"]}' 'http://127.0.0.1:8080/v2/send'```
+
+   e.g:
+
+   ```curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "+431212131491291", "recipients": ["group.ckRzaEd4VmRzNnJaASAEsasa", "+4912812812121"]}' 'http://127.0.0.1:8080/v2/send'```
 
 * Receive messages
 
@@ -103,12 +113,11 @@ Sample REST API calls:
 
   ```curl -X DELETE -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/+431212131491291/ckRzaEd4VmRzNnJaASAEsasa'```
 
-* Send a message to a group
 
-  ```curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "<number>", "recipients": ["<group id>"], "is_group": true}' 'http://127.0.0.1:8080/v1/send'```
 
-  e.g:
 
-  ```curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "+431212131491291", "recipients": ["ckRzaEd4VmRzNnJaASAEsasa"], "is_group": true}' 'http://127.0.0.1:8080/v1/send'```
+The following REST API endpoints are **deprecated and no longer maintained!**
+
+```/v1/send```
 
 In case you need more functionality, please **file a ticket** or **create a PR**

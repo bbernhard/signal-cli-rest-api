@@ -16,6 +16,8 @@ import (
 	"time"
 )
 
+const groupPrefix = "group."
+
 type GroupEntry struct {
 	Name       string   `json:"name"`
 	Id         string   `json:"id"`
@@ -133,7 +135,7 @@ func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
 		idIdx := strings.Index(line, " Name: ")
 		idPair := line[:idIdx]
 		groupEntry.InternalId = strings.TrimPrefix(idPair, "Id: ")
-		groupEntry.Id = base64.StdEncoding.EncodeToString([]byte(groupEntry.InternalId))
+		groupEntry.Id = groupPrefix + base64.StdEncoding.EncodeToString([]byte(groupEntry.InternalId))
 		lineWithoutId := strings.TrimLeft(line[idIdx:], " ")
 
 		nameIdx := strings.Index(lineWithoutId, " Active: ")
@@ -239,7 +241,7 @@ func main() {
 			err := json.Unmarshal(buf.Bytes(), &req)
 			if err != nil {
 				log.Error("Couldn't register number: ", err.Error())
-				c.JSON(400, "Couldn't process request - invalid request.")
+				c.JSON(400, gin.H{"error": "Couldn't process request - invalid request."})
 				return
 			}
 		} else {
@@ -247,7 +249,7 @@ func main() {
 		}
 
 		if number == "" {
-			c.JSON(400, "Please provide a number")
+			c.JSON(400, gin.H{"error": "Please provide a number"})
 			return
 		}
 
@@ -259,7 +261,7 @@ func main() {
 
 		_, err := runSignalCli(command)
 		if err != nil {
-			c.JSON(400, err.Error())
+			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(201, nil)
@@ -270,7 +272,7 @@ func main() {
 		token := c.Param("token")
 
 		if number == "" {
-			c.JSON(400, "Please provide a number")
+			c.JSON(400, gin.H{"error": "Please provide a number"})
 			return
 		}
 
@@ -298,7 +300,7 @@ func main() {
 		var req Request
 		err := c.BindJSON(&req)
 		if err != nil {
-			c.JSON(400, "Couldn't process request - invalid request")
+			c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
 			return
 		}
 
@@ -316,17 +318,48 @@ func main() {
 			Recipients        []string `json:"recipients"`
 			Message           string   `json:"message"`
 			Base64Attachments []string `json:"base64_attachments"`
-			IsGroup           bool     `json:"is_group"`
 		}
 		var req Request
 		err := c.BindJSON(&req)
 		if err != nil {
-			c.JSON(400, "Couldn't process request - invalid request")
+			c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
 			log.Error(err.Error())
 			return
 		}
 
-		send(c, *attachmentTmpDir, *signalCliConfig, req.Number, req.Message, req.Recipients, req.Base64Attachments, req.IsGroup)
+		if len(req.Recipients) == 0 {
+			c.JSON(400, gin.H{"error": "Couldn't process request - please provide at least one recipient"})
+			return
+		}
+
+		groups := []string{}
+		recipients := []string{}
+
+		for _, recipient := range req.Recipients {
+			if strings.HasPrefix(recipient, groupPrefix) {
+				groups = append(groups, strings.TrimPrefix(recipient, groupPrefix))
+			} else {
+				recipients = append(recipients, recipient)
+			}
+		}
+
+		if len(recipients) > 0 && len(groups) > 0 {
+			c.JSON(400, gin.H{"error": "Signal Messenger Groups and phone numbers cannot be specified together in one request! Please split them up into multiple REST API calls."})
+			return
+		}
+
+		if len(groups) > 1 {
+			c.JSON(400, gin.H{"error": "A signal message cannot be sent to more than one group at once! Please use multiple REST API calls for that."})
+			return
+		}
+
+		for _, group := range groups {
+			send(c, *attachmentTmpDir, *signalCliConfig, req.Number, req.Message, []string{group}, req.Base64Attachments, true)
+		}
+
+		if len(recipients) > 0 {
+			send(c, *attachmentTmpDir, *signalCliConfig, req.Number, req.Message, recipients, req.Base64Attachments, false)
+		}
 	})
 
 	router.GET("/v1/receive/:number", func(c *gin.Context) {
@@ -335,7 +368,7 @@ func main() {
 		command := []string{"--config", *signalCliConfig, "-u", number, "receive", "-t", "1", "--json"}
 		out, err := runSignalCli(command)
 		if err != nil {
-			c.JSON(400, err.Error())
+			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
 
@@ -365,7 +398,7 @@ func main() {
 		var req Request
 		err := c.BindJSON(&req)
 		if err != nil {
-			c.JSON(400, "Couldn't process request - invalid request")
+			c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
 			log.Error(err.Error())
 			return
 		}
@@ -404,7 +437,7 @@ func main() {
 			return
 		}
 
-		groupId, err := base64.StdEncoding.DecodeString(base64EncodedGroupId)
+		groupId, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(base64EncodedGroupId, groupPrefix))
 		if err != nil {
 			c.JSON(400, gin.H{"error": "Invalid group id"})
 			return
