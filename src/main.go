@@ -27,6 +27,20 @@ type GroupEntry struct {
 	Blocked    bool     `json:"blocked"`
 }
 
+
+func getStringInBetween(str string, start string, end string) (result string) {
+	i := strings.Index(str, start)
+	if i == -1 {
+		return
+	}
+	i += len(start)
+	j := strings.Index(str[i:], end)
+	if j == -1 {
+		return
+	}
+	return str[i : i+j]
+}
+
 func cleanupTmpFiles(paths []string) {
 	for _, path := range paths {
 		os.Remove(path)
@@ -405,15 +419,15 @@ func main() {
 
 		cmd := []string{"--config", *signalCliConfig, "-u", number, "updateGroup", "-n", req.Name, "-m"}
 		cmd = append(cmd, req.Members...)
-		log.Info(cmd)
+
 		out, err := runSignalCli(cmd)
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
-
-		log.Info(out)
-
+		
+		groupId := getStringInBetween(out, `"`, `"`)
+		c.JSON(201, gin.H{"id": groupPrefix + groupId})
 	})
 
 	router.GET("/v1/groups/:number", func(c *gin.Context) {
