@@ -27,6 +27,10 @@ type GroupEntry struct {
 	Blocked    bool     `json:"blocked"`
 }
 
+func convertInternalGroupIdToGroupId(internalId string) string {
+	return groupPrefix + base64.StdEncoding.EncodeToString([]byte(internalId))
+}
+
 
 func getStringInBetween(str string, start string, end string) (result string) {
 	i := strings.Index(str, start)
@@ -149,7 +153,7 @@ func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
 		idIdx := strings.Index(line, " Name: ")
 		idPair := line[:idIdx]
 		groupEntry.InternalId = strings.TrimPrefix(idPair, "Id: ")
-		groupEntry.Id = groupPrefix + base64.StdEncoding.EncodeToString([]byte(groupEntry.InternalId))
+		groupEntry.Id = convertInternalGroupIdToGroupId(groupEntry.InternalId)
 		lineWithoutId := strings.TrimLeft(line[idIdx:], " ")
 
 		nameIdx := strings.Index(lineWithoutId, " Active: ")
@@ -426,8 +430,8 @@ func main() {
 			return
 		}
 		
-		groupId := getStringInBetween(out, `"`, `"`)
-		c.JSON(201, gin.H{"id": groupPrefix + groupId})
+		internalGroupId := getStringInBetween(out, `"`, `"`)
+		c.JSON(201, gin.H{"id": convertInternalGroupIdToGroupId(internalGroupId)})
 	})
 
 	router.GET("/v1/groups/:number", func(c *gin.Context) {
