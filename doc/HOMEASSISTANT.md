@@ -4,6 +4,9 @@ This document describes how to use the Signal Messenger REST API together with H
 
 prerequisites:
 * docker + docker-compose
+
+-or-
+* ability to install Home Assistant add-ons
 * a phone number to send signal notifications
 
 ## Set up the docker container
@@ -24,6 +27,13 @@ services:
 
 * start the docker container with `docker-compose up`
 
+## Or Install Home Assistant Add-on
+
+Add this repository to your Home Assistant Add-on Store reposity list:
+
+https://github.com/haberda/hassio_addons
+
+Then install and start the add-on.
 
 ## Register phone number
 
