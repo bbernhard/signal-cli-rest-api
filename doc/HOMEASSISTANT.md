@@ -7,6 +7,7 @@ prerequisites:
 
 -or-
 * ability to install Home Assistant add-ons
+
 * a phone number to send signal notifications
 
 ## Set up the docker container
