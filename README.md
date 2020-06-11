@@ -114,6 +114,16 @@ The group id can be obtained via the "List groups" REST call.
   ```curl -X DELETE -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/+431212131491291/ckRzaEd4VmRzNnJaASAEsasa'```
 
 
+* Link a device
+
+  ```curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/link/<name>'```
+
+  e.g:
+   
+  ```curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/link/HomeAssistant'```
+
+  This provides a tsdevice link which have to be converted to a QR-Code, e.g. `qrencode -o linkqr.png tsdevice:...`
+
 
 
 The following REST API endpoints are **deprecated and no longer maintained!**
