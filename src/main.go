@@ -7,14 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"github.com/gin-gonic/gin"
-	"github.com/h2non/filetype"
-	"github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/h2non/filetype"
+	log "github.com/sirupsen/logrus"
 )
 
 const groupPrefix = "group."
@@ -31,7 +31,6 @@ type GroupEntry struct {
 func convertInternalGroupIdToGroupId(internalId string) string {
 	return groupPrefix + base64.StdEncoding.EncodeToString([]byte(internalId))
 }
-
 
 func getStringInBetween(str string, start string, end string) (result string) {
 	i := strings.Index(str, start)
@@ -210,7 +209,6 @@ func runSignalCli(wait bool, args []string) (string, error) {
 		}
 
 		done := make(chan error, 1)
-	
 		go func() {
 			done <- cmd.Wait()
 		}()
@@ -230,7 +228,7 @@ func runSignalCli(wait bool, args []string) (string, error) {
 	} else {
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
-		  log.Fatal(err)
+			return "", err
 		}
 		cmd.Start()
 		buf := bufio.NewReader(stdout) // Notice that this is not in a loop
@@ -258,22 +256,20 @@ func main() {
 	})
 
 	router.POST("/v1/link/:device_name", func(c *gin.Context) {
-		device_name := c.Param("device_name")
-		log.Info("Linking device")
-		if device_name == "" {
+		deviceName := c.Param("device_name")
+		if deviceName == "" {
 			c.JSON(400, gin.H{"error": "Please provide a name for the device"})
 			return
 		}
 
-		command := []string{"--config", *signalCliConfig, "link", "-n", device_name}
+		command := []string{"--config", *signalCliConfig, "link", "-n", deviceName}
 
 		out, err := runSignalCli(false, command)
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
-
-		c.String(200, string(out))
+		c.String(200, gin.H{"uri": string(out)})
 	})
 
 	router.POST("/v1/register/:number", func(c *gin.Context) {
@@ -461,7 +457,7 @@ func main() {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
-		
+
 		internalGroupId := getStringInBetween(out, `"`, `"`)
 		c.JSON(201, gin.H{"id": convertInternalGroupIdToGroupId(internalGroupId)})
 	})
