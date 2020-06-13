@@ -14,7 +14,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/h2non/filetype"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
+	qrcode "github.com/skip2/go-qrcode"
 )
 
 const groupPrefix = "group."
@@ -494,6 +496,24 @@ func main() {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
+	})
+
+	router.GET("/v1/qrcode/:tsdevice_link", func(c *gin.Context) {
+		deviceLink := c.Param("tsdevice_link")
+
+		q, err := qrcode.New(deviceLink, qrcode.Medium)
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+		}
+
+		q.DisableBorder = true
+		var png []byte
+		png, err = q.PNG(256)
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+		}
+
+		c.Data(200, "image/png", png)
 	})
 
 	router.Run()
