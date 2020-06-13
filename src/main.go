@@ -269,7 +269,7 @@ func main() {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
-		c.String(200, gin.H{"uri": string(out)})
+		c.JSON(200, gin.H{"uri": string(out)})
 	})
 
 	router.POST("/v1/register/:number", func(c *gin.Context) {
