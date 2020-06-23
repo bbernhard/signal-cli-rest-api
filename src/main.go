@@ -257,23 +257,6 @@ func main() {
 		c.JSON(200, about)
 	})
 
-	router.POST("/v1/link/:device_name", func(c *gin.Context) {
-		deviceName := c.Param("device_name")
-		if deviceName == "" {
-			c.JSON(400, gin.H{"error": "Please provide a name for the device"})
-			return
-		}
-
-		command := []string{"--config", *signalCliConfig, "link", "-n", deviceName}
-
-		out, err := runSignalCli(false, command)
-		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(200, gin.H{"uri": string(out)})
-	})
-
 	router.POST("/v1/register/:number", func(c *gin.Context) {
 		number := c.Param("number")
 
@@ -498,10 +481,23 @@ func main() {
 		}
 	})
 
-	router.GET("/v1/qrcode/:tsdevice_link", func(c *gin.Context) {
-		deviceLink := c.Param("tsdevice_link")
+	router.GET("/v1/qrcodelink", func(c *gin.Context) {
+		deviceName := c.Query("device_name")
 
-		q, err := qrcode.New(deviceLink, qrcode.Medium)
+		if deviceName == "" {
+			c.JSON(400, gin.H{"error": "Please provide a name for the device"})
+			return
+		}
+
+		command := []string{"--config", *signalCliConfig, "link", "-n", deviceName}
+
+		tsdeviceLink, err := runSignalCli(false, command)
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		q, err := qrcode.New(string(tsdeviceLink), qrcode.Medium)
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 		}
