@@ -113,11 +113,11 @@ e.g:
 
 - Link a device
 
-  `curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/qrcodelink?<device name>'`
+  `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/qrcodelink?device_name=<device name>'`
 
   e.g:
 
-  `curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/qrcodelink?HomeAssistant'`
+  `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/qrcodelink?device_name=HomeAssistant'`
 
   This provides a QR-Code image. In case of an error a JSON object will be returned.
 
