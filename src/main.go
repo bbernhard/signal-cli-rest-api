@@ -1,19 +1,22 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"flag"
-	"github.com/gin-gonic/gin"
-	"github.com/h2non/filetype"
-	"github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/h2non/filetype"
+	uuid "github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
+	qrcode "github.com/skip2/go-qrcode"
 )
 
 const groupPrefix = "group."
@@ -30,7 +33,6 @@ type GroupEntry struct {
 func convertInternalGroupIdToGroupId(internalId string) string {
 	return groupPrefix + base64.StdEncoding.EncodeToString([]byte(internalId))
 }
-
 
 func getStringInBetween(str string, start string, end string) (result string) {
 	i := strings.Index(str, start)
@@ -126,7 +128,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 		cmd = append(cmd, attachmentTmpPaths...)
 	}
 
-	_, err := runSignalCli(cmd)
+	_, err := runSignalCli(true, cmd)
 	if err != nil {
 		cleanupTmpFiles(attachmentTmpPaths)
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -138,7 +140,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
 	groupEntries := []GroupEntry{}
 
-	out, err := runSignalCli([]string{"--config", signalCliConfig, "-u", number, "listGroups", "-d"})
+	out, err := runSignalCli(true, []string{"--config", signalCliConfig, "-u", number, "listGroups", "-d"})
 	if err != nil {
 		return groupEntries, err
 	}
@@ -195,35 +197,46 @@ func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
 	return groupEntries, nil
 }
 
-func runSignalCli(args []string) (string, error) {
+func runSignalCli(wait bool, args []string) (string, error) {
 	cmd := exec.Command("signal-cli", args...)
-	var errBuffer bytes.Buffer
-	var outBuffer bytes.Buffer
-	cmd.Stderr = &errBuffer
-	cmd.Stdout = &outBuffer
+	if wait {
+		var errBuffer bytes.Buffer
+		var outBuffer bytes.Buffer
+		cmd.Stderr = &errBuffer
+		cmd.Stdout = &outBuffer
 
-	err := cmd.Start()
-	if err != nil {
-		return "", err
-	}
-
-	done := make(chan error, 1)
-	go func() {
-		done <- cmd.Wait()
-	}()
-	select {
-	case <-time.After(60 * time.Second):
-		err := cmd.Process.Kill()
+		err := cmd.Start()
 		if err != nil {
 			return "", err
 		}
-		return "", errors.New("process killed as timeout reached")
-	case err := <-done:
-		if err != nil {
-			return "", errors.New(errBuffer.String())
+
+		done := make(chan error, 1)
+		go func() {
+			done <- cmd.Wait()
+		}()
+		select {
+		case <-time.After(60 * time.Second):
+			err := cmd.Process.Kill()
+			if err != nil {
+				return "", err
+			}
+			return "", errors.New("process killed as timeout reached")
+		case err := <-done:
+			if err != nil {
+				return "", errors.New(errBuffer.String())
+			}
 		}
+		return outBuffer.String(), nil
+	} else {
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return "", err
+		}
+		cmd.Start()
+		buf := bufio.NewReader(stdout) // Notice that this is not in a loop
+		line, _, _ := buf.ReadLine()
+		return string(line), nil
 	}
-	return outBuffer.String(), nil
 }
 
 func main() {
@@ -277,7 +290,7 @@ func main() {
 			command = append(command, "--voice")
 		}
 
-		_, err := runSignalCli(command)
+		_, err := runSignalCli(true, command)
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
@@ -299,7 +312,7 @@ func main() {
 			return
 		}
 
-		_, err := runSignalCli([]string{"--config", *signalCliConfig, "-u", number, "verify", token})
+		_, err := runSignalCli(true, []string{"--config", *signalCliConfig, "-u", number, "verify", token})
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
@@ -384,7 +397,7 @@ func main() {
 		number := c.Param("number")
 
 		command := []string{"--config", *signalCliConfig, "-u", number, "receive", "-t", "1", "--json"}
-		out, err := runSignalCli(command)
+		out, err := runSignalCli(true, command)
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
@@ -424,12 +437,12 @@ func main() {
 		cmd := []string{"--config", *signalCliConfig, "-u", number, "updateGroup", "-n", req.Name, "-m"}
 		cmd = append(cmd, req.Members...)
 
-		out, err := runSignalCli(cmd)
+		out, err := runSignalCli(true, cmd)
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
-		
+
 		internalGroupId := getStringInBetween(out, `"`, `"`)
 		c.JSON(201, gin.H{"id": convertInternalGroupIdToGroupId(internalGroupId)})
 	})
@@ -461,11 +474,42 @@ func main() {
 			return
 		}
 
-		_, err = runSignalCli([]string{"--config", *signalCliConfig, "-u", number, "quitGroup", "-g", string(groupId)})
+		_, err = runSignalCli(true, []string{"--config", *signalCliConfig, "-u", number, "quitGroup", "-g", string(groupId)})
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
+	})
+
+	router.GET("/v1/qrcodelink", func(c *gin.Context) {
+		deviceName := c.Query("device_name")
+
+		if deviceName == "" {
+			c.JSON(400, gin.H{"error": "Please provide a name for the device"})
+			return
+		}
+
+		command := []string{"--config", *signalCliConfig, "link", "-n", deviceName}
+
+		tsdeviceLink, err := runSignalCli(false, command)
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		q, err := qrcode.New(string(tsdeviceLink), qrcode.Medium)
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+		}
+
+		q.DisableBorder = true
+		var png []byte
+		png, err = q.PNG(256)
+		if err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+		}
+
+		c.Data(200, "image/png", png)
 	})
 
 	router.Run()
