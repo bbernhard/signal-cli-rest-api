@@ -36,7 +36,7 @@ RUN cd /tmp/ \
 RUN mkdir -p /signal-cli-config/
 RUN mkdir -p /home/.local/share/signal-cli
 COPY src/ /tmp/signal-cli-rest-api-src
-RUN cd /tmp/signal-cli-rest-api-src && go get -d ./... && go build main.go
+RUN cd /tmp/signal-cli-rest-api-src && go build
 
 ENV PATH /tmp/signal-cli-rest-api-src/:/usr/bin/signal-cli-${SIGNAL_CLI_VERSION}/bin/:$PATH
 

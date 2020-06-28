@@ -14,7 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/h2non/filetype"
-	uuid "github.com/satori/go.uuid"
+	uuid "github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
 	qrcode "github.com/skip2/go-qrcode"
 )
