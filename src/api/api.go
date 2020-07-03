@@ -288,20 +288,17 @@ func NewApi(signalCliConfig string, attachmentTmpDir string) *Api {
 // @Success 200 {object} About
 // @Router /v1/about [get]
 func (a *Api) About(c *gin.Context) {
-	
 
 	about := About{SupportedApiVersions: []string{"v1", "v2"}, BuildNr: 2}
 	c.JSON(200, about)
 }
-
-
 
 // @Summary Register a phone number.
 // @Tags Devices
 // @Description Register a phone number with the signal network.
 // @Accept  json
 // @Produce  json
-// @Success 201 
+// @Success 201
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Router /v1/register/{number} [post]
@@ -379,14 +376,14 @@ func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 // @Description Send a signal message
 // @Accept  json
 // @Produce  json
-// @Success 201 {string} string "OK" 
+// @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param data body SendMessageV1 true "Input Data"
 // @Router /v1/send/{number} [post]
 // @Deprecated
 func (a *Api) Send(c *gin.Context) {
-	
+
 	var req SendMessageV1
 	err := c.BindJSON(&req)
 	if err != nil {
@@ -407,7 +404,7 @@ func (a *Api) Send(c *gin.Context) {
 // @Description Send a signal message
 // @Accept  json
 // @Produce  json
-// @Success 201 {string} string "OK" 
+// @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param data body SendMessageV2 true "Input Data"
@@ -495,7 +492,7 @@ func (a *Api) Receive(c *gin.Context) {
 // @Description Create a new Signal Group with the specified members.
 // @Accept  json
 // @Produce  json
-// @Success 201 {object} CreateGroup 
+// @Success 201 {object} CreateGroup
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Router /v1/groups/{number} [post]
