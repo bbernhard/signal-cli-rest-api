@@ -1,2 +1,3 @@
 signal-cli-config
 src/main
+src/signal-cli-rest-api

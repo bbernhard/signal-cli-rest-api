@@ -1,0 +1,335 @@
+basePath: /
+definitions:
+  api.About:
+    properties:
+      build:
+        type: integer
+      versions:
+        items:
+          type: string
+        type: array
+    type: object
+  api.CreateGroup:
+    properties:
+      id:
+        type: string
+    type: object
+  api.Error:
+    properties:
+      error:
+        type: string
+    type: object
+  api.GroupEntry:
+    properties:
+      active:
+        type: boolean
+      blocked:
+        type: boolean
+      id:
+        type: string
+      internal_id:
+        type: string
+      members:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+    type: object
+  api.SendMessageV1:
+    properties:
+      base64_attachment:
+        type: string
+      is_group:
+        type: boolean
+      message:
+        type: string
+      number:
+        type: string
+      recipients:
+        items:
+          type: string
+        type: array
+    type: object
+  api.SendMessageV2:
+    properties:
+      base64_attachments:
+        items:
+          type: string
+        type: array
+      message:
+        type: string
+      number:
+        type: string
+      recipients:
+        items:
+          type: string
+        type: array
+    type: object
+host: 127.0.0.1:8080
+info:
+  contact: {}
+  description: This is the Signal Cli REST API documentation.
+  license: {}
+  title: Signal Cli REST API
+  version: "1.0"
+paths:
+  /v1/about:
+    get:
+      description: Returns the supported API versions and the internal build nr
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.About'
+      summary: Lists general information about the API
+      tags:
+      - General
+  /v1/groups/{number}:
+    get:
+      consumes:
+      - application/json
+      description: List all Signal Groups.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.GroupEntry'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: List all Signal Groups.
+      tags:
+      - Groups
+    post:
+      consumes:
+      - application/json
+      description: Create a new Signal Group with the specified members.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.CreateGroup'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Create a new Signal Group.
+      tags:
+      - Groups
+  /v1/groups/{number}/{groupid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a Signal Group.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Group Id
+        in: path
+        name: groupid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Delete a Signal Group.
+      tags:
+      - Groups
+  /v1/qrcodelink:
+    get:
+      description: test
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image
+          schema:
+            type: string
+      summary: Link device and generate QR code.
+      tags:
+      - Devices
+  /v1/receive/{number}:
+    get:
+      consumes:
+      - application/json
+      description: Receives Signal Messages from the Signal Network.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Receive Signal Messages.
+      tags:
+      - Messages
+  /v1/register/{number}:
+    post:
+      consumes:
+      - application/json
+      description: Register a phone number with the signal network.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Register a phone number.
+      tags:
+      - Devices
+  /v1/register/{number}/verify/{token}:
+    post:
+      consumes:
+      - application/json
+      description: Verify a registered phone number with the signal network.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Verification Code
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Verify a registered phone number.
+      tags:
+      - Devices
+  /v1/send/{number}:
+    post:
+      consumes:
+      - application/json
+      deprecated: true
+      description: Send a signal message
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Input Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.SendMessageV1'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Send a signal message.
+      tags:
+      - Messages
+  /v2/send/{number}:
+    post:
+      consumes:
+      - application/json
+      description: Send a signal message
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Input Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.SendMessageV2'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Send a signal message.
+      tags:
+      - Messages
+swagger: "2.0"
+tags:
+- description: List general information.
+  name: General
+- description: Register and link Devices.
+  name: Devices
+- description: Create, List and Delete Signal Groups.
+  name: Groups
+- description: Send and Receive Signal Messages.
+  name: Messages
