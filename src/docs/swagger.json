@@ -300,7 +300,7 @@
                 }
             }
         },
-        "/v1/send/": {
+        "/v1/send": {
             "post": {
                 "description": "Send a signal message",
                 "consumes": [
@@ -341,7 +341,7 @@
                 }
             }
         },
-        "/v2/send/": {
+        "/v2/send": {
             "post": {
                 "description": "Send a signal message",
                 "consumes": [

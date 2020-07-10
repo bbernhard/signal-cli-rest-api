@@ -315,7 +315,7 @@ var doc = `{
                 }
             }
         },
-        "/v1/send/": {
+        "/v1/send": {
             "post": {
                 "description": "Send a signal message",
                 "consumes": [
@@ -356,7 +356,7 @@ var doc = `{
                 }
             }
         },
-        "/v2/send/": {
+        "/v2/send": {
             "post": {
                 "description": "Send a signal message",
                 "consumes": [

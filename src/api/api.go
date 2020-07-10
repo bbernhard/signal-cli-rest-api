@@ -404,7 +404,7 @@ func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 // @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param data body SendMessageV1 true "Input Data"
-// @Router /v1/send/ [post]
+// @Router /v1/send [post]
 // @Deprecated
 func (a *Api) Send(c *gin.Context) {
 
@@ -431,7 +431,7 @@ func (a *Api) Send(c *gin.Context) {
 // @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param data body SendMessageV2 true "Input Data"
-// @Router /v2/send/ [post]
+// @Router /v2/send [post]
 func (a *Api) SendV2(c *gin.Context) {
 	var req SendMessageV2
 	err := c.BindJSON(&req)

@@ -271,7 +271,7 @@ paths:
       summary: Verify a registered phone number.
       tags:
       - Devices
-  /v1/send/:
+  /v1/send:
     post:
       consumes:
       - application/json
@@ -298,7 +298,7 @@ paths:
       summary: Send a signal message.
       tags:
       - Messages
-  /v2/send/:
+  /v2/send:
     post:
       consumes:
       - application/json
