@@ -283,6 +283,15 @@ var doc = `{
                         "required": true
                     },
                     {
+                        "description": "Additional Settings",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.VerifyNumberSettings"
+                        }
+                    },
+                    {
                         "type": "string",
                         "description": "Verification Code",
                         "name": "token",
@@ -306,7 +315,7 @@ var doc = `{
                 }
             }
         },
-        "/v1/send/{number}": {
+        "/v1/send/": {
             "post": {
                 "description": "Send a signal message",
                 "consumes": [
@@ -321,13 +330,6 @@ var doc = `{
                 "summary": "Send a signal message.",
                 "deprecated": true,
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Registered Phone Number",
-                        "name": "number",
-                        "in": "path",
-                        "required": true
-                    },
                     {
                         "description": "Input Data",
                         "name": "data",
@@ -354,7 +356,7 @@ var doc = `{
                 }
             }
         },
-        "/v2/send/{number}": {
+        "/v2/send/": {
             "post": {
                 "description": "Send a signal message",
                 "consumes": [
@@ -368,13 +370,6 @@ var doc = `{
                 ],
                 "summary": "Send a signal message.",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Registered Phone Number",
-                        "name": "number",
-                        "in": "path",
-                        "required": true
-                    },
                     {
                         "description": "Input Data",
                         "name": "data",
@@ -502,6 +497,14 @@ var doc = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "api.VerifyNumberSettings": {
+            "type": "object",
+            "properties": {
+                "pin": {
+                    "type": "string"
                 }
             }
         }

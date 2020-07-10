@@ -66,6 +66,11 @@ definitions:
           type: string
         type: array
     type: object
+  api.VerifyNumberSettings:
+    properties:
+      pin:
+        type: string
+    type: object
 host: 127.0.0.1:8080
 info:
   contact: {}
@@ -241,6 +246,12 @@ paths:
         name: number
         required: true
         type: string
+      - description: Additional Settings
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.VerifyNumberSettings'
       - description: Verification Code
         in: path
         name: token
@@ -260,18 +271,13 @@ paths:
       summary: Verify a registered phone number.
       tags:
       - Devices
-  /v1/send/{number}:
+  /v1/send/:
     post:
       consumes:
       - application/json
       deprecated: true
       description: Send a signal message
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
       - description: Input Data
         in: body
         name: data
@@ -292,17 +298,12 @@ paths:
       summary: Send a signal message.
       tags:
       - Messages
-  /v2/send/{number}:
+  /v2/send/:
     post:
       consumes:
       - application/json
       description: Send a signal message
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
       - description: Input Data
         in: body
         name: data

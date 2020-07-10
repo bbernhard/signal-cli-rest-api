@@ -32,6 +32,10 @@ type RegisterNumberRequest struct {
 	UseVoice bool `json:"use_voice"`
 }
 
+type VerifyNumberSettings struct {
+	Pin string `json:"pin"`
+}
+
 type SendMessageV1 struct {
 	Number           string   `json:"number"`
 	Recipients       []string `json:"recipients"`
@@ -347,11 +351,26 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 // @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
+// @Param data body VerifyNumberSettings true "Additional Settings"
 // @Param token path string true "Verification Code"
 // @Router /v1/register/{number}/verify/{token} [post]
 func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 	number := c.Param("number")
 	token := c.Param("token")
+
+	pin := ""
+	var req VerifyNumberSettings
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(c.Request.Body)
+	if buf.String() != "" {
+		err := json.Unmarshal(buf.Bytes(), &req)
+		if err != nil {
+			log.Error("Couldn't verify number: ", err.Error())
+			c.JSON(400, Error{Msg: "Couldn't process request - invalid request."})
+			return
+		}
+		pin = req.Pin
+	}
 
 	if number == "" {
 		c.JSON(400, gin.H{"error": "Please provide a number"})
@@ -363,7 +382,13 @@ func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 		return
 	}
 
-	_, err := runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "verify", token})
+	cmd := []string{"--config", a.signalCliConfig, "-u", number, "verify", token}
+	if pin != "" {
+		cmd = append(cmd, "--pin")
+		cmd = append(cmd, pin)
+	}
+
+	_, err := runSignalCli(true, cmd)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -378,9 +403,8 @@ func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 // @Produce  json
 // @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
 // @Param data body SendMessageV1 true "Input Data"
-// @Router /v1/send/{number} [post]
+// @Router /v1/send/ [post]
 // @Deprecated
 func (a *Api) Send(c *gin.Context) {
 
@@ -406,9 +430,8 @@ func (a *Api) Send(c *gin.Context) {
 // @Produce  json
 // @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
 // @Param data body SendMessageV2 true "Input Data"
-// @Router /v2/send/{number} [post]
+// @Router /v2/send/ [post]
 func (a *Api) SendV2(c *gin.Context) {
 	var req SendMessageV2
 	err := c.BindJSON(&req)
