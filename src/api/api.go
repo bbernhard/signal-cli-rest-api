@@ -168,6 +168,8 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+
+	cleanupTmpFiles(attachmentTmpPaths)
 	c.JSON(201, nil)
 }
 
