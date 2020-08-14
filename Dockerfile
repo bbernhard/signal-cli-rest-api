@@ -39,7 +39,7 @@ COPY src/go.sum /tmp/signal-cli-rest-api-src/
 RUN cd /tmp/signal-cli-rest-api-src && swag init && go build
 
 # Start a fresh container for release container
-FROM openjdk:11-slim
+FROM openjdk:11-jre-slim-buster
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
 COPY --from=buildcontainer /tmp/signal-cli /opt/signal-cli
