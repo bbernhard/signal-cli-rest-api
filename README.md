@@ -22,7 +22,6 @@ services:
     image: bbernhard/signal-cli-rest-api:latest
     ports:
       - "8080:8080" #map docker port 8080 to host port 8080.
-    network_mode: "host"
     volumes:
       - "./signal-cli-config:/home/.local/share/signal-cli" #map "signal-cli-config" folder on host system into docker container. the folder contains the password and cryptographic keys when a new number is registered
 
