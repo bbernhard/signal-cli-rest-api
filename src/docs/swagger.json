@@ -24,7 +24,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.About"
+                            "$ref": "#/definitions/datastructures.About"
                         }
                     }
                 }
@@ -58,14 +58,14 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.GroupEntry"
+                                "$ref": "#/definitions/datastructures.GroupEntry"
                             }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -95,13 +95,13 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.CreateGroup"
+                            "$ref": "#/definitions/datastructures.CreateGroup"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -146,7 +146,7 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -207,7 +207,7 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -240,7 +240,7 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -273,7 +273,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.VerifyNumberSettings"
+                            "$ref": "#/definitions/datastructures.VerifyNumberSettings"
                         }
                     },
                     {
@@ -294,7 +294,7 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -321,7 +321,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.SendMessageV1"
+                            "$ref": "#/definitions/datastructures.SendMessageV1"
                         }
                     }
                 ],
@@ -335,7 +335,7 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -361,7 +361,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.SendMessageV2"
+                            "$ref": "#/definitions/datastructures.SendMessageV2"
                         }
                     }
                 ],
@@ -375,7 +375,7 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -383,7 +383,7 @@
         }
     },
     "definitions": {
-        "api.About": {
+        "datastructures.About": {
             "type": "object",
             "properties": {
                 "build": {
@@ -397,7 +397,7 @@
                 }
             }
         },
-        "api.CreateGroup": {
+        "datastructures.CreateGroup": {
             "type": "object",
             "properties": {
                 "id": {
@@ -405,7 +405,7 @@
                 }
             }
         },
-        "api.Error": {
+        "datastructures.Error": {
             "type": "object",
             "properties": {
                 "error": {
@@ -413,7 +413,7 @@
                 }
             }
         },
-        "api.GroupEntry": {
+        "datastructures.GroupEntry": {
             "type": "object",
             "properties": {
                 "active": {
@@ -439,7 +439,7 @@
                 }
             }
         },
-        "api.SendMessageV1": {
+        "datastructures.SendMessageV1": {
             "type": "object",
             "properties": {
                 "base64_attachment": {
@@ -462,7 +462,7 @@
                 }
             }
         },
-        "api.SendMessageV2": {
+        "datastructures.SendMessageV2": {
             "type": "object",
             "properties": {
                 "base64_attachments": {
@@ -485,7 +485,7 @@
                 }
             }
         },
-        "api.VerifyNumberSettings": {
+        "datastructures.VerifyNumberSettings": {
             "type": "object",
             "properties": {
                 "pin": {

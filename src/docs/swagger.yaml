@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  api.About:
+  datastructures.About:
     properties:
       build:
         type: integer
@@ -9,17 +9,17 @@ definitions:
           type: string
         type: array
     type: object
-  api.CreateGroup:
+  datastructures.CreateGroup:
     properties:
       id:
         type: string
     type: object
-  api.Error:
+  datastructures.Error:
     properties:
       error:
         type: string
     type: object
-  api.GroupEntry:
+  datastructures.GroupEntry:
     properties:
       active:
         type: boolean
@@ -36,7 +36,7 @@ definitions:
       name:
         type: string
     type: object
-  api.SendMessageV1:
+  datastructures.SendMessageV1:
     properties:
       base64_attachment:
         type: string
@@ -51,7 +51,7 @@ definitions:
           type: string
         type: array
     type: object
-  api.SendMessageV2:
+  datastructures.SendMessageV2:
     properties:
       base64_attachments:
         items:
@@ -66,7 +66,7 @@ definitions:
           type: string
         type: array
     type: object
-  api.VerifyNumberSettings:
+  datastructures.VerifyNumberSettings:
     properties:
       pin:
         type: string
@@ -88,7 +88,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.About'
+            $ref: '#/definitions/datastructures.About'
       summary: Lists general information about the API
       tags:
       - General
@@ -110,12 +110,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.GroupEntry'
+              $ref: '#/definitions/datastructures.GroupEntry'
             type: array
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: '#/definitions/datastructures.Error'
       summary: List all Signal Groups.
       tags:
       - Groups
@@ -135,11 +135,11 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.CreateGroup'
+            $ref: '#/definitions/datastructures.CreateGroup'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: '#/definitions/datastructures.Error'
       summary: Create a new Signal Group.
       tags:
       - Groups
@@ -169,7 +169,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: '#/definitions/datastructures.Error'
       summary: Delete a Signal Group.
       tags:
       - Groups
@@ -209,7 +209,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: '#/definitions/datastructures.Error'
       summary: Receive Signal Messages.
       tags:
       - Messages
@@ -231,7 +231,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: '#/definitions/datastructures.Error'
       summary: Register a phone number.
       tags:
       - Devices
@@ -251,7 +251,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/api.VerifyNumberSettings'
+          $ref: '#/definitions/datastructures.VerifyNumberSettings'
       - description: Verification Code
         in: path
         name: token
@@ -267,7 +267,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: '#/definitions/datastructures.Error'
       summary: Verify a registered phone number.
       tags:
       - Devices
@@ -283,7 +283,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/api.SendMessageV1'
+          $ref: '#/definitions/datastructures.SendMessageV1'
       produces:
       - application/json
       responses:
@@ -294,7 +294,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: '#/definitions/datastructures.Error'
       summary: Send a signal message.
       tags:
       - Messages
@@ -309,7 +309,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/api.SendMessageV2'
+          $ref: '#/definitions/datastructures.SendMessageV2'
       produces:
       - application/json
       responses:
@@ -320,7 +320,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: '#/definitions/datastructures.Error'
       summary: Send a signal message.
       tags:
       - Messages

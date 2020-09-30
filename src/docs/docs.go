@@ -39,7 +39,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.About"
+                            "$ref": "#/definitions/datastructures.About"
                         }
                     }
                 }
@@ -73,14 +73,14 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.GroupEntry"
+                                "$ref": "#/definitions/datastructures.GroupEntry"
                             }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -110,13 +110,13 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.CreateGroup"
+                            "$ref": "#/definitions/datastructures.CreateGroup"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -161,7 +161,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -222,7 +222,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -255,7 +255,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -288,7 +288,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.VerifyNumberSettings"
+                            "$ref": "#/definitions/datastructures.VerifyNumberSettings"
                         }
                     },
                     {
@@ -309,7 +309,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -336,7 +336,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.SendMessageV1"
+                            "$ref": "#/definitions/datastructures.SendMessageV1"
                         }
                     }
                 ],
@@ -350,7 +350,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -376,7 +376,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.SendMessageV2"
+                            "$ref": "#/definitions/datastructures.SendMessageV2"
                         }
                     }
                 ],
@@ -390,7 +390,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/datastructures.Error"
                         }
                     }
                 }
@@ -398,7 +398,7 @@ var doc = `{
         }
     },
     "definitions": {
-        "api.About": {
+        "datastructures.About": {
             "type": "object",
             "properties": {
                 "build": {
@@ -412,7 +412,7 @@ var doc = `{
                 }
             }
         },
-        "api.CreateGroup": {
+        "datastructures.CreateGroup": {
             "type": "object",
             "properties": {
                 "id": {
@@ -420,7 +420,7 @@ var doc = `{
                 }
             }
         },
-        "api.Error": {
+        "datastructures.Error": {
             "type": "object",
             "properties": {
                 "error": {
@@ -428,7 +428,7 @@ var doc = `{
                 }
             }
         },
-        "api.GroupEntry": {
+        "datastructures.GroupEntry": {
             "type": "object",
             "properties": {
                 "active": {
@@ -454,7 +454,7 @@ var doc = `{
                 }
             }
         },
-        "api.SendMessageV1": {
+        "datastructures.SendMessageV1": {
             "type": "object",
             "properties": {
                 "base64_attachment": {
@@ -477,7 +477,7 @@ var doc = `{
                 }
             }
         },
-        "api.SendMessageV2": {
+        "datastructures.SendMessageV2": {
             "type": "object",
             "properties": {
                 "base64_attachments": {
@@ -500,7 +500,7 @@ var doc = `{
                 }
             }
         },
-        "api.VerifyNumberSettings": {
+        "datastructures.VerifyNumberSettings": {
             "type": "object",
             "properties": {
                 "pin": {

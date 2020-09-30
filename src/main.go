@@ -8,6 +8,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/bbernhard/signal-cli-rest-api/api"
+	system "github.com/bbernhard/signal-cli-rest-api/system"
 	_ "github.com/bbernhard/signal-cli-rest-api/docs"
 
 )
@@ -36,6 +37,18 @@ func main() {
 	signalCliConfig := flag.String("signal-cli-config", "/home/.local/share/signal-cli/", "Config directory where signal-cli config is stored")
 	attachmentTmpDir := flag.String("attachment-tmp-dir", "/tmp/", "Attachment tmp directory")
 	flag.Parse()
+
+	if system.UseDbus() {
+		err := system.StartSystemDbus()
+		if err != nil {
+			log.Fatal("Couldn't start system DBUS: ", err.Error())
+		}
+
+		err = system.StartSignalCliDbusDaemon(*signalCliConfig)
+		if err != nil {
+			log.Fatal("Couldn't start supervisor: ", err.Error())
+		}
+	}
 
 	router := gin.Default()
 	log.Info("Started Signal Messenger REST API")
