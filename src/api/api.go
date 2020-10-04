@@ -631,7 +631,7 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 	}
 
-	q.DisableBorder = true
+	q.DisableBorder = false
 	var png []byte
 	png, err = q.PNG(256)
 	if err != nil {
