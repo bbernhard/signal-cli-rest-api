@@ -183,6 +183,10 @@ paths:
           description: Image
           schema:
             type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
       summary: Link device and generate QR code.
       tags:
       - Devices

@@ -609,6 +609,7 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 // @Description test
 // @Produce  json
 // @Success 200 {string} string	"Image"
+// @Failure 400 {object} Error
 // @Router /v1/qrcodelink [get]
 func (a *Api) GetQrCodeLink(c *gin.Context) {
 	deviceName := c.Query("device_name")
@@ -622,20 +623,25 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 
 	tsdeviceLink, err := runSignalCli(false, command)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		log.Error("Couldn't create QR code: ", err.Error())
+		c.JSON(400, Error{Msg: "Couldn't create QR code: " + err.Error()})
 		return
 	}
 
 	q, err := qrcode.New(string(tsdeviceLink), qrcode.Medium)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		log.Error("Couldn't create QR code: ", err.Error())
+		c.JSON(400, Error{Msg: "Couldn't create QR code: " + err.Error()})
+		return
 	}
 
 	q.DisableBorder = false
 	var png []byte
 	png, err = q.PNG(256)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		log.Error("Couldn't create QR code: ", err.Error())
+		c.JSON(400, Error{Msg: "Couldn't create QR code: " + err.Error()})
+		return
 	}
 
 	c.Data(200, "image/png", png)
