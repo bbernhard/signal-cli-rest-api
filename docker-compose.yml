@@ -1,6 +1,8 @@
 version: "3"
 services:
   signal-cli-rest-api:
+    environment:
+      - USE_DBUS=true
     build: "."
     ports:
       - "8080:8080" #map docker port 8080 to host port 8080.
