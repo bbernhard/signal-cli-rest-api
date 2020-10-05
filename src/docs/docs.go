@@ -169,8 +169,18 @@ var doc = `{
         },
         "/v1/qrcodelink": {
             "get": {
-                "description": "test",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "device_name",
+                        "type": "string",
+                        "required": true,
+                        "description": "The name of the device is being linked. This name will be shown in Signal as device."
+                    }
+                ],
+                "description": "Returns a QR-Code image. In case of an error a JSON object will be returned. Due to security reason of Signal, the provided QR-Code will change with each request.",
                 "produces": [
+                    "image/png".
                     "application/json"
                 ],
                 "tags": [
@@ -179,9 +189,14 @@ var doc = `{
                 "summary": "Link device and generate QR code.",
                 "responses": {
                     "200": {
-                        "description": "Image",
+                        "description": "Ok",
+                        "content":
+                            "image"
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }

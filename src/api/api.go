@@ -6,15 +6,16 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	uuid "github.com/gofrs/uuid"
 	"github.com/h2non/filetype"
 	log "github.com/sirupsen/logrus"
 	qrcode "github.com/skip2/go-qrcode"
-	"os"
-	"os/exec"
-	"strings"
-	"time"
 )
 
 const groupPrefix = "group."
@@ -630,7 +631,7 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 	}
 
-	q.DisableBorder = true
+	q.DisableBorder = false
 	var png []byte
 	png, err = q.PNG(256)
 	if err != nil {
