@@ -41,20 +41,12 @@ RUN cd /tmp/signal-cli-rest-api-src && swag init && go build
 # Start a fresh container for release container
 FROM adoptopenjdk:11-jre-hotspot
 
-RUN useradd -ms /bin/bash signal
-
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
 COPY --from=buildcontainer /tmp/signal-cli /opt/signal-cli
 
 RUN ln -s /opt/signal-cli/bin/signal-cli /usr/bin/signal-cli
 RUN mkdir -p /signal-cli-config/
 RUN mkdir -p /home/.local/share/signal-cli
-
-RUN chown -R signal:signal /home/.local/share/signal-cli
-RUN chmod u+rwx /home/.local/share/signal-cli
-
-USER signal
-WORKDIR /home/signal
 
 EXPOSE 8080
 
