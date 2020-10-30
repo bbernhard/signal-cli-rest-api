@@ -491,7 +491,9 @@ func (a *Api) SendV2(c *gin.Context) {
 func (a *Api) Receive(c *gin.Context) {
 	number := c.Param("number")
 
-	command := []string{"--config", a.signalCliConfig, "-u", number, "receive", "-t", "1", "--json"}
+	timeout := c.DefaultQuery("timeout", "1")
+
+	command := []string{"--config", a.signalCliConfig, "-u", number, "receive", "-t", timeout, "--json"}
 	out, err := runSignalCli(true, command)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
