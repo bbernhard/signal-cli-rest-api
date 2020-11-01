@@ -201,6 +201,10 @@ paths:
         name: number
         required: true
         type: string
+      - description: 'Receive timeout in seconds (default: 1)'
+        in: query
+        name: timeout
+        type: string
       produces:
       - application/json
       responses:

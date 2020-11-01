@@ -487,6 +487,7 @@ func (a *Api) SendV2(c *gin.Context) {
 // @Success 200 {object} []string
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
+// @Param timeout query string false "Receive timeout in seconds (default: 1)"
 // @Router /v1/receive/{number} [get]
 func (a *Api) Receive(c *gin.Context) {
 	number := c.Param("number")

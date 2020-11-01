@@ -213,6 +213,12 @@ var doc = `{
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Receive timeout in seconds (default: 1)",
+                        "name": "timeout",
+                        "in": "query"
                     }
                 ],
                 "responses": {
