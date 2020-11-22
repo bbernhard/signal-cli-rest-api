@@ -90,7 +90,7 @@ func cleanupTmpFiles(paths []string) {
 
 func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, number string, message string,
 	recipients []string, base64Attachments []string, isGroup bool) {
-	cmd := []string{"--config", signalCliConfig, "-u", number, "send", "-m", message}
+	cmd := []string{"--config", signalCliConfig, "-u", number, "send"}
 
 	if len(recipients) == 0 {
 		c.JSON(400, gin.H{"error": "Please specify at least one recipient"})
@@ -163,7 +163,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 		cmd = append(cmd, attachmentTmpPaths...)
 	}
 
-	_, err := runSignalCli(true, cmd)
+	_, err := runSignalCli(true, cmd, message)
 	if err != nil {
 		cleanupTmpFiles(attachmentTmpPaths)
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -177,7 +177,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
 	groupEntries := []GroupEntry{}
 
-	out, err := runSignalCli(true, []string{"--config", signalCliConfig, "-u", number, "listGroups", "-d"})
+	out, err := runSignalCli(true, []string{"--config", signalCliConfig, "-u", number, "listGroups", "-d"}, "")
 	if err != nil {
 		return groupEntries, err
 	}
@@ -234,8 +234,11 @@ func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
 	return groupEntries, nil
 }
 
-func runSignalCli(wait bool, args []string) (string, error) {
+func runSignalCli(wait bool, args []string, stdin string) (string, error) {
 	cmd := exec.Command("signal-cli", args...)
+	if stdin != "" {
+		cmd.Stdin = strings.NewReader(stdin)
+	}
 	if wait {
 		var errBuffer bytes.Buffer
 		var outBuffer bytes.Buffer
@@ -338,7 +341,7 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 		command = append(command, "--voice")
 	}
 
-	_, err := runSignalCli(true, command)
+	_, err := runSignalCli(true, command, "")
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -391,7 +394,7 @@ func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 		cmd = append(cmd, pin)
 	}
 
-	_, err := runSignalCli(true, cmd)
+	_, err := runSignalCli(true, cmd, "")
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -495,7 +498,7 @@ func (a *Api) Receive(c *gin.Context) {
 	timeout := c.DefaultQuery("timeout", "1")
 
 	command := []string{"--config", a.signalCliConfig, "-u", number, "receive", "-t", timeout, "--json"}
-	out, err := runSignalCli(true, command)
+	out, err := runSignalCli(true, command, "")
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -544,7 +547,7 @@ func (a *Api) CreateGroup(c *gin.Context) {
 	cmd := []string{"--config", a.signalCliConfig, "-u", number, "updateGroup", "-n", req.Name, "-m"}
 	cmd = append(cmd, req.Members...)
 
-	out, err := runSignalCli(true, cmd)
+	out, err := runSignalCli(true, cmd, "")
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -600,7 +603,7 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 		return
 	}
 
-	_, err = runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "quitGroup", "-g", string(groupId)})
+	_, err = runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "quitGroup", "-g", string(groupId)}, "")
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -624,7 +627,7 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 
 	command := []string{"--config", a.signalCliConfig, "link", "-n", deviceName}
 
-	tsdeviceLink, err := runSignalCli(false, command)
+	tsdeviceLink, err := runSignalCli(false, command, "")
 	if err != nil {
 		log.Error("Couldn't create QR code: ", err.Error())
 		c.JSON(400, Error{Msg: "Couldn't create QR code: " + err.Error()})
