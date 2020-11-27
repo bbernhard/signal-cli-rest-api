@@ -13,4 +13,4 @@ echo "Run 'su signal-api' before using signal-cli!"
 EOF
 
 # Start API as signal-api user
-exec su -s /bin/sh -c "exec signal-cli-rest-api $@" signal-api
+exec setpriv --reuid=1000 --regid=1000 --init-groups --inh-caps=-all signal-cli-rest-api $@
