@@ -1,6 +1,6 @@
 FROM golang:1.13-buster AS buildcontainer
 
-ARG SIGNAL_CLI_VERSION=0.7.0
+ARG SIGNAL_CLI_VERSION=0.6.12
 ARG SWAG_VERSION=1.6.7
 
 ENV GIN_MODE=release
