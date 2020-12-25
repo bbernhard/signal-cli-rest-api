@@ -1,17 +1,22 @@
 FROM golang:1.13-buster AS buildcontainer
 
-ARG SIGNAL_CLI_VERSION=0.7.0
+ARG SIGNAL_CLI_VERSION=0.7.1
+ARG ZKGROUP_VERSION=0.7.0
 ARG SWAG_VERSION=1.6.7
 
 ENV GIN_MODE=release
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git locales \
+	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git locales zip \
 	&& rm -rf /var/lib/apt/lists/* 
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
     update-locale LANG=en_US.UTF-8
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 ENV LANG en_US.UTF-8
 
@@ -30,6 +35,21 @@ RUN cd /tmp/ \
 	&& ./gradlew build \
 	&& ./gradlew installDist \
 	&& ln -s /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/ /tmp/signal-cli
+
+RUN ls /tmp/signal-cli/lib/zkgroup-java-${ZKGROUP_VERSION}.jar || (echo "\n\nzkgroup jar file with version ${ZKGROUP_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls /tmp/signal-cli/lib/zkgroup-java-* && echo "\n\n" && exit 1)
+
+RUN cd /tmp/ \
+	&& git clone https://github.com/signalapp/zkgroup.git zkgroup-${ZKGROUP_VERSION} \
+	&& cd zkgroup-${ZKGROUP_VERSION} \
+	&& git checkout v${ZKGROUP_VERSION} \
+	&& make libzkgroup \
+	&& ln -s /tmp/zkgroup-${ZKGROUP_VERSION} /tmp/zkgroup
+
+RUN cd /tmp/signal-cli \
+	&& cd /tmp/zkgroup-${ZKGROUP_VERSION}/target/release/ \
+	&& zip -u /tmp/signal-cli/lib/zkgroup-java-*.jar libzkgroup.so 
+	#\
+	#&& jar uf /tmp/signal-cli/lib/zkgroup-java-*.jar -C /tmp/zkgroup/
 
 COPY src/api /tmp/signal-cli-rest-api-src/api
 COPY src/main.go /tmp/signal-cli-rest-api-src/
