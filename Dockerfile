@@ -41,6 +41,10 @@ RUN cd /tmp/signal-cli-rest-api-src && swag init && go build
 # Start a fresh container for release container
 FROM adoptopenjdk:11-jdk-hotspot-bionic
 
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends setpriv \
+	&& rm -rf /var/lib/apt/lists/* 
+
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
 COPY --from=buildcontainer /tmp/signal-cli /opt/signal-cli
 COPY entrypoint.sh /entrypoint.sh
