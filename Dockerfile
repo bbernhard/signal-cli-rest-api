@@ -1,10 +1,22 @@
-FROM golang:1.13-buster AS buildcontainer
-
-
 ARG SIGNAL_CLI_VERSION=0.7.1
 ARG ZKGROUP_VERSION=0.7.0
 
 ARG SWAG_VERSION=1.6.7
+
+# fetch the vendor with the builder platform to avoid qemu issues
+FROM --platform=$BUILDPLATFORM rust:1-buster AS rust-sources-downloader
+
+ARG ZKGROUP_VERSION
+
+RUN cd /tmp/ && git clone https://github.com/signalapp/zkgroup.git zkgroup-${ZKGROUP_VERSION}
+RUN cd /tmp/zkgroup-${ZKGROUP_VERSION} && cargo fetch
+
+
+FROM golang:1.13-buster AS buildcontainer
+
+ARG SIGNAL_CLI_VERSION
+ARG ZKGROUP_VERSION
+ARG SWAG_VERSION
 
 ENV GIN_MODE=release
 
@@ -40,18 +52,15 @@ RUN cd /tmp/ \
 
 RUN ls /tmp/signal-cli/lib/zkgroup-java-${ZKGROUP_VERSION}.jar || (echo "\n\nzkgroup jar file with version ${ZKGROUP_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls /tmp/signal-cli/lib/zkgroup-java-* && echo "\n\n" && exit 1)
 
-RUN cd /tmp/ \
-	&& git clone https://github.com/signalapp/zkgroup.git zkgroup-${ZKGROUP_VERSION} \
-	&& cd zkgroup-${ZKGROUP_VERSION} \
-	&& git checkout v${ZKGROUP_VERSION} \
+COPY --from=rust-sources-downloader /tmp/zkgroup-${ZKGROUP_VERSION} /tmp/zkgroup-${ZKGROUP_VERSION} 
+
+RUN	cd /tmp/zkgroup-${ZKGROUP_VERSION} \
 	&& make libzkgroup \
 	&& ln -s /tmp/zkgroup-${ZKGROUP_VERSION} /tmp/zkgroup
 
 RUN cd /tmp/signal-cli \
 	&& cd /tmp/zkgroup-${ZKGROUP_VERSION}/target/release/ \
 	&& zip -u /tmp/signal-cli/lib/zkgroup-java-*.jar libzkgroup.so 
-	#\
-	#&& jar uf /tmp/signal-cli/lib/zkgroup-java-*.jar -C /tmp/zkgroup/
 
 COPY src/api /tmp/signal-cli-rest-api-src/api
 COPY src/main.go /tmp/signal-cli-rest-api-src/
