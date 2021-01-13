@@ -31,6 +31,7 @@ type GroupEntry struct {
 
 type RegisterNumberRequest struct {
 	UseVoice bool `json:"use_voice"`
+	Captcha string `json:"captcha"`
 }
 
 type VerifyNumberSettings struct {
@@ -328,6 +329,7 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 		}
 	} else {
 		req.UseVoice = false
+		req.Captcha = ""
 	}
 
 	if number == "" {
@@ -339,6 +341,10 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 
 	if req.UseVoice == true {
 		command = append(command, "--voice")
+	}
+
+	if req.Captcha != "" {
+		command = append(command, []string{"--captcha", req.Captcha}...)
 	}
 
 	_, err := runSignalCli(true, command, "")
