@@ -92,6 +92,70 @@ paths:
       summary: Lists general information about the API
       tags:
       - General
+  /v1/attachments:
+    get:
+      description: List all downloaded attachments
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: List all attachments.
+      tags:
+      - Attachments
+  /v1/attachments/{attachment}:
+    delete:
+      description: Remove the attachment with the given id from filesystem.
+      parameters:
+      - description: Attachment ID
+        in: path
+        name: attachment
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Remove attachment.
+      tags:
+      - Attachments
+    get:
+      description: Serve the attachment with the given id
+      parameters:
+      - description: Attachment ID
+        in: path
+        name: attachment
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Serve Attachment.
+      tags:
+      - Attachments
   /v1/groups/{number}:
     get:
       consumes:
@@ -175,7 +239,7 @@ paths:
       - Groups
   /v1/qrcodelink:
     get:
-      description: test
+      description: Link device and generate QR code
       produces:
       - application/json
       responses:
@@ -342,3 +406,5 @@ tags:
   name: Groups
 - description: Send and Receive Signal Messages.
   name: Messages
+- description: List and Delete Attachments.
+  name: Attachments

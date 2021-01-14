@@ -31,6 +31,9 @@ import (
 // @tag.name Messages
 // @tag.description Send and Receive Signal Messages.
 
+// @tag.name Attachments 
+// @tag.description List and Delete Attachments.
+
 // @host 127.0.0.1:8080
 // @BasePath /
 func main() {
@@ -75,6 +78,13 @@ func main() {
 		link := v1.Group("qrcodelink")
 		{
 			link.GET("", api.GetQrCodeLink)
+		}
+
+		attachments := v1.Group("attachments")
+		{
+			attachments.GET("", api.GetAttachments)
+			attachments.DELETE(":attachment", api.RemoveAttachment)
+			attachments.GET(":attachment", api.ServeAttachment)
 		}
 	}
 
