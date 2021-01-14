@@ -45,6 +45,103 @@ var doc = `{
                 }
             }
         },
+        "/v1/attachments": {
+            "get": {
+                "description": "List all downloaded attachments",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Attachments"
+                ],
+                "summary": "List all attachments.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/attachments/{attachment}": {
+            "get": {
+                "description": "Serve the attachment with the given id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Attachments"
+                ],
+                "summary": "Serve Attachment.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Attachment ID",
+                        "name": "attachment",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove the attachment with the given id from filesystem.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Attachments"
+                ],
+                "summary": "Remove attachment.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Attachment ID",
+                        "name": "attachment",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/groups/{number}": {
             "get": {
                 "description": "List all Signal Groups.",
@@ -169,7 +266,7 @@ var doc = `{
         },
         "/v1/qrcodelink": {
             "get": {
-                "description": "test",
+                "description": "Link device and generate QR code",
                 "produces": [
                     "application/json"
                 ],
@@ -537,6 +634,10 @@ var doc = `{
         {
             "description": "Send and Receive Signal Messages.",
             "name": "Messages"
+        },
+        {
+            "description": "List and Delete Attachments.",
+            "name": "Attachments"
         }
     ]
 }`

@@ -10,12 +10,18 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+	"path/filepath"
+	"net/http"
+	"strconv"
+	"io/ioutil"
 
 	"github.com/gin-gonic/gin"
 	uuid "github.com/gofrs/uuid"
 	"github.com/h2non/filetype"
 	log "github.com/sirupsen/logrus"
 	qrcode "github.com/skip2/go-qrcode"
+	"github.com/gabriel-vasile/mimetype"
+	"github.com/cyphar/filepath-securejoin"
 )
 
 const groupPrefix = "group."
@@ -618,7 +624,7 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 
 // @Summary Link device and generate QR code.
 // @Tags Devices
-// @Description test
+// @Description Link device and generate QR code
 // @Produce  json
 // @Success 200 {string} string	"Image"
 // @Failure 400 {object} Error
@@ -657,4 +663,99 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 	}
 
 	c.Data(200, "image/png", png)
+}
+
+// @Summary List all attachments.
+// @Tags Attachments
+// @Description List all downloaded attachments
+// @Produce  json
+// @Success 200 {object} []string
+// @Failure 400 {object} Error
+// @Router /v1/attachments [get]
+func (a *Api) GetAttachments(c *gin.Context) {
+	files := []string{}
+	err := filepath.Walk(a.signalCliConfig + "/attachments/", func(path string, info os.FileInfo, err error) error {
+        if info.IsDir() {
+			return nil
+		}
+		files = append(files, filepath.Base(path))
+        return nil
+    })
+
+	if err != nil {
+        c.JSON(500, Error{Msg: "Couldn't get list of attachments: " + err.Error()})
+		return
+    }
+
+	c.JSON(200, files)
+}
+
+// @Summary Remove attachment.
+// @Tags Attachments
+// @Description Remove the attachment with the given id from filesystem.
+// @Produce  json
+// @Success 200 {string} OK
+// @Failure 400 {object} Error
+// @Param attachment path string true "Attachment ID"
+// @Router /v1/attachments/{attachment} [delete]
+func (a *Api) RemoveAttachment(c *gin.Context) {
+	attachment := c.Param("attachment")
+	path, err := securejoin.SecureJoin(a.signalCliConfig + "/attachments/", attachment)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Please provide a valid attachment name"})
+		return
+	}
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		c.JSON(404, Error{Msg: "No attachment with that name found"})
+		return
+	}
+	err = os.Remove(path)
+	if err != nil {
+		c.JSON(500, Error{Msg: "Couldn't delete attachment - please try again later"})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Serve Attachment.
+// @Tags Attachments
+// @Description Serve the attachment with the given id 
+// @Produce  json
+// @Success 200 {string} OK
+// @Failure 400 {object} Error
+// @Param attachment path string true "Attachment ID"
+// @Router /v1/attachments/{attachment} [get]
+func (a *Api) ServeAttachment(c *gin.Context) {
+	attachment := c.Param("attachment")
+	path, err := securejoin.SecureJoin(a.signalCliConfig + "/attachments/", attachment)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Please provide a valid attachment name"})
+		return
+	}
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		c.JSON(404, Error{Msg: "No attachment with that name found"})
+		return
+	}
+	
+	imgBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		c.JSON(500, Error{Msg: "Couldn't read attachment - please try again later"})
+		return
+	}
+
+	mime, err := mimetype.DetectReader(bytes.NewReader(imgBytes))
+	if err != nil {
+		c.JSON(500, Error{Msg: "Couldn't detect MIME type for attachment"})
+		return
+	}
+
+	c.Writer.Header().Set("Content-Type", mime.String())
+	c.Writer.Header().Set("Content-Length", strconv.Itoa(len(imgBytes)))
+	_, err = c.Writer.Write(imgBytes)
+	if err != nil {
+		c.JSON(500, Error{Msg: "Couldn't serve attachment - please try again later"})
+		return
+	}
 }
