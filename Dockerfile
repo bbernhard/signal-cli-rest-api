@@ -3,17 +3,6 @@ ARG ZKGROUP_VERSION=0.7.0
 
 ARG SWAG_VERSION=1.6.7
 
-# fetch the vendor with the builder platform to avoid qemu issues
-FROM --platform=$BUILDPLATFORM rust:1-buster AS rust-sources-downloader
-
-ARG ZKGROUP_VERSION
-
-RUN cd /tmp/ && git clone https://github.com/signalapp/zkgroup.git zkgroup-${ZKGROUP_VERSION}
-RUN cd /tmp/zkgroup-${ZKGROUP_VERSION} \
-	&& mkdir -p /tmp/zkgroup-${ZKGROUP_VERSION}/.cargo \
-	&& cargo vendor > /tmp/zkgroup-${ZKGROUP_VERSION}/.cargo/config
-
-
 FROM golang:1.14-buster AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
@@ -22,15 +11,25 @@ ARG SWAG_VERSION
 
 ENV GIN_MODE=release
 
+COPY ext/libraries/zkgroup/v${ZKGROUP_VERSION} /tmp/zkgroup-libraries
+
+RUN ls -la /tmp/zkgroup-libraries/x86-64
+
+RUN arch="$(uname -m)"; \
+        case "$arch" in \
+            armv7l) cp /tmp/zkgroup-libraries/armv7/libzkgroup.so /tmp/libzkgroup.so ;; \
+            x86_64) cp /tmp/zkgroup-libraries/x86-64/libzkgroup.so /tmp/libzkgroup.so ;; \ 
+        esac;
+
+RUN ls -la /tmp
+
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git locales zip \
+	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git locales zip file \
 	&& rm -rf /var/lib/apt/lists/* 
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
     update-locale LANG=en_US.UTF-8
-
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 ENV PATH="/root/.cargo/bin:${PATH}"
 
@@ -51,31 +50,17 @@ RUN cd /tmp/ \
 	&& ./gradlew build \
 	&& ./gradlew installDist \
 	&& ./gradlew distTar
-	#\
-	#&& ln -s /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/ /tmp/signal-cli
 
 #RUN ls /tmp/signal-cli/lib/zkgroup-java-${ZKGROUP_VERSION}.jar || (echo "\n\nzkgroup jar file with version ${ZKGROUP_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls /tmp/signal-cli/lib/zkgroup-java-* && echo "\n\n" && exit 1)
 
-COPY --from=rust-sources-downloader /tmp/zkgroup-${ZKGROUP_VERSION} /tmp/zkgroup-${ZKGROUP_VERSION} 
-
-#run cargo in offline mode (i.e fetch resources from local cache instead of network)
-ENV CARGO_NET_OFFLINE true
-
-RUN	cd /tmp/zkgroup-${ZKGROUP_VERSION} \
-	&& make libzkgroup
-	#\
-	#&& ln -s /tmp/zkgroup-${ZKGROUP_VERSION} /tmp/zkgroup
-
-RUN cd /tmp/zkgroup-${ZKGROUP_VERSION}/target/release \
-	&& zip -u /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/zkgroup-${ZKGROUP_VERSION}.jar libzkgroup.so 
+RUN cd /tmp/ \
+	&& zip -u /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/zkgroup-java-${ZKGROUP_VERSION}.jar libzkgroup.so 
 
 RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/ \
 	&& mkdir -p signal-cli-${SIGNAL_CLI_VERSION}/lib/ \
 	&& cp /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/zkgroup-java-${ZKGROUP_VERSION}.jar signal-cli-${SIGNAL_CLI_VERSION}/lib/ \
-
 	# update zip
-	&& zip -u /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.zip signal-cli-${SIGNAL_CLI_VERSION}/lib/zkgroup-java-${ZKGROUP_VERSION}.jar \
-
+	&& zip -u /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.zip signal-cli-${SIGNAL_CLI_VERSION}/lib/zkgroup-java-${ZKGROUP_VERSION}.jar \	
 	# update tar
 	&& tar --delete -vPf /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar signal-cli-${SIGNAL_CLI_VERSION}/lib/zkgroup-java-${ZKGROUP_VERSION}.jar \
 	&& tar --owner='' --group='' -rvPf /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar signal-cli-${SIGNAL_CLI_VERSION}/lib/zkgroup-java-${ZKGROUP_VERSION}.jar
@@ -112,3 +97,5 @@ RUN groupadd -g 1000 signal-api \
 EXPOSE 8080
 
 ENTRYPOINT ["/entrypoint.sh"]
+	
+
