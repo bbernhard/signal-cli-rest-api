@@ -66,6 +66,13 @@ definitions:
           type: string
         type: array
     type: object
+  api.UpdateProfileRequest:
+    properties:
+      base64_avatar:
+        type: string
+      name:
+        type: string
+    type: object
   api.VerifyNumberSettings:
     properties:
       pin:
@@ -123,8 +130,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "204":
+          description: No Content
           schema:
             type: string
         "400":
@@ -237,6 +244,35 @@ paths:
       summary: Delete a Signal Group.
       tags:
       - Groups
+  /v1/profiles/{number}:
+    put:
+      description: Set your name and optional an avatar.
+      parameters:
+      - description: Profile Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateProfileRequest'
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Update Profile.
+      tags:
+      - Profiles
   /v1/qrcodelink:
     get:
       description: Link device and generate QR code
@@ -408,3 +444,5 @@ tags:
   name: Messages
 - description: List and Delete Attachments.
   name: Attachments
+- description: Update Profile.
+  name: Profiles

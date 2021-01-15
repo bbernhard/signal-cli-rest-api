@@ -72,6 +72,11 @@ type CreateGroup struct {
 	Id string `json:"id"`
 }
 
+type UpdateProfileRequest struct {
+	Name string `json:"name"`
+	Base64Avatar string `json:"base64_avatar"`
+}
+
 func convertInternalGroupIdToGroupId(internalId string) string {
 	return groupPrefix + base64.StdEncoding.EncodeToString([]byte(internalId))
 }
@@ -289,12 +294,14 @@ func runSignalCli(wait bool, args []string, stdin string) (string, error) {
 type Api struct {
 	signalCliConfig  string
 	attachmentTmpDir string
+	avatarTmpDir string
 }
 
-func NewApi(signalCliConfig string, attachmentTmpDir string) *Api {
+func NewApi(signalCliConfig string, attachmentTmpDir string, avatarTmpDir string) *Api {
 	return &Api{
 		signalCliConfig:  signalCliConfig,
 		attachmentTmpDir: attachmentTmpDir,
+		avatarTmpDir: avatarTmpDir,
 	}
 }
 
@@ -694,7 +701,7 @@ func (a *Api) GetAttachments(c *gin.Context) {
 // @Tags Attachments
 // @Description Remove the attachment with the given id from filesystem.
 // @Produce  json
-// @Success 200 {string} OK
+// @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param attachment path string true "Attachment ID"
 // @Router /v1/attachments/{attachment} [delete]
@@ -758,4 +765,88 @@ func (a *Api) ServeAttachment(c *gin.Context) {
 		c.JSON(500, Error{Msg: "Couldn't serve attachment - please try again later"})
 		return
 	}
+}
+
+// @Summary Update Profile.
+// @Tags Profiles
+// @Description Set your name and optional an avatar. 
+// @Produce  json
+// @Success 204 {string} OK
+// @Failure 400 {object} Error
+// @Param data body UpdateProfileRequest true "Profile Data"
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/profiles/{number} [put]
+func (a *Api) UpdateProfile(c *gin.Context) {
+	number := c.Param("number")
+
+	var req UpdateProfileRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	if req.Name == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - profile name missing"})
+		return
+	}
+	cmd := []string{"--config", a.signalCliConfig, "-u", number, "updateProfile", "--name", req.Name}
+	
+	avatarTmpPaths := []string{}
+	if req.Base64Avatar == "" {
+		cmd = append(cmd, "--remove-avatar")
+	} else {
+		u, err := uuid.NewV4()
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+
+		avatarBytes, err := base64.StdEncoding.DecodeString(req.Base64Avatar)
+		if err != nil {
+			c.JSON(400, Error{Msg: "Couldn't decode base64 encoded avatar"})
+			return
+		}
+		
+		fType, err := filetype.Get(avatarBytes)
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+
+		avatarTmpPath := a.avatarTmpDir + u.String() + "." + fType.Extension
+
+		f, err := os.Create(avatarTmpPath)
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+		defer f.Close()
+
+		if _, err := f.Write(avatarBytes); err != nil {
+			cleanupTmpFiles(avatarTmpPaths)
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+		if err := f.Sync(); err != nil {
+			cleanupTmpFiles(avatarTmpPaths)
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+		f.Close()
+
+		cmd = append(cmd, []string{"--avatar", avatarTmpPath}...)
+		avatarTmpPaths = append(avatarTmpPaths, avatarTmpPath)
+	}
+
+	_, err = runSignalCli(true, cmd, "")
+	if err != nil {
+		cleanupTmpFiles(avatarTmpPaths)
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	cleanupTmpFiles(avatarTmpPaths)
+	c.Status(http.StatusNoContent)
 }

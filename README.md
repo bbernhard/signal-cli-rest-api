@@ -10,6 +10,8 @@ At the moment, the following functionality is exposed via REST:
 - Receive messages
 - Link devices
 - Create/Liste/Remove groups
+- List/Serve/Delete attachments
+- Update profile
 
 ## Examples
 

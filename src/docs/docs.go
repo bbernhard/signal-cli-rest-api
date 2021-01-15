@@ -127,8 +127,8 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "204": {
+                        "description": "No Content",
                         "schema": {
                             "type": "string"
                         }
@@ -251,6 +251,50 @@ var doc = `{
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/profiles/{number}": {
+            "put": {
+                "description": "Set your name and optional an avatar.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profiles"
+                ],
+                "summary": "Update Profile.",
+                "parameters": [
+                    {
+                        "description": "Profile Data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateProfileRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
                         "schema": {
                             "type": "string"
                         }
@@ -609,6 +653,17 @@ var doc = `{
                 }
             }
         },
+        "api.UpdateProfileRequest": {
+            "type": "object",
+            "properties": {
+                "base64_avatar": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "api.VerifyNumberSettings": {
             "type": "object",
             "properties": {
@@ -638,6 +693,10 @@ var doc = `{
         {
             "description": "List and Delete Attachments.",
             "name": "Attachments"
+        },
+        {
+            "description": "Update Profile.",
+            "name": "Profiles"
         }
     ]
 }`
