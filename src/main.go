@@ -34,17 +34,21 @@ import (
 // @tag.name Attachments 
 // @tag.description List and Delete Attachments.
 
+// @tag.name Profiles 
+// @tag.description Update Profile.
+
 // @host 127.0.0.1:8080
 // @BasePath /
 func main() {
 	signalCliConfig := flag.String("signal-cli-config", "/home/.local/share/signal-cli/", "Config directory where signal-cli config is stored")
 	attachmentTmpDir := flag.String("attachment-tmp-dir", "/tmp/", "Attachment tmp directory")
+	avatarTmpDir := flag.String("avatar-tmp-dir", "/tmp/", "Avatar tmp directory")
 	flag.Parse()
 
 	router := gin.Default()
 	log.Info("Started Signal Messenger REST API")
 
-	api := api.NewApi(*signalCliConfig, *attachmentTmpDir)	
+	api := api.NewApi(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir)
 	v1 := router.Group("/v1")
 	{
 		about := v1.Group("/about")
@@ -85,6 +89,11 @@ func main() {
 			attachments.GET("", api.GetAttachments)
 			attachments.DELETE(":attachment", api.RemoveAttachment)
 			attachments.GET(":attachment", api.ServeAttachment)
+		}
+
+		profiles := v1.Group("profiles")
+		{
+			profiles.PUT(":number", api.UpdateProfile)
 		}
 	}
 
