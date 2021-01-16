@@ -74,6 +74,8 @@ RUN cd /tmp/signal-cli-rest-api-src && swag init && go build
 # Start a fresh container for release container
 FROM adoptopenjdk:11-jre-hotspot-bionic
 
+ENV PORT=8080
+
 ARG SIGNAL_CLI_VERSION
 
 RUN apt-get update \
@@ -93,9 +95,9 @@ RUN groupadd -g 1000 signal-api \
 	&& mkdir -p /signal-cli-config/ \
 	&& mkdir -p /home/.local/share/signal-cli
 
-EXPOSE 8080
+EXPOSE ${PORT}
 
 ENTRYPOINT ["/entrypoint.sh"]
 
 HEALTHCHECK --interval=20s --timeout=10s --retries=3 \
-    CMD curl -f http://localhost:8080/v1/about || exit 1
+    CMD curl -f http://localhost:${PORT}/v1/about || exit 1
