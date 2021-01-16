@@ -850,3 +850,13 @@ func (a *Api) UpdateProfile(c *gin.Context) {
 	cleanupTmpFiles(avatarTmpPaths)
 	c.Status(http.StatusNoContent)
 }
+
+// @Summary API Health Check
+// @Tags General
+// @Description Internally used by the docker container to perform the health check.
+// @Produce  json
+// @Success 204 {string} OK
+// @Router /v1/health [get]
+func (a *Api) Health(c *gin.Context) {
+	c.Status(http.StatusNoContent)
+}

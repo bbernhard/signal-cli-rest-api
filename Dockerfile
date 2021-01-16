@@ -9,8 +9,6 @@ ARG SIGNAL_CLI_VERSION
 ARG ZKGROUP_VERSION
 ARG SWAG_VERSION
 
-ENV GIN_MODE=release
-
 COPY ext/libraries/zkgroup/v${ZKGROUP_VERSION} /tmp/zkgroup-libraries
 
 RUN ls -la /tmp/zkgroup-libraries/x86-64
@@ -74,6 +72,8 @@ RUN cd /tmp/signal-cli-rest-api-src && swag init && go build
 # Start a fresh container for release container
 FROM adoptopenjdk:11-jre-hotspot-bionic
 
+ENV GIN_MODE=release
+
 ENV PORT=8080
 
 ARG SIGNAL_CLI_VERSION
@@ -100,4 +100,4 @@ EXPOSE ${PORT}
 ENTRYPOINT ["/entrypoint.sh"]
 
 HEALTHCHECK --interval=20s --timeout=10s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/v1/about || exit 1
+    CMD curl -f http://localhost:${PORT}/v1/health || exit 1

@@ -249,6 +249,26 @@
                 }
             }
         },
+        "/v1/health": {
+            "get": {
+                "description": "Internally used by the docker container to perform the health check.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "API Health Check",
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/profiles/{number}": {
             "put": {
                 "description": "Set your name and optional an avatar.",

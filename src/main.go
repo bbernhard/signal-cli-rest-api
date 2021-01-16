@@ -45,7 +45,13 @@ func main() {
 	avatarTmpDir := flag.String("avatar-tmp-dir", "/tmp/", "Avatar tmp directory")
 	flag.Parse()
 
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		SkipPaths: []string{"/v1/health"}, //do not log the health requests (to avoid spamming the log file)
+	}))
+
+	router.Use(gin.Recovery())
+
 	log.Info("Started Signal Messenger REST API")
 
 	api := api.NewApi(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir)
@@ -54,6 +60,11 @@ func main() {
 		about := v1.Group("/about")
 		{
 			about.GET("", api.About)
+		}
+
+		health := v1.Group("/health")
+		{
+			health.GET("", api.Health)
 		}
 
 		register := v1.Group("/register")
