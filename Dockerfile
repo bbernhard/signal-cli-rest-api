@@ -96,5 +96,6 @@ RUN groupadd -g 1000 signal-api \
 EXPOSE 8080
 
 ENTRYPOINT ["/entrypoint.sh"]
-	
 
+HEALTHCHECK --interval=20s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:8080/v1/about || exit 1
