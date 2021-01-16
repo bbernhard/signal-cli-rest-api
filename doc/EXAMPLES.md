@@ -1,5 +1,5 @@
 
-# Sample REST API calls:
+# Sample REST API calls
 
 - Register a number (with SMS verification)
 
@@ -99,6 +99,4 @@ e.g:
 
 The following REST API endpoints are **deprecated and no longer maintained!**
 
-
 `/v1/send`
-

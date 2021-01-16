@@ -9,7 +9,7 @@ At the moment, the following functionality is exposed via REST:
 - Send message (+ attachments) to multiple recipients (or a group)
 - Receive messages
 - Link devices
-- Create/Liste/Remove groups
+- Create/List/Remove groups
 - List/Serve/Delete attachments
 - Update profile
 
@@ -17,7 +17,7 @@ At the moment, the following functionality is exposed via REST:
 
 Sample `docker-compose.yml`file:
 
-```
+```sh
 version: "3"
 services:
   signal-cli-rest-api:
@@ -31,5 +31,4 @@ services:
 
 The Swagger API documentation can be found [here](https://bbernhard.github.io/signal-cli-rest-api/). If you prefer a simple text file like API documentation have a look [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/EXAMPLES.md)
 
-
-In case you need more functionality, please **file a ticket** or **create a PR**
+In case you need more functionality, please **file a ticket** or **create a PR**.
