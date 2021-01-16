@@ -72,7 +72,7 @@ COPY src/go.sum /tmp/signal-cli-rest-api-src/
 RUN cd /tmp/signal-cli-rest-api-src && swag init && go build
 
 # Start a fresh container for release container
-FROM adoptopenjdk:11-jdk-hotspot-bionic
+FROM adoptopenjdk:11-jre-hotspot-bionic
 
 ARG SIGNAL_CLI_VERSION
 
