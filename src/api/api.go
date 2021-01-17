@@ -24,6 +24,8 @@ import (
 	"github.com/cyphar/filepath-securejoin"
 )
 
+const signalCliV2GroupError = "Cannot create a V2 group as self does not have a versioned profile"
+
 const groupPrefix = "group."
 
 type GroupEntry struct {
@@ -178,7 +180,11 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 	_, err := runSignalCli(true, cmd, message)
 	if err != nil {
 		cleanupTmpFiles(attachmentTmpPaths)
-		c.JSON(400, gin.H{"error": err.Error()})
+		if strings.Contains(err.Error(), signalCliV2GroupError) {
+			c.JSON(400, Error{Msg: "Cannot create group - please first update your profile."})
+		} else {
+			c.JSON(400, Error{Msg: err.Error()})
+		}
 		return
 	}
 
@@ -568,7 +574,11 @@ func (a *Api) CreateGroup(c *gin.Context) {
 
 	out, err := runSignalCli(true, cmd, "")
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		if strings.Contains(err.Error(), signalCliV2GroupError) {
+			c.JSON(400, Error{Msg: "Cannot create group - please first update your profile."})
+		} else {
+			c.JSON(400, Error{Msg: err.Error()})
+		}
 		return
 	}
 
