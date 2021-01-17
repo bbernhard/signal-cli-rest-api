@@ -181,7 +181,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 	if err != nil {
 		cleanupTmpFiles(attachmentTmpPaths)
 		if strings.Contains(err.Error(), signalCliV2GroupError) {
-			c.JSON(400, Error{Msg: "Cannot create group - please first update your profile."})
+			c.JSON(400, Error{Msg: "Cannot send message to group - please first update your profile."})
 		} else {
 			c.JSON(400, Error{Msg: err.Error()})
 		}
