@@ -36,6 +36,19 @@ definitions:
       name:
         type: string
     type: object
+  api.IdentityEntry:
+    properties:
+      added:
+        type: string
+      fingerprint:
+        type: string
+      number:
+        type: string
+      safety_number:
+        type: string
+      status:
+        type: string
+    type: object
   api.SendMessageV1:
     properties:
       base64_attachment:
@@ -65,6 +78,11 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  api.TrustIdentityRequest:
+    properties:
+      verified_safety_number:
+        type: string
     type: object
   api.UpdateProfileRequest:
     properties:
@@ -257,6 +275,57 @@ paths:
       summary: API Health Check
       tags:
       - General
+  /v1/identities/{number}:
+    get:
+      description: List all identities for the given number.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.IdentityEntry'
+            type: array
+      summary: List Identities
+      tags:
+      - Identities
+  /v1/identities/{number}/{numberToTrust}:
+    put:
+      description: Trust an identity.
+      parameters:
+      - description: Input Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.TrustIdentityRequest'
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Number To Trust
+        in: path
+        name: numberToTrust
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+      summary: Trust Identity
+      tags:
+      - Identities
   /v1/profiles/{number}:
     put:
       description: Set your name and optional an avatar.
@@ -459,3 +528,5 @@ tags:
   name: Attachments
 - description: Update Profile.
   name: Profiles
+- description: List and Trust Identities.
+  name: Identities

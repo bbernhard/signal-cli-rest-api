@@ -37,6 +37,14 @@ type GroupEntry struct {
 	Blocked    bool     `json:"blocked"`
 }
 
+type IdentityEntry struct {
+	Number string `json:"number"`
+	Status string `json:"status"`
+	Fingerprint string `json:"fingerprint"`
+	Added string `json:"added"`
+	SafetyNumber string `json:"safety_number"`
+}
+
 type RegisterNumberRequest struct {
 	UseVoice bool `json:"use_voice"`
 	Captcha string `json:"captcha"`
@@ -77,6 +85,10 @@ type CreateGroup struct {
 type UpdateProfileRequest struct {
 	Name string `json:"name"`
 	Base64Avatar string `json:"base64_avatar"`
+}
+
+type TrustIdentityRequest struct {
+	VerifiedSafetyNumber string `json:"verified_safety_number"`
 }
 
 func convertInternalGroupIdToGroupId(internalId string) string {
@@ -190,6 +202,36 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 
 	cleanupTmpFiles(attachmentTmpPaths)
 	c.JSON(201, nil)
+}
+
+func parseWhitespaceDelimitedKeyValueStringList(in string, keys []string) []map[string]string {
+	l := []map[string]string{}
+	lines := strings.Split(in, "\n")
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+
+		m := make(map[string]string)
+
+		temp := line
+		for i, key := range keys {
+			if i == 0 {
+				continue
+			}
+
+			idx := strings.Index(temp, " " + key + ": ")
+			pair := temp[:idx]
+			value := strings.TrimPrefix(pair, key + ": ")
+			temp = strings.TrimLeft(temp[idx:], " "+key+": ")
+
+			m[keys[i-1]] = value
+		}
+		m[keys[len(keys)-1]] = temp
+
+		l = append(l, m)
+	}
+	return l
 }
 
 func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
@@ -789,6 +831,11 @@ func (a *Api) ServeAttachment(c *gin.Context) {
 func (a *Api) UpdateProfile(c *gin.Context) {
 	number := c.Param("number")
 
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
 	var req UpdateProfileRequest
 	err := c.BindJSON(&req)
 	if err != nil {
@@ -868,5 +915,90 @@ func (a *Api) UpdateProfile(c *gin.Context) {
 // @Success 204 {string} OK
 // @Router /v1/health [get]
 func (a *Api) Health(c *gin.Context) {
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary List Identities
+// @Tags Identities 
+// @Description List all identities for the given number.
+// @Produce  json
+// @Success 200 {object} []IdentityEntry
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/identities/{number} [get]
+func (a *Api) ListIdentities(c *gin.Context) {
+	number := c.Param("number")
+
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	out, err := runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "listIdentities"}, "")
+	if err != nil {
+		c.JSON(500, Error{Msg: err.Error()})
+		return
+	}
+
+	identityEntries := []IdentityEntry{}
+	keyValuePairs := parseWhitespaceDelimitedKeyValueStringList(out, []string{"NumberAndTrustStatus", "Added", "Fingerprint", "Safety Number"})
+	for _, keyValuePair := range keyValuePairs {
+		numberAndTrustStatus := keyValuePair["NumberAndTrustStatus"]
+		numberAndTrustStatusSplitted := strings.Split(numberAndTrustStatus, ":")
+
+
+		identityEntry := IdentityEntry{Number: strings.Trim(numberAndTrustStatusSplitted[0], " "),
+									   Status: strings.Trim(numberAndTrustStatusSplitted[1], " "),
+										Added: keyValuePair["Added"],
+										Fingerprint: strings.Trim(keyValuePair["Fingerprint"], " "),
+										SafetyNumber: strings.Trim(keyValuePair["Safety Number"], " "),
+									  }
+		identityEntries = append(identityEntries, identityEntry)
+	}
+
+	c.JSON(200, identityEntries)
+}
+
+// @Summary Trust Identity
+// @Tags Identities
+// @Description Trust an identity.
+// @Produce  json
+// @Success 204 {string} OK
+// @Param data body TrustIdentityRequest true "Input Data"
+// @Param number path string true "Registered Phone Number"
+// @Param numberToTrust path string true "Number To Trust"
+// @Router /v1/identities/{number}/{numberToTrust} [put]
+func (a *Api) TrustIdentity(c *gin.Context) {
+	number := c.Param("number")
+
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	numberToTrust := c.Param("numbertotrust")
+	if numberToTrust == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number to trust missing"})
+		return
+	}
+
+	var req TrustIdentityRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	if req.VerifiedSafetyNumber == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - verified safety number missing"})
+		return
+	}
+
+	cmd := []string{"--config", a.signalCliConfig, "-u", number, "trust", numberToTrust, "--verified-safety-number", req.VerifiedSafetyNumber}
+	_, err = runSignalCli(true, cmd, "")
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
 	c.Status(http.StatusNoContent)
 }

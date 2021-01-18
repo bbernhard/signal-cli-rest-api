@@ -284,6 +284,83 @@ var doc = `{
                 }
             }
         },
+        "/v1/identities/{number}": {
+            "get": {
+                "description": "List all identities for the given number.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Identities"
+                ],
+                "summary": "List Identities",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.IdentityEntry"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/identities/{number}/{numberToTrust}": {
+            "put": {
+                "description": "Trust an identity.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Identities"
+                ],
+                "summary": "Trust Identity",
+                "parameters": [
+                    {
+                        "description": "Input Data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TrustIdentityRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Number To Trust",
+                        "name": "numberToTrust",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/profiles/{number}": {
             "put": {
                 "description": "Set your name and optional an avatar.",
@@ -627,6 +704,26 @@ var doc = `{
                 }
             }
         },
+        "api.IdentityEntry": {
+            "type": "object",
+            "properties": {
+                "added": {
+                    "type": "string"
+                },
+                "fingerprint": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "safety_number": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "api.SendMessageV1": {
             "type": "object",
             "properties": {
@@ -670,6 +767,14 @@ var doc = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "api.TrustIdentityRequest": {
+            "type": "object",
+            "properties": {
+                "verified_safety_number": {
+                    "type": "string"
                 }
             }
         },
@@ -717,6 +822,10 @@ var doc = `{
         {
             "description": "Update Profile.",
             "name": "Profiles"
+        },
+        {
+            "description": "List and Trust Identities.",
+            "name": "Identities"
         }
     ]
 }`

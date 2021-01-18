@@ -37,6 +37,9 @@ import (
 // @tag.name Profiles 
 // @tag.description Update Profile.
 
+// @tag.name Identities
+// @tag.description List and Trust Identities.
+
 // @host 127.0.0.1:8080
 // @BasePath /
 func main() {
@@ -105,6 +108,12 @@ func main() {
 		profiles := v1.Group("profiles")
 		{
 			profiles.PUT(":number", api.UpdateProfile)
+		}
+
+		identities := v1.Group("identities")
+		{
+			identities.GET(":number", api.ListIdentities)
+			identities.PUT(":number/trust/:numbertotrust", api.TrustIdentity)
 		}
 	}
 
