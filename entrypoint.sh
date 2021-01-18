@@ -3,13 +3,16 @@
 set -x
 set -e
 
+export SIGNAL_CLI_CONFIG_DIR=/home/.local/share/signal-cli
+
 # Fix permissions to ensure backward compatibility
-chown 1000:1000 -R /home/.local/share/signal-cli
+chown 1000:1000 -R ${SIGNAL_CLI_CONFIG_DIR} 
 
 # Show warning on docker exec
 cat <<EOF >> /root/.bashrc
 echo "WARNING: signal-cli-rest-api runs as signal-api (not as root!)" 
 echo "Run 'su signal-api' before using signal-cli!"
+echo "If you want to use signal-cli directly, don't forget to specify the config directory. e.g: \"signal-cli --config ${SIGNAL_CLI_CONFIG_DIR}\""
 EOF
 
 cap_prefix="-cap_"
