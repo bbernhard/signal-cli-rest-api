@@ -6,22 +6,22 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
-	"path/filepath"
-	"net/http"
-	"strconv"
-	"io/ioutil"
 
+	"github.com/cyphar/filepath-securejoin"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/gofrs/uuid"
 	"github.com/h2non/filetype"
 	log "github.com/sirupsen/logrus"
 	qrcode "github.com/skip2/go-qrcode"
-	"github.com/gabriel-vasile/mimetype"
-	"github.com/cyphar/filepath-securejoin"
 )
 
 const signalCliV2GroupError = "Cannot create a V2 group as self does not have a versioned profile"
@@ -29,38 +29,38 @@ const signalCliV2GroupError = "Cannot create a V2 group as self does not have a 
 const groupPrefix = "group."
 
 type GroupEntry struct {
-	Name       string   `json:"name"`
-	Id         string   `json:"id"`
-	InternalId string   `json:"internal_id"`
-	Members    []string `json:"members"`
-	Blocked    bool     `json:"blocked"`
-	PendingInvites   []string   `json:"pending_invites"`
-	PendingRequests []string  `json:"pending_requests"`
-	InviteLink string `json:"invite_link"`
+	Name            string   `json:"name"`
+	Id              string   `json:"id"`
+	InternalId      string   `json:"internal_id"`
+	Members         []string `json:"members"`
+	Blocked         bool     `json:"blocked"`
+	PendingInvites  []string `json:"pending_invites"`
+	PendingRequests []string `json:"pending_requests"`
+	InviteLink      string   `json:"invite_link"`
 }
 
 type SignalCliGroupEntry struct {
-	Name       string   `json:"name"`
-	Id         string   `json:"id"`
-	IsMember   bool `json:"isMember"`
-	IsBlocked     bool     `json:"isBlocked"`
-	Members   []string     `json:"members"`
-	PendingMembers []string `json:"pendingMembers"`
+	Name              string   `json:"name"`
+	Id                string   `json:"id"`
+	IsMember          bool     `json:"isMember"`
+	IsBlocked         bool     `json:"isBlocked"`
+	Members           []string `json:"members"`
+	PendingMembers    []string `json:"pendingMembers"`
 	RequestingMembers []string `json:"requestingMembers"`
-	GroupInviteLink string `json:"groupInviteLink"`
+	GroupInviteLink   string   `json:"groupInviteLink"`
 }
 
 type IdentityEntry struct {
-	Number string `json:"number"`
-	Status string `json:"status"`
-	Fingerprint string `json:"fingerprint"`
-	Added string `json:"added"`
+	Number       string `json:"number"`
+	Status       string `json:"status"`
+	Fingerprint  string `json:"fingerprint"`
+	Added        string `json:"added"`
 	SafetyNumber string `json:"safety_number"`
 }
 
 type RegisterNumberRequest struct {
-	UseVoice bool `json:"use_voice"`
-	Captcha string `json:"captcha"`
+	UseVoice bool   `json:"use_voice"`
+	Captcha  string `json:"captcha"`
 }
 
 type VerifyNumberSettings struct {
@@ -96,7 +96,7 @@ type CreateGroup struct {
 }
 
 type UpdateProfileRequest struct {
-	Name string `json:"name"`
+	Name         string `json:"name"`
 	Base64Avatar string `json:"base64_avatar"`
 }
 
@@ -233,9 +233,9 @@ func parseWhitespaceDelimitedKeyValueStringList(in string, keys []string) []map[
 				continue
 			}
 
-			idx := strings.Index(temp, " " + key + ": ")
+			idx := strings.Index(temp, " "+key+": ")
 			pair := temp[:idx]
-			value := strings.TrimPrefix(pair, key + ": ")
+			value := strings.TrimPrefix(pair, key+": ")
 			temp = strings.TrimLeft(temp[idx:], " "+key+": ")
 
 			m[keys[i-1]] = value
@@ -259,8 +259,8 @@ func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
 
 	err = json.Unmarshal([]byte(out), &signalCliGroupEntries)
 	if err != nil {
-        return groupEntries, err
-    }
+		return groupEntries, err
+	}
 
 	for _, signalCliGroupEntry := range signalCliGroupEntries {
 		var groupEntry GroupEntry
@@ -326,14 +326,14 @@ func runSignalCli(wait bool, args []string, stdin string) (string, error) {
 type Api struct {
 	signalCliConfig  string
 	attachmentTmpDir string
-	avatarTmpDir string
+	avatarTmpDir     string
 }
 
 func NewApi(signalCliConfig string, attachmentTmpDir string, avatarTmpDir string) *Api {
 	return &Api{
 		signalCliConfig:  signalCliConfig,
 		attachmentTmpDir: attachmentTmpDir,
-		avatarTmpDir: avatarTmpDir,
+		avatarTmpDir:     avatarTmpDir,
 	}
 }
 
@@ -737,18 +737,18 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 // @Router /v1/attachments [get]
 func (a *Api) GetAttachments(c *gin.Context) {
 	files := []string{}
-	err := filepath.Walk(a.signalCliConfig + "/attachments/", func(path string, info os.FileInfo, err error) error {
-        if info.IsDir() {
+	err := filepath.Walk(a.signalCliConfig+"/attachments/", func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
 			return nil
 		}
 		files = append(files, filepath.Base(path))
-        return nil
-    })
+		return nil
+	})
 
 	if err != nil {
-        c.JSON(500, Error{Msg: "Couldn't get list of attachments: " + err.Error()})
+		c.JSON(500, Error{Msg: "Couldn't get list of attachments: " + err.Error()})
 		return
-    }
+	}
 
 	c.JSON(200, files)
 }
@@ -763,7 +763,7 @@ func (a *Api) GetAttachments(c *gin.Context) {
 // @Router /v1/attachments/{attachment} [delete]
 func (a *Api) RemoveAttachment(c *gin.Context) {
 	attachment := c.Param("attachment")
-	path, err := securejoin.SecureJoin(a.signalCliConfig + "/attachments/", attachment)
+	path, err := securejoin.SecureJoin(a.signalCliConfig+"/attachments/", attachment)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Please provide a valid attachment name"})
 		return
@@ -783,7 +783,7 @@ func (a *Api) RemoveAttachment(c *gin.Context) {
 
 // @Summary Serve Attachment.
 // @Tags Attachments
-// @Description Serve the attachment with the given id 
+// @Description Serve the attachment with the given id
 // @Produce  json
 // @Success 200 {string} OK
 // @Failure 400 {object} Error
@@ -791,7 +791,7 @@ func (a *Api) RemoveAttachment(c *gin.Context) {
 // @Router /v1/attachments/{attachment} [get]
 func (a *Api) ServeAttachment(c *gin.Context) {
 	attachment := c.Param("attachment")
-	path, err := securejoin.SecureJoin(a.signalCliConfig + "/attachments/", attachment)
+	path, err := securejoin.SecureJoin(a.signalCliConfig+"/attachments/", attachment)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Please provide a valid attachment name"})
 		return
@@ -801,7 +801,7 @@ func (a *Api) ServeAttachment(c *gin.Context) {
 		c.JSON(404, Error{Msg: "No attachment with that name found"})
 		return
 	}
-	
+
 	imgBytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		c.JSON(500, Error{Msg: "Couldn't read attachment - please try again later"})
@@ -825,7 +825,7 @@ func (a *Api) ServeAttachment(c *gin.Context) {
 
 // @Summary Update Profile.
 // @Tags Profiles
-// @Description Set your name and optional an avatar. 
+// @Description Set your name and optional an avatar.
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
@@ -853,7 +853,7 @@ func (a *Api) UpdateProfile(c *gin.Context) {
 		return
 	}
 	cmd := []string{"--config", a.signalCliConfig, "-u", number, "updateProfile", "--name", req.Name}
-	
+
 	avatarTmpPaths := []string{}
 	if req.Base64Avatar == "" {
 		cmd = append(cmd, "--remove-avatar")
@@ -869,7 +869,7 @@ func (a *Api) UpdateProfile(c *gin.Context) {
 			c.JSON(400, Error{Msg: "Couldn't decode base64 encoded avatar"})
 			return
 		}
-		
+
 		fType, err := filetype.Get(avatarBytes)
 		if err != nil {
 			c.JSON(400, Error{Msg: err.Error()})
@@ -923,7 +923,7 @@ func (a *Api) Health(c *gin.Context) {
 }
 
 // @Summary List Identities
-// @Tags Identities 
+// @Tags Identities
 // @Description List all identities for the given number.
 // @Produce  json
 // @Success 200 {object} []IdentityEntry
@@ -949,13 +949,12 @@ func (a *Api) ListIdentities(c *gin.Context) {
 		numberAndTrustStatus := keyValuePair["NumberAndTrustStatus"]
 		numberAndTrustStatusSplitted := strings.Split(numberAndTrustStatus, ":")
 
-
 		identityEntry := IdentityEntry{Number: strings.Trim(numberAndTrustStatusSplitted[0], " "),
-									   Status: strings.Trim(numberAndTrustStatusSplitted[1], " "),
-										Added: keyValuePair["Added"],
-										Fingerprint: strings.Trim(keyValuePair["Fingerprint"], " "),
-										SafetyNumber: strings.Trim(keyValuePair["Safety Number"], " "),
-									  }
+			Status:       strings.Trim(numberAndTrustStatusSplitted[1], " "),
+			Added:        keyValuePair["Added"],
+			Fingerprint:  strings.Trim(keyValuePair["Fingerprint"], " "),
+			SafetyNumber: strings.Trim(keyValuePair["Safety Number"], " "),
+		}
 		identityEntries = append(identityEntries, identityEntry)
 	}
 
