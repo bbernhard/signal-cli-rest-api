@@ -649,6 +649,26 @@ func (a *Api) GetGroups(c *gin.Context) {
 	c.JSON(200, groups)
 }
 
+func (a *Api) GetGroup(c *gin.Context) {
+	number := c.Param("number")
+	groupId := c.Param("groupid")
+
+	groups, err := getGroups(number, a.signalCliConfig)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	for _, group := range groups {
+		if group.Id == groupId {
+			c.JSON(200, group)
+			return
+		}
+	}
+
+	c.JSON(404, Error{Msg: "No group with that id found"})
+}
+
 // @Summary Delete a Signal Group.
 // @Tags Groups
 // @Description Delete a Signal Group.
