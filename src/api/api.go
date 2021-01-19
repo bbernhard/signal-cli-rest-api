@@ -265,6 +265,7 @@ func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
 	for _, signalCliGroupEntry := range signalCliGroupEntries {
 		var groupEntry GroupEntry
 		groupEntry.InternalId = signalCliGroupEntry.Id
+		groupEntry.Name = signalCliGroupEntry.Name
 		groupEntry.Id = convertInternalGroupIdToGroupId(signalCliGroupEntry.Id)
 		groupEntry.Blocked = signalCliGroupEntry.IsBlocked
 		groupEntry.Members = signalCliGroupEntry.Members
