@@ -33,8 +33,21 @@ type GroupEntry struct {
 	Id         string   `json:"id"`
 	InternalId string   `json:"internal_id"`
 	Members    []string `json:"members"`
-	Active     bool     `json:"active"`
 	Blocked    bool     `json:"blocked"`
+	PendingInvites   []string   `json:"pending_invites"`
+	PendingRequests []string  `json:"pending_requests"`
+	InviteLink string `json:"invite_link"`
+}
+
+type SignalCliGroupEntry struct {
+	Name       string   `json:"name"`
+	Id         string   `json:"id"`
+	IsMember   bool `json:"isMember"`
+	IsBlocked     bool     `json:"isBlocked"`
+	Members   []string     `json:"members"`
+	PendingMembers []string `json:"pendingMembers"`
+	RequestingMembers []string `json:"requestingMembers"`
+	GroupInviteLink string `json:"groupInviteLink"`
 }
 
 type IdentityEntry struct {
@@ -237,56 +250,27 @@ func parseWhitespaceDelimitedKeyValueStringList(in string, keys []string) []map[
 func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
 	groupEntries := []GroupEntry{}
 
-	out, err := runSignalCli(true, []string{"--config", signalCliConfig, "-u", number, "listGroups", "-d"}, "")
+	out, err := runSignalCli(true, []string{"--config", signalCliConfig, "--output", "json", "-u", number, "listGroups", "-d"}, "")
 	if err != nil {
 		return groupEntries, err
 	}
 
-	lines := strings.Split(out, "\n")
-	for _, line := range lines {
+	var signalCliGroupEntries []SignalCliGroupEntry
+
+	err = json.Unmarshal([]byte(out), &signalCliGroupEntries)
+	if err != nil {
+        return groupEntries, err
+    }
+
+	for _, signalCliGroupEntry := range signalCliGroupEntries {
 		var groupEntry GroupEntry
-		if line == "" {
-			continue
-		}
-
-		idIdx := strings.Index(line, " Name: ")
-		idPair := line[:idIdx]
-		groupEntry.InternalId = strings.TrimPrefix(idPair, "Id: ")
-		groupEntry.Id = convertInternalGroupIdToGroupId(groupEntry.InternalId)
-		lineWithoutId := strings.TrimLeft(line[idIdx:], " ")
-
-		nameIdx := strings.Index(lineWithoutId, " Active: ")
-		namePair := lineWithoutId[:nameIdx]
-		groupEntry.Name = strings.TrimRight(strings.TrimPrefix(namePair, "Name: "), " ")
-		lineWithoutName := strings.TrimLeft(lineWithoutId[nameIdx:], " ")
-
-		activeIdx := strings.Index(lineWithoutName, " Blocked: ")
-		activePair := lineWithoutName[:activeIdx]
-		active := strings.TrimPrefix(activePair, "Active: ")
-		if active == "true" {
-			groupEntry.Active = true
-		} else {
-			groupEntry.Active = false
-		}
-		lineWithoutActive := strings.TrimLeft(lineWithoutName[activeIdx:], " ")
-
-		blockedIdx := strings.Index(lineWithoutActive, " Members: ")
-		blockedPair := lineWithoutActive[:blockedIdx]
-		blocked := strings.TrimPrefix(blockedPair, "Blocked: ")
-		if blocked == "true" {
-			groupEntry.Blocked = true
-		} else {
-			groupEntry.Blocked = false
-		}
-		lineWithoutBlocked := strings.TrimLeft(lineWithoutActive[blockedIdx:], " ")
-
-		membersPair := lineWithoutBlocked
-		members := strings.TrimPrefix(membersPair, "Members: ")
-		trimmedMembers := strings.TrimRight(strings.TrimLeft(members, "["), "]")
-		trimmedMembersList := strings.Split(trimmedMembers, ",")
-		for _, member := range trimmedMembersList {
-			groupEntry.Members = append(groupEntry.Members, strings.Trim(member, " "))
-		}
+		groupEntry.InternalId = signalCliGroupEntry.Id
+		groupEntry.Id = convertInternalGroupIdToGroupId(signalCliGroupEntry.Id)
+		groupEntry.Blocked = signalCliGroupEntry.IsBlocked
+		groupEntry.Members = signalCliGroupEntry.Members
+		groupEntry.PendingRequests = signalCliGroupEntry.PendingMembers
+		groupEntry.PendingInvites = signalCliGroupEntry.RequestingMembers
+		groupEntry.InviteLink = signalCliGroupEntry.GroupInviteLink
 
 		groupEntries = append(groupEntries, groupEntry)
 	}
