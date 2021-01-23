@@ -39,6 +39,14 @@ type GroupEntry struct {
 	InviteLink      string   `json:"invite_link"`
 }
 
+type LoggingConfiguration struct {
+	Level            string   `json:"Level"`
+}
+
+type Configuration struct {
+	Logging            LoggingConfiguration   `json:"logging"`
+}
+
 type SignalCliGroupEntry struct {
 	Name              string   `json:"name"`
 	Id                string   `json:"id"`
@@ -125,6 +133,19 @@ func cleanupTmpFiles(paths []string) {
 	for _, path := range paths {
 		os.Remove(path)
 	}
+}
+
+func getContainerId() (string, error) {
+	data, err := ioutil.ReadFile("/proc/1/cpuset")
+	if err != nil {
+		return "", err
+	}
+	lines := strings.Split(string(data), "\n")
+	if len(lines) == 0 {
+		return "", errors.New("Couldn't get docker container id (empty)")
+	}
+	containerId := strings.Replace(lines[0], "/docker/", "", -1)
+	return containerId, nil
 }
 
 func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, number string, message string,
@@ -280,6 +301,17 @@ func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
 }
 
 func runSignalCli(wait bool, args []string, stdin string) (string, error) {
+	containerId, err := getContainerId()
+
+	log.Debug("If you want to run this command manually, run the following steps on your host system:")
+	if err == nil {
+		log.Debug("*) docker exec -it ", containerId, " /bin/bash")
+	} else {
+		log.Debug("*) docker exec -it <container id> /bin/bash")
+	}
+	log.Debug("*) su signal-api")
+	log.Debug("*) signal-cli ", strings.Join(args, " "))
+
 	cmd := exec.Command("signal-cli", args...)
 	if stdin != "" {
 		cmd.Stdin = strings.NewReader(stdin)
@@ -311,6 +343,7 @@ func runSignalCli(wait bool, args []string, stdin string) (string, error) {
 				return "", errors.New(errBuffer.String())
 			}
 		}
+
 		return outBuffer.String(), nil
 	} else {
 		stdout, err := cmd.StdoutPipe()
@@ -1005,4 +1038,59 @@ func (a *Api) TrustIdentity(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// @Summary Set the REST API configuration.
+// @Tags General
+// @Description Set the REST API configuration.
+// @Accept  json
+// @Produce  json
+// @Success 201 {string} string "OK"
+// @Failure 400 {object} Error
+// @Param data body Configuration true "Configuration"
+// @Router /v1/configuration [post]
+func (a *Api) SetConfiguration(c *gin.Context) {
+	var req Configuration
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	if req.Logging.Level != "" {
+		if req.Logging.Level == "debug" {
+			log.SetLevel(log.DebugLevel)
+		} else if req.Logging.Level == "info" {
+			log.SetLevel(log.InfoLevel)
+		} else if req.Logging.Level == "warn" {
+			log.SetLevel(log.WarnLevel)
+		} else {
+			c.JSON(400, Error{Msg: "Couldn't set log level - invalid log level"})
+			return
+		}
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary List the REST API configuration.
+// @Tags General
+// @Description List the REST API configuration.
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} Configuration
+// @Failure 400 {object} Error
+// @Router /v1/configuration [get]
+func (a *Api) GetConfiguration(c *gin.Context) {
+	logLevel := ""
+	if log.GetLevel() == log.DebugLevel {
+		logLevel = "debug"
+	} else if log.GetLevel() == log.InfoLevel {
+		logLevel = "info"
+	} else if log.GetLevel() == log.WarnLevel {
+		logLevel = "warn"
+	}
+
+	configuration := Configuration{Logging: LoggingConfiguration{Level: logLevel}}
+	c.JSON(200, configuration)
 }

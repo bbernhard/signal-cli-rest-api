@@ -142,6 +142,73 @@ var doc = `{
                 }
             }
         },
+        "/v1/configuration": {
+            "get": {
+                "description": "List the REST API configuration.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "List the REST API configuration.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Configuration"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Set the REST API configuration.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Set the REST API configuration.",
+                "parameters": [
+                    {
+                        "description": "Configuration",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Configuration"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/groups/{number}": {
             "get": {
                 "description": "List all Signal Groups.",
@@ -662,6 +729,15 @@ var doc = `{
                 }
             }
         },
+        "api.Configuration": {
+            "type": "object",
+            "properties": {
+                "logging": {
+                    "type": "object",
+                    "$ref": "#/definitions/api.LoggingConfiguration"
+                }
+            }
+        },
         "api.CreateGroup": {
             "type": "object",
             "properties": {
@@ -681,9 +757,6 @@ var doc = `{
         "api.GroupEntry": {
             "type": "object",
             "properties": {
-                "active": {
-                    "type": "boolean"
-                },
                 "blocked": {
                     "type": "boolean"
                 },
@@ -691,6 +764,9 @@ var doc = `{
                     "type": "string"
                 },
                 "internal_id": {
+                    "type": "string"
+                },
+                "invite_link": {
                     "type": "string"
                 },
                 "members": {
@@ -701,6 +777,18 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "pending_invites": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pending_requests": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -720,6 +808,14 @@ var doc = `{
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.LoggingConfiguration": {
+            "type": "object",
+            "properties": {
+                "Level": {
                     "type": "string"
                 }
             }

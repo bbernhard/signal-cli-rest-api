@@ -20,7 +20,7 @@ import (
 // @description This is the Signal Cli REST API documentation.
 
 // @tag.name General
-// @tag.description List general information.
+// @tag.description Some general endpoints.
 
 // @tag.name Devices
 // @tag.description Register and link Devices.
@@ -63,6 +63,12 @@ func main() {
 		about := v1.Group("/about")
 		{
 			about.GET("", api.About)
+		}
+
+		configuration := v1.Group("/configuration")
+		{
+			configuration.GET("", api.GetConfiguration)
+			configuration.POST("", api.SetConfiguration)
 		}
 
 		health := v1.Group("/health")

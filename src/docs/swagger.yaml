@@ -9,6 +9,12 @@ definitions:
           type: string
         type: array
     type: object
+  api.Configuration:
+    properties:
+      logging:
+        $ref: '#/definitions/api.LoggingConfiguration'
+        type: object
+    type: object
   api.CreateGroup:
     properties:
       id:
@@ -21,13 +27,13 @@ definitions:
     type: object
   api.GroupEntry:
     properties:
-      active:
-        type: boolean
       blocked:
         type: boolean
       id:
         type: string
       internal_id:
+        type: string
+      invite_link:
         type: string
       members:
         items:
@@ -35,6 +41,14 @@ definitions:
         type: array
       name:
         type: string
+      pending_invites:
+        items:
+          type: string
+        type: array
+      pending_requests:
+        items:
+          type: string
+        type: array
     type: object
   api.IdentityEntry:
     properties:
@@ -47,6 +61,11 @@ definitions:
       safety_number:
         type: string
       status:
+        type: string
+    type: object
+  api.LoggingConfiguration:
+    properties:
+      Level:
         type: string
     type: object
   api.SendMessageV1:
@@ -181,6 +200,50 @@ paths:
       summary: Serve Attachment.
       tags:
       - Attachments
+  /v1/configuration:
+    get:
+      consumes:
+      - application/json
+      description: List the REST API configuration.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Configuration'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: List the REST API configuration.
+      tags:
+      - General
+    post:
+      consumes:
+      - application/json
+      description: Set the REST API configuration.
+      parameters:
+      - description: Configuration
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.Configuration'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Set the REST API configuration.
+      tags:
+      - General
   /v1/groups/{number}:
     get:
       consumes:
