@@ -98,6 +98,9 @@ func main() {
 			groups.GET(":number", api.GetGroups)
 			groups.GET(":number/:groupid", api.GetGroup)
 			groups.DELETE(":number/:groupid", api.DeleteGroup)
+			groups.POST(":number/:groupid/block", api.BlockGroup)
+			groups.POST(":number/:groupid/join", api.JoinGroup)
+			groups.POST(":number/:groupid/quit", api.QuitGroup)
 		}
 
 		link := v1.Group("qrcodelink")

@@ -299,7 +299,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete a Signal Group.
+      description: Delete the specified Signal Group.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -323,6 +323,125 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: Delete a Signal Group.
+      tags:
+      - Groups
+    get:
+      consumes:
+      - application/json
+      description: List a specific Signal Group.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.GroupEntry'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: List a Signal Group.
+      tags:
+      - Groups
+  /v1/groups/{number}/{groupid}/block:
+    post:
+      consumes:
+      - application/json
+      description: Block the specified Signal Group.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Block a Signal Group.
+      tags:
+      - Groups
+  /v1/groups/{number}/{groupid}/join:
+    post:
+      consumes:
+      - application/json
+      description: Join the specified Signal Group.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Join a Signal Group.
+      tags:
+      - Groups
+  /v1/groups/{number}/{groupid}/quit:
+    post:
+      consumes:
+      - application/json
+      description: Quit the specified Signal Group.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Quit a Signal Group.
       tags:
       - Groups
   /v1/health:
@@ -579,7 +698,7 @@ paths:
       - Messages
 swagger: "2.0"
 tags:
-- description: List general information.
+- description: Some general endpoints.
   name: General
 - description: Register and link Devices.
   name: Devices

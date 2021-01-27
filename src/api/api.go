@@ -116,6 +116,16 @@ func convertInternalGroupIdToGroupId(internalId string) string {
 	return groupPrefix + base64.StdEncoding.EncodeToString([]byte(internalId))
 }
 
+func convertGroupIdToInternalGroupId(id string) (string, error) {
+	groupIdWithoutPrefix := strings.TrimPrefix(id, groupPrefix)
+	internalGroupId, err := base64.StdEncoding.DecodeString(groupIdWithoutPrefix)
+	if err != nil {
+		return "", errors.New("Invalid group id")
+	}
+
+	return string(internalGroupId), err
+}
+
 func getStringInBetween(str string, start string, end string) (result string) {
 	i := strings.Index(str, start)
 	if i == -1 {
@@ -667,6 +677,16 @@ func (a *Api) GetGroups(c *gin.Context) {
 	c.JSON(200, groups)
 }
 
+// @Summary List a Signal Group.
+// @Tags Groups
+// @Description List a specific Signal Group.
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} GroupEntry
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
+// @Router /v1/groups/{number}/{groupid} [get]
 func (a *Api) GetGroup(c *gin.Context) {
 	number := c.Param("number")
 	groupId := c.Param("groupid")
@@ -689,7 +709,7 @@ func (a *Api) GetGroup(c *gin.Context) {
 
 // @Summary Delete a Signal Group.
 // @Tags Groups
-// @Description Delete a Signal Group.
+// @Description Delete the specified Signal Group.
 // @Accept  json
 // @Produce  json
 // @Success 200 {string} string "OK"
@@ -1093,4 +1113,100 @@ func (a *Api) GetConfiguration(c *gin.Context) {
 
 	configuration := Configuration{Logging: LoggingConfiguration{Level: logLevel}}
 	c.JSON(200, configuration)
+}
+
+// @Summary Block a Signal Group.
+// @Tags Groups
+// @Description Block the specified Signal Group.
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} OK
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
+// @Router /v1/groups/{number}/{groupid}/block [post]
+func (a *Api) BlockGroup(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	groupId := c.Param("groupid")
+	internalGroupId, err := convertGroupIdToInternalGroupId(groupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	_, err = runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "block", "-g", internalGroupId}, "")
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Join a Signal Group.
+// @Tags Groups
+// @Description Join the specified Signal Group.
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} OK
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
+// @Router /v1/groups/{number}/{groupid}/join [post]
+func (a *Api) JoinGroup(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	groupId := c.Param("groupid")
+	internalGroupId, err := convertGroupIdToInternalGroupId(groupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	_, err = runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "updateGroup", "-g", internalGroupId}, "")
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Quit a Signal Group.
+// @Tags Groups
+// @Description Quit the specified Signal Group.
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} OK
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
+// @Router /v1/groups/{number}/{groupid}/quit [post]
+func (a *Api) QuitGroup(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	groupId := c.Param("groupid")
+	internalGroupId, err := convertGroupIdToInternalGroupId(groupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	_, err = runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "quitGroup", "-g", internalGroupId}, "")
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }

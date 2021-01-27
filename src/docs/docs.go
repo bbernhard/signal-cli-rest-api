@@ -287,8 +287,51 @@ var doc = `{
             }
         },
         "/v1/groups/{number}/{groupid}": {
+            "get": {
+                "description": "List a specific Signal Group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "List a Signal Group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.GroupEntry"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
             "delete": {
-                "description": "Delete a Signal Group.",
+                "description": "Delete the specified Signal Group.",
                 "consumes": [
                     "application/json"
                 ],
@@ -310,6 +353,141 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Group Id",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/groups/{number}/{groupid}/block": {
+            "post": {
+                "description": "Block the specified Signal Group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Block a Signal Group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/groups/{number}/{groupid}/join": {
+            "post": {
+                "description": "Join the specified Signal Group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Join a Signal Group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/groups/{number}/{groupid}/quit": {
+            "post": {
+                "description": "Quit the specified Signal Group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Quit a Signal Group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
                         "name": "groupid",
                         "in": "path",
                         "required": true
@@ -896,7 +1074,7 @@ var doc = `{
     },
     "tags": [
         {
-            "description": "List general information.",
+            "description": "Some general endpoints.",
             "name": "General"
         },
         {
