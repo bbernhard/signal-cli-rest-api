@@ -12,6 +12,7 @@ At the moment, the following functionality is exposed via REST:
 - Create/List/Remove groups
 - List/Serve/Delete attachments
 - Update profile
+and [many more](https://bbernhard.github.io/signal-cli-rest-api/)
 
 ## Examples
 
