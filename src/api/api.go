@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"regexp"
 
 	"github.com/cyphar/filepath-securejoin"
 	"github.com/gabriel-vasile/mimetype"
@@ -165,6 +166,11 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 	if len(recipients) == 0 {
 		c.JSON(400, gin.H{"error": "Please specify at least one recipient"})
 		return
+	}
+
+	phoneNumberRe := regexp.MustCompile(`^\+\d+$`);
+	if (! phoneNumberRe.MatchString(recipients[0])) {
+		isGroup = true;
 	}
 
 	if !isGroup {
