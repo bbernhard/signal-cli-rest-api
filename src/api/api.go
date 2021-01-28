@@ -175,13 +175,13 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 			return
 		}
 
-		groupId, err := base64.StdEncoding.DecodeString(recipients[0])
+		_, err := base64.StdEncoding.DecodeString(recipients[0])
 		if err != nil {
 			c.JSON(400, gin.H{"error": "Invalid group id"})
 			return
 		}
 
-		cmd = append(cmd, []string{"-g", string(groupId)}...)
+		cmd = append(cmd, []string{"-g", recipients[0]}...)
 	}
 
 	attachmentTmpPaths := []string{}
