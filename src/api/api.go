@@ -750,7 +750,7 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 	deviceName := c.Query("device_name")
 
 	if deviceName == "" {
-		c.JSON(400, gin.H{"error": "Please provide a name for the device"})
+		c.JSON(400, gin.H{"error": "Please provide a name for the device using ../qrcodelink?device_name=<device_name> parameter"})
 		return
 	}
 
