@@ -42,13 +42,11 @@ case "$response" in
 		docker buildx use multibuilder
 		
 		if [[ "$TAG" == "stable" ]]; then
-			docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:$VERSION . --push
-			docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:latest . --push
+			docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:$VERSION -t bbernhard/signal-cli-rest-api:latest . --push
         fi
 
 		if [[ "$TAG" == "dev" ]]; then
-			docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION}-dev . --push
-			docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:latest-dev . --push
+			docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION}-dev -t bbernhard/signal-cli-rest-api:latest-dev . --push
         fi
 
 		;;
