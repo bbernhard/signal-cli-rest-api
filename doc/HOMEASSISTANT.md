@@ -84,6 +84,10 @@ Next, use the following endpoint to obtain the group id:
 
 The group id then needs to be added to the Signal Messenger's `recipients` list in the `configuration.yaml`. (see [here](https://www.home-assistant.io/integrations/signal_messenger/) for details)
 
+## API details
+
+Details regarding API (in example for receiving messages through REST) can be found [here](https://bbernhard.github.io/signal-cli-rest-api/)
+
 ## Troubleshooting
 
 In case you've problems with the `signal-cli-rest-api` container, have a look [here](TROUBLESHOOTING.md)
