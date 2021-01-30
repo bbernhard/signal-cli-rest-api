@@ -561,7 +561,7 @@ var doc = `{
                 }
             }
         },
-        "/v1/identities/{number}/{numberToTrust}": {
+        "/v1/identities/{number}/trust/{numberToTrust}": {
             "put": {
                 "description": "Trust an identity.",
                 "produces": [

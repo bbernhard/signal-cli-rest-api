@@ -1023,7 +1023,7 @@ func (a *Api) ListIdentities(c *gin.Context) {
 // @Param data body TrustIdentityRequest true "Input Data"
 // @Param number path string true "Registered Phone Number"
 // @Param numberToTrust path string true "Number To Trust"
-// @Router /v1/identities/{number}/{numberToTrust} [put]
+// @Router /v1/identities/{number}/trust/{numberToTrust} [put]
 func (a *Api) TrustIdentity(c *gin.Context) {
 	number := c.Param("number")
 
