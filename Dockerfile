@@ -2,12 +2,16 @@ ARG SIGNAL_CLI_VERSION=0.7.4
 ARG ZKGROUP_VERSION=0.7.0
 
 ARG SWAG_VERSION=1.6.7
+ARG GRAALVM_JAVA_VERSION=11
+ARG GRAALVM_VERSION=21.0.0
 
 FROM golang:1.14-buster AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
 ARG ZKGROUP_VERSION
 ARG SWAG_VERSION
+ARG GRAALVM_JAVA_VERSION
+ARG GRAALVM_VERSION
 
 COPY ext/libraries/zkgroup/v${ZKGROUP_VERSION} /tmp/zkgroup-libraries
 
@@ -68,6 +72,26 @@ COPY src/go.mod /tmp/signal-cli-rest-api-src/
 COPY src/go.sum /tmp/signal-cli-rest-api-src/
 
 RUN cd /tmp/signal-cli-rest-api-src && swag init && go build
+
+
+# build native image with graalvm
+
+RUN arch="$(uname -m)"; \
+        case "$arch" in \
+            aarch64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-aarch64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \
+			armv7l) echo "TODO" ;; \
+            x86_64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-amd64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \ 
+        esac;
+
+RUN cd /tmp/ \
+	&& tar xvf gvm.tar.gz 
+	#\
+	#&& cd graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}
+
+ENV GRAALVM_HOME=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}
+
+RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
+	&& ./gradlew assembleNativeImage
 
 # Start a fresh container for release container
 FROM adoptopenjdk:11-jre-hotspot-bionic
