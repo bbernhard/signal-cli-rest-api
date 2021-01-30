@@ -7,4 +7,4 @@ assignees: ''
 
 ---
 
-Before creating an issue, please have a look at the [Troubleshooting](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/TROUBLESHOOTING.md) page.
+Before creating an issue, please have a look at the Troubleshooting page: https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/TROUBLESHOOTING.md
