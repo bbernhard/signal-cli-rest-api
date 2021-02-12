@@ -245,7 +245,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 	}
 
 	cleanupTmpFiles(attachmentTmpPaths)
-	c.JSON(201, nil)
+	c.Writer.WriteHeader(201)
 }
 
 func parseWhitespaceDelimitedKeyValueStringList(in string, keys []string) []map[string]string {
@@ -441,7 +441,7 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(201, nil)
+	c.Writer.WriteHeader(201)
 }
 
 // @Summary Verify a registered phone number.
@@ -494,7 +494,7 @@ func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(201, nil)
+	c.Writer.WriteHeader(201)
 }
 
 // @Summary Send a signal message.
