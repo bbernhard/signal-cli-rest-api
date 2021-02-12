@@ -17,6 +17,16 @@ e.g:
 
 `curl -X POST -H "Content-Type: application/json" --data '{"use_voice": true}' 'http://127.0.0.1:8080/v1/register/+431212131491291'`
 
+- Register a number (with captcha)
+
+  When you try to register a number, if you receive a response like `{"error":"Captcha required for verification (null)\n"}` then Signal is requiring a captcha. To register the number you must do the following:
+  1. Go to  [https://signalcaptchas.org/registration/generate.html](https://signalcaptchas.org/registration/generate.html)
+  2. Open the developer console
+  3. Find the line that looks like this: `Prevented navigation to “signalcaptcha://{captcha value}” due to an unknown protocol.` Copy the captcha value
+  4. Use it to make the registration call like this:
+
+  `curl -X POST -H "Content-Type: application/json" -d '{"captcha":"{captcha value}"}' 'http://127.0.0.1:8080/v1/register/<number>`
+
 - Verify the number using the code received via SMS/voice
 
   `curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/register/<number>/verify/<verification code>'`

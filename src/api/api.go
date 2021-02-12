@@ -401,6 +401,7 @@ func (a *Api) About(c *gin.Context) {
 // @Success 201
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
+// @Param data body RegisterNumberRequest false "Additional Settings"
 // @Router /v1/register/{number} [post]
 func (a *Api) RegisterNumber(c *gin.Context) {
 	number := c.Param("number")
@@ -452,7 +453,7 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 // @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
-// @Param data body VerifyNumberSettings true "Additional Settings"
+// @Param data body VerifyNumberSettings false "Additional Settings"
 // @Param token path string true "Verification Code"
 // @Router /v1/register/{number}/verify/{token} [post]
 func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
