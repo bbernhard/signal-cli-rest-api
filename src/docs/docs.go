@@ -19,7 +19,6 @@ var doc = `{
         "description": "{{.Description}}",
         "title": "{{.Title}}",
         "contact": {},
-        "license": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -743,10 +742,20 @@ var doc = `{
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Additional Settings",
+                        "name": "data",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/api.RegisterNumberRequest"
+                        }
                     }
                 ],
                 "responses": {
-                    "201": {},
+                    "201": {
+                        "description": ""
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -781,7 +790,6 @@ var doc = `{
                         "description": "Additional Settings",
                         "name": "data",
                         "in": "body",
-                        "required": true,
                         "schema": {
                             "$ref": "#/definitions/api.VerifyNumberSettings"
                         }
@@ -911,7 +919,6 @@ var doc = `{
             "type": "object",
             "properties": {
                 "logging": {
-                    "type": "object",
                     "$ref": "#/definitions/api.LoggingConfiguration"
                 }
             }
@@ -995,6 +1002,17 @@ var doc = `{
             "properties": {
                 "Level": {
                     "type": "string"
+                }
+            }
+        },
+        "api.RegisterNumberRequest": {
+            "type": "object",
+            "properties": {
+                "captcha": {
+                    "type": "string"
+                },
+                "use_voice": {
+                    "type": "boolean"
                 }
             }
         },

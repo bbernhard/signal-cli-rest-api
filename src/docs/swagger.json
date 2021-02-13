@@ -4,7 +4,6 @@
         "description": "This is the Signal Cli REST API documentation.",
         "title": "Signal Cli REST API",
         "contact": {},
-        "license": {},
         "version": "1.0"
     },
     "host": "127.0.0.1:8080",
@@ -728,10 +727,20 @@
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Additional Settings",
+                        "name": "data",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/api.RegisterNumberRequest"
+                        }
                     }
                 ],
                 "responses": {
-                    "201": {},
+                    "201": {
+                        "description": ""
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -766,7 +775,6 @@
                         "description": "Additional Settings",
                         "name": "data",
                         "in": "body",
-                        "required": true,
                         "schema": {
                             "$ref": "#/definitions/api.VerifyNumberSettings"
                         }
@@ -896,7 +904,6 @@
             "type": "object",
             "properties": {
                 "logging": {
-                    "type": "object",
                     "$ref": "#/definitions/api.LoggingConfiguration"
                 }
             }
@@ -980,6 +987,17 @@
             "properties": {
                 "Level": {
                     "type": "string"
+                }
+            }
+        },
+        "api.RegisterNumberRequest": {
+            "type": "object",
+            "properties": {
+                "captcha": {
+                    "type": "string"
+                },
+                "use_voice": {
+                    "type": "boolean"
                 }
             }
         },
