@@ -13,7 +13,6 @@ definitions:
     properties:
       logging:
         $ref: '#/definitions/api.LoggingConfiguration'
-        type: object
     type: object
   api.CreateGroup:
     properties:
@@ -68,6 +67,13 @@ definitions:
       Level:
         type: string
     type: object
+  api.RegisterNumberRequest:
+    properties:
+      captcha:
+        type: string
+      use_voice:
+        type: boolean
+    type: object
   api.SendMessageV1:
     properties:
       base64_attachment:
@@ -119,7 +125,6 @@ host: 127.0.0.1:8080
 info:
   contact: {}
   description: This is the Signal Cli REST API documentation.
-  license: {}
   title: Signal Cli REST API
   version: "1.0"
 paths:
@@ -478,7 +483,7 @@ paths:
       summary: List Identities
       tags:
       - Identities
-  /v1/identities/{number}/{numberToTrust}:
+  /v1/identities/{number}/trust/{numberToTrust}:
     put:
       description: Trust an identity.
       parameters:
@@ -596,10 +601,16 @@ paths:
         name: number
         required: true
         type: string
+      - description: Additional Settings
+        in: body
+        name: data
+        schema:
+          $ref: '#/definitions/api.RegisterNumberRequest'
       produces:
       - application/json
       responses:
-        "201": {}
+        "201":
+          description: ""
         "400":
           description: Bad Request
           schema:
@@ -621,7 +632,6 @@ paths:
       - description: Additional Settings
         in: body
         name: data
-        required: true
         schema:
           $ref: '#/definitions/api.VerifyNumberSettings'
       - description: Verification Code

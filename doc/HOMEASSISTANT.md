@@ -57,6 +57,14 @@ e.g:
 
 `curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/register/+431212131491291/verify/123-456'`
 
+When you try to register a number, if you receive a response like `{"error":"Captcha required for verification (null)\n"}` then Signal is requiring a captcha. To register the number you must do the following:
+1. Go to  [https://signalcaptchas.org/registration/generate.html](https://signalcaptchas.org/registration/generate.html)
+2. Open the developer console
+3. Find the line that looks like this: `Prevented navigation to “signalcaptcha://{captcha value}” due to an unknown protocol.` Copy the captcha value
+4. Use it to make the registration call like this:
+
+`curl -X POST -H "Content-Type: application/json" -d '{"captcha":"{captcha value}"}' 'http://127.0.0.1:8080/v1/register/<number>`
+
 ## Sending messages to Signal Messenger groups
 
 The `signal-cli-rest-api` docker container is also capable of sending messages to a Signal Messenger group.
@@ -83,6 +91,10 @@ Next, use the following endpoint to obtain the group id:
 ```curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/<number>'```
 
 The group id then needs to be added to the Signal Messenger's `recipients` list in the `configuration.yaml`. (see [here](https://www.home-assistant.io/integrations/signal_messenger/) for details)
+
+## API details
+
+Details regarding API (in example for receiving messages through REST) can be found [here](https://bbernhard.github.io/signal-cli-rest-api/)
 
 ## Troubleshooting
 

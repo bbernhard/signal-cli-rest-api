@@ -245,7 +245,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 	}
 
 	cleanupTmpFiles(attachmentTmpPaths)
-	c.JSON(201, nil)
+	c.Writer.WriteHeader(201)
 }
 
 func parseWhitespaceDelimitedKeyValueStringList(in string, keys []string) []map[string]string {
@@ -401,6 +401,7 @@ func (a *Api) About(c *gin.Context) {
 // @Success 201
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
+// @Param data body RegisterNumberRequest false "Additional Settings"
 // @Router /v1/register/{number} [post]
 func (a *Api) RegisterNumber(c *gin.Context) {
 	number := c.Param("number")
@@ -441,7 +442,7 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(201, nil)
+	c.Writer.WriteHeader(201)
 }
 
 // @Summary Verify a registered phone number.
@@ -452,7 +453,7 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 // @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
-// @Param data body VerifyNumberSettings true "Additional Settings"
+// @Param data body VerifyNumberSettings false "Additional Settings"
 // @Param token path string true "Verification Code"
 // @Router /v1/register/{number}/verify/{token} [post]
 func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
@@ -494,7 +495,7 @@ func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(201, nil)
+	c.Writer.WriteHeader(201)
 }
 
 // @Summary Send a signal message.
@@ -1023,7 +1024,7 @@ func (a *Api) ListIdentities(c *gin.Context) {
 // @Param data body TrustIdentityRequest true "Input Data"
 // @Param number path string true "Registered Phone Number"
 // @Param numberToTrust path string true "Number To Trust"
-// @Router /v1/identities/{number}/{numberToTrust} [put]
+// @Router /v1/identities/{number}/trust/{numberToTrust} [put]
 func (a *Api) TrustIdentity(c *gin.Context) {
 	number := c.Param("number")
 
