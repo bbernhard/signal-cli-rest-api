@@ -35,7 +35,7 @@ RUN arch="$(uname -m)"; \
         esac;
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git locales zip file \
+	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git locales zip file build-essential libz-dev zlib1g-dev \
 	&& rm -rf /var/lib/apt/lists/* 
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
@@ -110,15 +110,14 @@ RUN arch="$(uname -m)"; \
         esac;
 
 RUN cd /tmp/ \
-	&& tar xvf gvm.tar.gz 
-	#\
-	#&& cd graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}
+	&& tar xvf gvm.tar.gz
 
 ENV GRAALVM_HOME=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}
 
 # TODO
-#RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
-#	&& ./gradlew assembleNativeImage
+RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
+	&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
+	&& ./gradlew assembleNativeImage
 
 # Start a fresh container for release container
 FROM adoptopenjdk:11-jre-hotspot-bionic
@@ -135,6 +134,7 @@ RUN apt-get update \
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
 COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar /tmp/signal-cli-${SIGNAL_CLI_VERSION}.tar
+COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image/signal-cli /tmp/signal-cli-native
 COPY entrypoint.sh /entrypoint.sh
 
 RUN tar xf /tmp/signal-cli-${SIGNAL_CLI_VERSION}.tar -C /opt
@@ -143,6 +143,9 @@ RUN rm -rf /tmp/signal-cli-${SIGNAL_CLI_VERSION}
 RUN groupadd -g 1000 signal-api \
 	&& useradd --no-log-init -M -d /home -s /bin/bash -u 1000 -g 1000 signal-api \
 	&& ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli /usr/bin/signal-cli \
+	&& cp /tmp/signal-cli-native /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native \
+	&& ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native \
+	&& rm /tmp/signal-cli-native \
 	&& mkdir -p /signal-cli-config/ \
 	&& mkdir -p /home/.local/share/signal-cli
 
