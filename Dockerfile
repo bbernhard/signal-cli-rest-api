@@ -1,5 +1,6 @@
-ARG SIGNAL_CLI_VERSION=0.7.4
+ARG SIGNAL_CLI_VERSION=0.8.0
 ARG ZKGROUP_VERSION=0.7.0
+ARG LIBSIGNAL_CLIENT_VERSION=0.2.3
 
 ARG SWAG_VERSION=1.6.7
 ARG GRAALVM_JAVA_VERSION=11
@@ -9,19 +10,28 @@ FROM golang:1.14-buster AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
 ARG ZKGROUP_VERSION
+ARG LIBSIGNAL_CLIENT_VERSION
 ARG SWAG_VERSION
 ARG GRAALVM_JAVA_VERSION
 ARG GRAALVM_VERSION
 
 COPY ext/libraries/zkgroup/v${ZKGROUP_VERSION} /tmp/zkgroup-libraries
+COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
 
-RUN ls -la /tmp/zkgroup-libraries/x86-64
-
+# use architecture specific libzkgroup.so
 RUN arch="$(uname -m)"; \
         case "$arch" in \
             aarch64) cp /tmp/zkgroup-libraries/arm64/libzkgroup.so /tmp/libzkgroup.so ;; \
 			armv7l) cp /tmp/zkgroup-libraries/armv7/libzkgroup.so /tmp/libzkgroup.so ;; \
             x86_64) cp /tmp/zkgroup-libraries/x86-64/libzkgroup.so /tmp/libzkgroup.so ;; \ 
+        esac;
+
+# use architecture specific libsignal_jni.so
+RUN arch="$(uname -m)"; \
+        case "$arch" in \
+            aarch64) cp /tmp/libsignal-client-libraries/arm64/libsignal_jni.so /tmp/libsignal_jni.so ;; \
+			armv7l) cp /tmp/libsignal-client-libraries/armv7/libsignal_jni.so /tmp/libsignal_jni.so ;; \
+            x86_64) cp /tmp/libsignal-client-libraries/x86-64/libsignal_jni.so /tmp/libsignal_jni.so ;; \ 
         esac;
 
 RUN apt-get update \
@@ -52,6 +62,8 @@ RUN cd /tmp/ \
 	&& ./gradlew installDist \
 	&& ./gradlew distTar
 
+# replace zkgroup
+
 RUN ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/zkgroup-java-${ZKGROUP_VERSION}.jar || (echo "\n\nzkgroup jar file with version ${ZKGROUP_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/zkgroup-java-* && echo "\n\n" && exit 1)
 
 RUN cd /tmp/ \
@@ -65,6 +77,20 @@ RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/ \
 	# update tar
 	&& tar --delete -vPf /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar signal-cli-${SIGNAL_CLI_VERSION}/lib/zkgroup-java-${ZKGROUP_VERSION}.jar \
 	&& tar --owner='' --group='' -rvPf /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar signal-cli-${SIGNAL_CLI_VERSION}/lib/zkgroup-java-${ZKGROUP_VERSION}.jar
+
+# replace libsignal-client
+
+RUN ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar || (echo "\n\nsignal-client jar file with version ${LIBSIGNAL_CLIENT_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/signal-client-java-* && echo "\n\n" && exit 1)
+
+RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/ \
+	&& mkdir -p signal-cli-${SIGNAL_CLI_VERSION}/lib/ \
+	&& cp /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar signal-cli-${SIGNAL_CLI_VERSION}/lib/ \
+	# update zip
+	&& zip -u /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.zip signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar \	
+	# update tar
+	&& tar --delete -vPf /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar \
+	&& tar --owner='' --group='' -rvPf /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar
+
 
 COPY src/api /tmp/signal-cli-rest-api-src/api
 COPY src/main.go /tmp/signal-cli-rest-api-src/
@@ -90,8 +116,9 @@ RUN cd /tmp/ \
 
 ENV GRAALVM_HOME=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}
 
-RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
-	&& ./gradlew assembleNativeImage
+# TODO
+#RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
+#	&& ./gradlew assembleNativeImage
 
 # Start a fresh container for release container
 FROM adoptopenjdk:11-jre-hotspot-bionic
