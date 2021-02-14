@@ -92,32 +92,35 @@ RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/ \
 	&& tar --owner='' --group='' -rvPf /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar
 
 
-COPY src/api /tmp/signal-cli-rest-api-src/api
-COPY src/main.go /tmp/signal-cli-rest-api-src/
-COPY src/go.mod /tmp/signal-cli-rest-api-src/
-COPY src/go.sum /tmp/signal-cli-rest-api-src/
-
-RUN cd /tmp/signal-cli-rest-api-src && swag init && go build
-
-
 # build native image with graalvm
 
 RUN arch="$(uname -m)"; \
         case "$arch" in \
             aarch64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-aarch64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \
-			armv7l) echo "TODO" ;; \
+			armv7l) echo "Not supported" ;; \
             x86_64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-amd64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \ 
         esac;
+
+# TODO: graalvm for armv7 not supported; FIX ME
 
 RUN cd /tmp/ \
 	&& tar xvf gvm.tar.gz
 
 ENV GRAALVM_HOME=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}
 
-# TODO
+
 RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
 	&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
 	&& ./gradlew assembleNativeImage
+
+COPY src/api /tmp/signal-cli-rest-api-src/api
+COPY src/utils /tmp/signal-cli-rest-api-src/utils
+COPY src/main.go /tmp/signal-cli-rest-api-src/
+COPY src/go.mod /tmp/signal-cli-rest-api-src/
+COPY src/go.sum /tmp/signal-cli-rest-api-src/
+
+RUN cd /tmp/signal-cli-rest-api-src && swag init && go build
+
 
 # Start a fresh container for release container
 FROM adoptopenjdk:11-jre-hotspot-bionic
