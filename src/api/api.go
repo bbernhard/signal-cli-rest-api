@@ -745,6 +745,7 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 // @Description Link device and generate QR code
 // @Produce  json
 // @Success 200 {string} string	"Image"
+// @Param device_name query string true "Device Name"
 // @Failure 400 {object} Error
 // @Router /v1/qrcodelink [get]
 func (a *Api) GetQrCodeLink(c *gin.Context) {
