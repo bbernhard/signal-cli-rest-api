@@ -19,6 +19,7 @@ var doc = `{
         "description": "{{.Description}}",
         "title": "{{.Title}}",
         "contact": {},
+        "license": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -659,6 +660,15 @@ var doc = `{
                     "Devices"
                 ],
                 "summary": "Link device and generate QR code.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device Name",
+                        "name": "device_name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Image",
@@ -753,9 +763,7 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": ""
-                    },
+                    "201": {},
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -919,6 +927,7 @@ var doc = `{
             "type": "object",
             "properties": {
                 "logging": {
+                    "type": "object",
                     "$ref": "#/definitions/api.LoggingConfiguration"
                 }
             }

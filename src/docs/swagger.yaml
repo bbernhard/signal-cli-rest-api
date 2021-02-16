@@ -13,6 +13,7 @@ definitions:
     properties:
       logging:
         $ref: '#/definitions/api.LoggingConfiguration'
+        type: object
     type: object
   api.CreateGroup:
     properties:
@@ -125,6 +126,7 @@ host: 127.0.0.1:8080
 info:
   contact: {}
   description: This is the Signal Cli REST API documentation.
+  license: {}
   title: Signal Cli REST API
   version: "1.0"
 paths:
@@ -545,6 +547,12 @@ paths:
   /v1/qrcodelink:
     get:
       description: Link device and generate QR code
+      parameters:
+      - description: Device Name
+        in: query
+        name: device_name
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -609,8 +617,7 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: ""
+        "201": {}
         "400":
           description: Bad Request
           schema:
