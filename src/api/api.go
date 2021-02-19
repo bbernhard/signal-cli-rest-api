@@ -22,6 +22,7 @@ import (
 	"github.com/h2non/filetype"
 	log "github.com/sirupsen/logrus"
 	qrcode "github.com/skip2/go-qrcode"
+	utils "github.com/bbernhard/signal-cli-rest-api/utils"
 )
 
 const signalCliV2GroupError = "Cannot create a V2 group as self does not have a versioned profile"
@@ -319,10 +320,21 @@ func runSignalCli(wait bool, args []string, stdin string) (string, error) {
 	} else {
 		log.Debug("*) docker exec -it <container id> /bin/bash")
 	}
-	log.Debug("*) su signal-api")
-	log.Debug("*) signal-cli ", strings.Join(args, " "))
 
-	cmd := exec.Command("signal-cli", args...)
+	signalCliBinary := "signal-cli"
+	if utils.GetEnv("USE_NATIVE", "0") == "1" {
+		if utils.GetEnv("SUPPORTS_NATIVE", "0") == "1" {
+			signalCliBinary = "signal-cli-native"
+		} else {
+			log.Error("signal-cli-native is not support on this system...falling back to signal-cli")
+			signalCliBinary = "signal-cli"
+		}
+	}
+
+	log.Debug("*) su signal-api")
+	log.Debug("*) ", signalCliBinary, " ", strings.Join(args, " "))
+
+	cmd := exec.Command(signalCliBinary, args...)
 	if stdin != "" {
 		cmd.Stdin = strings.NewReader(stdin)
 	}

@@ -3,6 +3,7 @@ services:
   signal-cli-rest-api:
     build: "."
     environment:
+      - USE_NATIVE=1
       - PORT=8080
     ports:
       - "8080:8080" #map docker port 8080 to host port 8080.
