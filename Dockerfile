@@ -97,21 +97,24 @@ RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/ \
 RUN arch="$(uname -m)"; \
         case "$arch" in \
             aarch64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-aarch64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \
-			armv7l) echo "Not supported" ;; \
+            armv7l) echo "GRAALVM doesn't support 32bit" ;; \
             x86_64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-amd64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \ 
         esac;
 
-# TODO: graalvm for armv7 not supported; FIX ME
-
-RUN cd /tmp/ \
-	&& tar xvf gvm.tar.gz
-
-ENV GRAALVM_HOME=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}
-
-
-RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
-	&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
-	&& ./gradlew assembleNativeImage
+RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "x86_64" ]; then \
+		cd /tmp && tar xvf gvm.tar.gz \
+		&& export GRAALVM_HOME=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION} \
+		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
+		&& chmod +x /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu \ 
+		&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
+		&& ./gradlew assembleNativeImage; \
+    elif [ "$(uname -m)" = "armv7l" ]; then \
+		echo "GRAALVM doesn't support 32bit" \
+		&& echo "Creating temporary file, otherwise the below copy doesn't work for armv7" \
+		&& touch /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image/signal-cli; \ 
+    else \
+		echo "Unknown architecture"; \
+    fi;
 
 COPY src/api /tmp/signal-cli-rest-api-src/api
 COPY src/utils /tmp/signal-cli-rest-api-src/utils
@@ -151,6 +154,12 @@ RUN groupadd -g 1000 signal-api \
 	&& rm /tmp/signal-cli-native \
 	&& mkdir -p /signal-cli-config/ \
 	&& mkdir -p /home/.local/share/signal-cli
+
+# remove the temporary created signal-cli-native on armv7, as GRAALVM doesn't support 32bit
+RUN arch="$(uname -m)"; \
+        case "$arch" in \
+            armv7l) echo "GRAALVM doesn't support 32bit" && rm /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native  ;; \
+        esac;
 
 EXPOSE ${PORT}
 
