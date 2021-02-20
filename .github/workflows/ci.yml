@@ -31,7 +31,7 @@ jobs:
         run: |
           echo "Start CI build"
           docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-		  docker buildx create --name multibuilder
+          docker buildx create --name multibuilder
           docker buildx use multibuilder
           docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION}-ci .
 
