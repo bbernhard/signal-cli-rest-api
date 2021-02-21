@@ -2,7 +2,7 @@ name: Release Dev Version
 
 on:
   workflow_dispatch:
-    version:
+    logLevel:
       description: 'Version'     
       required: true
       default: ''
