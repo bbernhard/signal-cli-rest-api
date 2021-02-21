@@ -82,6 +82,9 @@ RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/ \
 
 RUN ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar || (echo "\n\nsignal-client jar file with version ${LIBSIGNAL_CLIENT_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/signal-client-java-* && echo "\n\n" && exit 1)
 
+RUN cd /tmp/ \
+	&& zip -u /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal_jni.so
+
 RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/ \
 	&& mkdir -p signal-cli-${SIGNAL_CLI_VERSION}/lib/ \
 	&& cp /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar signal-cli-${SIGNAL_CLI_VERSION}/lib/ \
