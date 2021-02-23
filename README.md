@@ -39,6 +39,8 @@ On Systems like the Raspberry Pi, some operations like sending messages can take
 
 By adding `USE_NATIVE=1` as environmental variable to the `docker-compose.yml` file the native mode will be enabled. In case there's no native binary available (e.g on a 32 bit Raspian OS), it will fall back to the signal-cli Java application.
 
+* THIS ONLY WORKS ON A 64bit OS!*
+
 ## API documentation
 
 The Swagger API documentation can be found [here](https://bbernhard.github.io/signal-cli-rest-api/). If you prefer a simple text file like API documentation have a look [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/EXAMPLES.md)
