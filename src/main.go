@@ -2,14 +2,15 @@ package main
 
 import (
 	"flag"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/bbernhard/signal-cli-rest-api/api"
+	"github.com/bbernhard/signal-cli-rest-api/utils"
 	_ "github.com/bbernhard/signal-cli-rest-api/docs"
+	"os"
 
 )
 
@@ -56,6 +57,16 @@ func main() {
 	router.Use(gin.Recovery())
 
 	log.Info("Started Signal Messenger REST API")
+
+	supportsSignalCliNative := "0"
+	if _, err := os.Stat("/usr/bin/signal-cli-native"); err == nil {
+		supportsSignalCliNative = "1"
+	}
+
+	err := os.Setenv("SUPPORTS_NATIVE", supportsSignalCliNative)
+	if err != nil {
+		log.Fatal("Couldn't set env variable: ", err.Error())
+	}
 
 	api := api.NewApi(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir)
 	v1 := router.Group("/v1")
@@ -135,7 +146,7 @@ func main() {
 		}
 	}
 
-	swaggerPort := getEnv("PORT", "8080")
+	swaggerPort := utils.GetEnv("PORT", "8080")
 
 	swaggerUrl := ginSwagger.URL("http://127.0.0.1:" + string(swaggerPort) + "/swagger/doc.json")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
@@ -143,9 +154,4 @@ func main() {
 	router.Run()
 }
 
-func getEnv(key string, defaultVal string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
-	}
-	return defaultVal
-}
+
