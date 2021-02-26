@@ -21,9 +21,10 @@ COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-
 # use architecture specific libzkgroup.so
 RUN arch="$(uname -m)"; \
         case "$arch" in \
-            aarch64) cp /tmp/zkgroup-libraries/arm64/libzkgroup.so /tmp/libzkgroup.so ;; \
-			armv7l) cp /tmp/zkgroup-libraries/armv7/libzkgroup.so /tmp/libzkgroup.so ;; \
-            x86_64) cp /tmp/zkgroup-libraries/x86-64/libzkgroup.so /tmp/libzkgroup.so ;; \ 
+            aarch64) echo "[DEBUG] Using arm64 zkgroup" && cp /tmp/zkgroup-libraries/arm64/libzkgroup.so /tmp/libzkgroup.so ;; \
+			armv7l) echo "[DEBUG] Using armv7 zkgroup" && cp /tmp/zkgroup-libraries/armv7/libzkgroup.so /tmp/libzkgroup.so ;; \
+            x86_64) echo "[DEBUG] Using x86-64 zkgroup" && cp /tmp/zkgroup-libraries/x86-64/libzkgroup.so /tmp/libzkgroup.so ;; \ 
+			*) echo "Unknown architecture" && exit 1 ;; \
         esac;
 
 # use architecture specific libsignal_jni.so
@@ -32,6 +33,7 @@ RUN arch="$(uname -m)"; \
             aarch64) cp /tmp/libsignal-client-libraries/arm64/libsignal_jni.so /tmp/libsignal_jni.so ;; \
 			armv7l) cp /tmp/libsignal-client-libraries/armv7/libsignal_jni.so /tmp/libsignal_jni.so ;; \
             x86_64) cp /tmp/libsignal-client-libraries/x86-64/libsignal_jni.so /tmp/libsignal_jni.so ;; \ 
+			*) echo "Unknown architecture" && exit 1 ;; \
         esac;
 
 RUN apt-get update \
@@ -61,6 +63,31 @@ RUN cd /tmp/ \
 	&& ./gradlew build \
 	&& ./gradlew installDist \
 	&& ./gradlew distTar
+
+# build native image with graalvm
+
+RUN arch="$(uname -m)"; \
+        case "$arch" in \
+            aarch64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-aarch64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \
+            armv7l) echo "GRAALVM doesn't support 32bit" ;; \
+            x86_64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-amd64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \ 
+        esac;
+
+RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "x86_64" ]; then \
+		cd /tmp && tar xvf gvm.tar.gz \
+		&& export GRAALVM_HOME=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION} \
+		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
+		&& chmod +x /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu \ 
+		&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
+		&& ./gradlew assembleNativeImage; \
+    elif [ "$(uname -m)" = "armv7l" ]; then \
+		echo "GRAALVM doesn't support 32bit" \
+		&& echo "Creating temporary file, otherwise the below copy doesn't work for armv7" \
+		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image \
+		&& touch /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image/signal-cli; \ 
+    else \
+		echo "Unknown architecture"; \
+    fi;
 
 # replace zkgroup
 
@@ -94,31 +121,6 @@ RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/ \
 	&& tar --delete -vPf /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar \
 	&& tar --owner='' --group='' -rvPf /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar
 
-
-# build native image with graalvm
-
-RUN arch="$(uname -m)"; \
-        case "$arch" in \
-            aarch64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-aarch64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \
-            armv7l) echo "GRAALVM doesn't support 32bit" ;; \
-            x86_64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-amd64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \ 
-        esac;
-
-RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "x86_64" ]; then \
-		cd /tmp && tar xvf gvm.tar.gz \
-		&& export GRAALVM_HOME=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION} \
-		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
-		&& chmod +x /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu \ 
-		&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
-		&& ./gradlew assembleNativeImage; \
-    elif [ "$(uname -m)" = "armv7l" ]; then \
-		echo "GRAALVM doesn't support 32bit" \
-		&& echo "Creating temporary file, otherwise the below copy doesn't work for armv7" \
-		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image \
-		&& touch /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image/signal-cli; \ 
-    else \
-		echo "Unknown architecture"; \
-    fi;
 
 COPY src/api /tmp/signal-cli-rest-api-src/api
 COPY src/utils /tmp/signal-cli-rest-api-src/utils
