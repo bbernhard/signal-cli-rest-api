@@ -169,6 +169,8 @@ RUN arch="$(uname -m)"; \
 
 EXPOSE ${PORT}
 
+ENV SIGNAL_CLI_CONFIG_DIR=/home/.local/share/signal-cli
+
 ENTRYPOINT ["/entrypoint.sh"]
 
 HEALTHCHECK --interval=20s --timeout=10s --retries=3 \
