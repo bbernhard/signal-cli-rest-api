@@ -42,8 +42,6 @@ body:
     attributes:
       value: |
         # Details
-
-        ```
   - type: textarea
     attributes:
       label: Anything in the logs that might be useful?
