@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a bug with the signal-cli-rest-api
+    url: https://github.com/bbernhard/signal-cli-rest-api/issues
+    about: This is the issue tracker for the signal-cli-rest-api.
