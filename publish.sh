@@ -26,27 +26,28 @@ if [[ "$TAG" != "dev" && "$TAG" != "stable" ]]; then
 	exit 1
 fi
 
-echo "This will upload a new signal-cli-rest-api to dockerhub"
+echo "This will upload a new signal-cli-rest-api to dockerhub via Github Actions"
 echo "Version: $VERSION"
 echo "Tag: $TAG"
 echo ""
 
+branch_name="$(git symbolic-ref HEAD 2>/dev/null)" ||
+branch_name="(unnamed branch)"     # detached HEAD
+
+branch_name=${branch_name##refs/heads/}
+
 read -r -p "Are you sure? [y/N] " response
 case "$response" in
     [yY][eE][sS]|[yY])
-        docker buildx rm multibuilder
-		
-		docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-		
-		docker buildx create --name multibuilder
-		docker buildx use multibuilder
 		
 		if [[ "$TAG" == "stable" ]]; then
-			docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:$VERSION -t bbernhard/signal-cli-rest-api:latest . --push
+			curl --request POST --url 'https://api.github.com/repos/bbernhard/signal-cli-rest-api/actions/workflows/6006444/dispatches' --header 'authorization: Bearer '"$SIGNAL_CLI_GITHUB_ACTIONS_TOKEN"'' --data '{"ref": "'"$branch_name"'", "inputs": {"version": "'"$VERSION"'"}}'
+			echo "Successfully triggered Github Actions Job"
         fi
 
 		if [[ "$TAG" == "dev" ]]; then
-			docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION}-dev -t bbernhard/signal-cli-rest-api:latest-dev . --push
+			curl --request POST --url 'https://api.github.com/repos/bbernhard/signal-cli-rest-api/actions/workflows/6006443/dispatches' --header 'authorization: Bearer '"$SIGNAL_CLI_GITHUB_ACTIONS_TOKEN"'' --data '{"ref": "'"$branch_name"'", "inputs": {"version": "'"$VERSION"'"}}'
+			echo "Successfully triggered Github Actions Job"
         fi
 
 		;;
