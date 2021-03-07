@@ -605,7 +605,7 @@ func (a *Api) Receive(c *gin.Context) {
 
 	timeout := c.DefaultQuery("timeout", "1")
 
-	command := []string{"--config", a.signalCliConfig, "-u", number, "receive", "-t", timeout, "--json"}
+	command := []string{"--config", a.signalCliConfig, "--output", "json", "-u", number, "receive", "-t", timeout}
 	out, err := runSignalCli(true, command, "")
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
