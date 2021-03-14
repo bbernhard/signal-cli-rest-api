@@ -150,7 +150,7 @@ COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-im
 COPY entrypoint.sh /entrypoint.sh
 
 RUN tar xf /tmp/signal-cli-${SIGNAL_CLI_VERSION}.tar -C /opt
-RUN rm -rf /tmp/signal-cli-${SIGNAL_CLI_VERSION}
+RUN rm -rf /tmp/signal-cli-${SIGNAL_CLI_VERSION}.tar
 
 RUN groupadd -g 1000 signal-api \
 	&& useradd --no-log-init -M -d /home -s /bin/bash -u 1000 -g 1000 signal-api \
