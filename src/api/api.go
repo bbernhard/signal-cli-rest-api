@@ -40,6 +40,11 @@ type GroupEntry struct {
 	InviteLink      string   `json:"invite_link"`
 }
 
+type CreateGroupRequest struct {
+	Name    string   `json:"name"`
+	Members []string `json:"members"`
+}
+
 type LoggingConfiguration struct {
 	Level            string   `json:"Level"`
 }
@@ -100,7 +105,7 @@ type About struct {
 	BuildNr              int      `json:"build"`
 }
 
-type CreateGroup struct {
+type CreateGroupResponse struct {
 	Id string `json:"id"`
 }
 
@@ -632,19 +637,15 @@ func (a *Api) Receive(c *gin.Context) {
 // @Description Create a new Signal Group with the specified members.
 // @Accept  json
 // @Produce  json
-// @Success 201 {object} CreateGroup
+// @Success 201 {object} CreateGroupResponse
 // @Failure 400 {object} Error
+// @Param data body CreateGroupRequest true "Input Data"
 // @Param number path string true "Registered Phone Number"
 // @Router /v1/groups/{number} [post]
 func (a *Api) CreateGroup(c *gin.Context) {
 	number := c.Param("number")
 
-	type Request struct {
-		Name    string   `json:"name"`
-		Members []string `json:"members"`
-	}
-
-	var req Request
+	var req CreateGroupRequest
 	err := c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
@@ -666,7 +667,7 @@ func (a *Api) CreateGroup(c *gin.Context) {
 	}
 
 	internalGroupId := getStringInBetween(out, `"`, `"`)
-	c.JSON(201, CreateGroup{Id: convertInternalGroupIdToGroupId(internalGroupId)})
+	c.JSON(201, CreateGroupResponse{Id: convertInternalGroupIdToGroupId(internalGroupId)})
 }
 
 // @Summary List all Signal Groups.

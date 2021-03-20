@@ -15,7 +15,16 @@ definitions:
         $ref: '#/definitions/api.LoggingConfiguration'
         type: object
     type: object
-  api.CreateGroup:
+  api.CreateGroupRequest:
+    properties:
+      members:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+    type: object
+  api.CreateGroupResponse:
     properties:
       id:
         type: string
@@ -283,6 +292,12 @@ paths:
       - application/json
       description: Create a new Signal Group with the specified members.
       parameters:
+      - description: Input Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateGroupRequest'
       - description: Registered Phone Number
         in: path
         name: number
@@ -294,7 +309,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.CreateGroup'
+            $ref: '#/definitions/api.CreateGroupResponse'
         "400":
           description: Bad Request
           schema:

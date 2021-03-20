@@ -263,6 +263,15 @@ var doc = `{
                 "summary": "Create a new Signal Group.",
                 "parameters": [
                     {
+                        "description": "Input Data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateGroupRequest"
+                        }
+                    },
+                    {
                         "type": "string",
                         "description": "Registered Phone Number",
                         "name": "number",
@@ -274,7 +283,7 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.CreateGroup"
+                            "$ref": "#/definitions/api.CreateGroupResponse"
                         }
                     },
                     "400": {
@@ -932,7 +941,21 @@ var doc = `{
                 }
             }
         },
-        "api.CreateGroup": {
+        "api.CreateGroupRequest": {
+            "type": "object",
+            "properties": {
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CreateGroupResponse": {
             "type": "object",
             "properties": {
                 "id": {
