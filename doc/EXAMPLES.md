@@ -107,6 +107,17 @@ e.g:
 
   Due to security reason of Signal, the provided QR-Code will change with each request.
 
+- React to a message
+
+  `curl -X POST -H "Content-Type: application/json" -d '{"reaction": "<reaction>", "timestamp": <timestamp>, "number": "<number>", "recipient": "<recipient>"}' 'http://127.0.0.1:8080/v1/react'`
+
+  e.g:
+
+  `curl -X POST -H "Content-Type: application/json" -d '{"reaction": "😀", "timestamp": 1616247771636, "number": "+431212131491291", "recipient": "+4354546464654"}' 'http://127.0.0.1:8080/v1/react'`
+
+  The REST API endpoint requires you to specify the author and the timestamp of the message you want to react to.
+  The timestamp of the message you want to react to, can be obtained via the `/receive` endpoint.
+
 The following REST API endpoints are **deprecated and no longer maintained!**
 
 `/v1/send`

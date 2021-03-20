@@ -685,6 +685,46 @@ var doc = `{
                 }
             }
         },
+        "/v1/react/{number}": {
+            "post": {
+                "description": "React to a message.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reactions"
+                ],
+                "summary": "Send a reaction.",
+                "parameters": [
+                    {
+                        "description": "Reaction",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Reaction"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/receive/{number}": {
             "get": {
                 "description": "Receives Signal Messages from the Signal Network.",
@@ -1014,6 +1054,23 @@ var doc = `{
                 }
             }
         },
+        "api.Reaction": {
+            "type": "object",
+            "properties": {
+                "number": {
+                    "type": "string"
+                },
+                "reaction": {
+                    "type": "string"
+                },
+                "recipient": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.RegisterNumberRequest": {
             "type": "object",
             "properties": {
@@ -1127,6 +1184,10 @@ var doc = `{
         {
             "description": "List and Trust Identities.",
             "name": "Identities"
+        },
+        {
+            "description": "React to messages.",
+            "name": "Reactions"
         }
     ]
 }`

@@ -76,6 +76,13 @@ type VerifyNumberSettings struct {
 	Pin string `json:"pin"`
 }
 
+type Reaction struct {
+	Number string `json:"number"`
+	Timestamp int64 `json:"timestamp"`
+	Recipient string `json:"recipient"`
+	Reaction string `json:"reaction"`
+}
+
 type SendMessageV1 struct {
 	Number           string   `json:"number"`
 	Recipients       []string `json:"recipients"`
@@ -1218,6 +1225,61 @@ func (a *Api) QuitGroup(c *gin.Context) {
 	}
 
 	_, err = runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "quitGroup", "-g", internalGroupId}, "")
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Send a reaction.
+// @Tags Reactions
+// @Description React to a message.
+// @Accept  json
+// @Produce  json
+// @Success 201 {string} OK
+// @Failure 400 {object} Error
+// @Param data body Reaction true "Reaction"
+// @Router /v1/react/{number} [post]
+func (a *Api) SendReaction(c *gin.Context) {
+	var req Reaction
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	if req.Recipient == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
+		return
+	}
+
+	if req.Timestamp == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - timestamp missing"})
+		return
+	}
+
+	if req.Reaction == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - reaction missing"})
+		return
+	}
+
+	if req.Number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	if strings.HasPrefix(req.Recipient, groupPrefix) {
+		c.JSON(500, Error{Msg: "Sending reactions to Signal Groups isn't implemented yet"})
+		return
+	}
+
+
+	cmd := []string{"--config", a.signalCliConfig, "-u", req.Number, "sendReaction", req.Recipient, "-a", req.Recipient, "-t",
+						strconv.FormatInt(req.Timestamp, 10), "-e", req.Reaction}
+
+	_, err = runSignalCli(true, cmd, "")
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return

@@ -68,6 +68,17 @@ definitions:
       Level:
         type: string
     type: object
+  api.Reaction:
+    properties:
+      number:
+        type: string
+      reaction:
+        type: string
+      recipient:
+        type: string
+      timestamp:
+        type: integer
+    type: object
   api.RegisterNumberRequest:
     properties:
       captcha:
@@ -567,6 +578,32 @@ paths:
       summary: Link device and generate QR code.
       tags:
       - Devices
+  /v1/react/{number}:
+    post:
+      consumes:
+      - application/json
+      description: React to a message.
+      parameters:
+      - description: Reaction
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.Reaction'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Send a reaction.
+      tags:
+      - Reactions
   /v1/receive/{number}:
     get:
       consumes:
@@ -729,3 +766,5 @@ tags:
   name: Profiles
 - description: List and Trust Identities.
   name: Identities
+- description: React to messages.
+  name: Reactions

@@ -41,6 +41,9 @@ import (
 // @tag.name Identities
 // @tag.description List and Trust Identities.
 
+// @tag.name Reactions
+// @tag.description React to messages.
+
 // @host 127.0.0.1:8080
 // @BasePath /
 func main() {
@@ -135,6 +138,11 @@ func main() {
 		{
 			identities.GET(":number", api.ListIdentities)
 			identities.PUT(":number/trust/:numbertotrust", api.TrustIdentity)
+		}
+
+		react := v1.Group("react")
+		{
+			react.POST("", api.SendReaction)
 		}
 	}
 
