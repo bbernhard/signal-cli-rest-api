@@ -1,7 +1,8 @@
 version: "3"
 services:
   signal-cli-rest-api:
-    build: "."
+    image: bbernhard/signal-cli-rest-api:latest
+    #build: "."
     environment:
       - USE_NATIVE=0
       - PORT=8080
