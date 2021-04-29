@@ -59,7 +59,7 @@ RUN cd /tmp/ \
 RUN cd /tmp/ \
 	&& git clone https://github.com/AsamK/signal-cli.git signal-cli-${SIGNAL_CLI_VERSION} \
 	&& cd signal-cli-${SIGNAL_CLI_VERSION} \
-	&& git checkout v${SIGNAL_CLI_VERSION} \
+	&& git checkout bda952839244254842d685baceb0d02cd469c944 \
 	&& ./gradlew build \
 	&& ./gradlew installDist \
 	&& ./gradlew distTar
