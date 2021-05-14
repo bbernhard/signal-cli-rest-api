@@ -53,11 +53,11 @@ By adding `USE_NATIVE=1` as environmental variable to the `docker-compose.yml` f
 
 The Swagger API documentation can be found [here](https://bbernhard.github.io/signal-cli-rest-api/). If you prefer a simple text file like API documentation have a look [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/EXAMPLES.md)
 
+In case you need more functionality, please **file a ticket** or **create a PR**.
+
 ## Clients & Libraries
 
 |     Name    | Client           | Library  | Language | Maintainer |
 | ------------- |:-------------:| :-----:|:-----:|:-----:|
 | [Shell Client](https://gist.github.com/florian-h05/26be2140e9907884218b4e3144c2f2ab)      | X | | Bash | [@florian-h05](https://github.com/florian-h05)
 | [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/)      | | X | Python | [@bbernhard](https://github.com/bbernhard)
-
-In case you need more functionality, please **file a ticket** or **create a PR**.
