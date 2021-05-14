@@ -1,20 +1,23 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"strings"
 
+	"net/http"
+	"os"
+	"path/filepath"
+	"io/ioutil"
+	"github.com/bbernhard/signal-cli-rest-api/api"
+	_ "github.com/bbernhard/signal-cli-rest-api/docs"
+	"github.com/bbernhard/signal-cli-rest-api/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"github.com/bbernhard/signal-cli-rest-api/api"
-	"github.com/bbernhard/signal-cli-rest-api/utils"
-	_ "github.com/bbernhard/signal-cli-rest-api/docs"
-	"os"
-
 )
-
-
 
 // @title Signal Cli REST API
 // @version 1.0
@@ -32,10 +35,10 @@ import (
 // @tag.name Messages
 // @tag.description Send and Receive Signal Messages.
 
-// @tag.name Attachments 
+// @tag.name Attachments
 // @tag.description List and Delete Attachments.
 
-// @tag.name Profiles 
+// @tag.name Profiles
 // @tag.description Update Profile.
 
 // @tag.name Identities
@@ -150,6 +153,57 @@ func main() {
 
 	swaggerUrl := ginSwagger.URL("http://127.0.0.1:" + string(swaggerPort) + "/swagger/doc.json")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
+
+	autoReceiveSchedule := utils.GetEnv("AUTO_RECEIVE_SCHEDULE", "")
+	if autoReceiveSchedule != "" {
+		p := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+		schedule, err := p.Parse(autoReceiveSchedule)
+		if err != nil {
+			log.Fatal("AUTO_RECEIVE_SCHEDULE: Invalid schedule: ", err.Error())
+		}
+
+		c := cron.New()
+		c.Schedule(schedule, cron.FuncJob(func() {
+			err := filepath.Walk(*signalCliConfig, func(path string, info os.FileInfo, err error) error {
+				filename := filepath.Base(path)
+				if strings.HasPrefix(filename, "+") && info.Mode().IsRegular() {
+					log.Debug("AUTO_RECEIVE_SCHEDULE: Calling receive for number ", filename)
+					resp, err := http.Get("http://127.0.0.1:8080/v1/receive/"+filename)
+					if err != nil {
+						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", filename, ": ", err.Error())
+					}
+					if resp.StatusCode != 200 {
+						jsonResp, err := ioutil.ReadAll(resp.Body)
+						resp.Body.Close()
+						if err != nil {
+							log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't read json response: ", err.Error())
+							return nil
+						}
+
+						type ReceiveResponse struct {
+							Error  string  `json:"error"`
+						}
+						var receiveResponse ReceiveResponse
+						err = json.Unmarshal(jsonResp, &receiveResponse)
+						if err != nil {
+							log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't parse json response: ", err.Error())
+							return nil
+						}
+
+						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", filename, ": ", receiveResponse)
+
+					}
+				}
+
+				return nil
+			})
+			if err != nil {
+				log.Fatal("AUTO_RECEIVE_SCHEDULE: Couldn't get registered numbers")
+			}
+		}))
+		c.Start()
+	}
+
 
 	router.Run()
 }
