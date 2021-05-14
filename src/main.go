@@ -159,7 +159,7 @@ func main() {
 		p := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 		schedule, err := p.Parse(autoReceiveSchedule)
 		if err != nil {
-			log.Fatal("Invalid AUTO_RECEIVE_SCHEDULE: ", err.Error())
+			log.Fatal("AUTO_RECEIVE_SCHEDULE: Invalid schedule: ", err.Error())
 		}
 
 		c := cron.New()
@@ -198,7 +198,7 @@ func main() {
 				return nil
 			})
 			if err != nil {
-				log.Fatal("Couldn't get registered numbers")
+				log.Fatal("AUTO_RECEIVE_SCHEDULE: Couldn't get registered numbers")
 			}
 		}))
 		c.Start()
