@@ -53,4 +53,9 @@ By adding `USE_NATIVE=1` as environmental variable to the `docker-compose.yml` f
 
 The Swagger API documentation can be found [here](https://bbernhard.github.io/signal-cli-rest-api/). If you prefer a simple text file like API documentation have a look [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/EXAMPLES.md)
 
+## Clients & Libraries
+
+[Shell Client](https://gist.github.com/florian-h05/26be2140e9907884218b4e3144c2f2ab) - by @florian-h05
+[Python Library](https://pypi.org/project/pysignalclirestapi/)
+
 In case you need more functionality, please **file a ticket** or **create a PR**.
