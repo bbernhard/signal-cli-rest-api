@@ -55,8 +55,9 @@ The Swagger API documentation can be found [here](https://bbernhard.github.io/si
 
 ## Clients & Libraries
 
-[Shell Client](https://gist.github.com/florian-h05/26be2140e9907884218b4e3144c2f2ab) - by @florian-h05
-
-[Python Library](https://pypi.org/project/pysignalclirestapi/)
+|     Name    | Client           | Library  | Language | Maintainer |
+| ------------- |:-------------:| :-----:|:-----:|:-----:|
+| [Shell Client](https://gist.github.com/florian-h05/26be2140e9907884218b4e3144c2f2ab)      | X | | Bash | [@florian-h05](https://github.com/florian-h05)
+| [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/)      | | X | Python | [@bbernhard](https://github.com/bbernhard)
 
 In case you need more functionality, please **file a ticket** or **create a PR**.
