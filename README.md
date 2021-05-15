@@ -59,5 +59,5 @@ In case you need more functionality, please **file a ticket** or **create a PR**
 
 |     Name    | Client           | Library  | Language | Maintainer |
 | ------------- |:-------------:| :-----:|:-----:|:-----:|
-| [Shell Client](https://gist.github.com/florian-h05/26be2140e9907884218b4e3144c2f2ab)      | X | | Shell | [@florian-h05](https://github.com/florian-h05)
+| [Shell Client](https://github.com/florian-h05/shell-script_collection/blob/main/signal-cli-rest-api_client.sh)      | X | | Shell | [@florian-h05](https://github.com/florian-h05)
 | [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/)      | | X | Python | [@bbernhard](https://github.com/bbernhard)
