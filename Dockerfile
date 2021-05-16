@@ -61,7 +61,7 @@ RUN cd /tmp/ \
 	&& cd signal-cli-${SIGNAL_CLI_VERSION} \
 	&& git checkout v${SIGNAL_CLI_VERSION} \
 	&& cp /tmp/libzkgroup.so ./lib/src/main/resources/libzkgroup.so \
-        && cp /tmp/libsignal_jni.so ./lib/src/main/resources/libsignal_jni.so \
+	&& cp /tmp/libsignal_jni.so ./lib/src/main/resources/libsignal_jni.so \
 	&& ./gradlew build \
 	&& ./gradlew installDist \
 	&& ./gradlew distTar
