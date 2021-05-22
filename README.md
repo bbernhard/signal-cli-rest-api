@@ -45,9 +45,7 @@ services:
 
 On Systems like the Raspberry Pi, some operations like sending messages can take quite a while. That's because signal-cli is a Java application and a significant amount of time is spent in the JVM (Java Virtual Machine) startup. signal-cli recently added the possibility to compile the Java application to a native binary (done via GraalVM).
 
-By adding `USE_NATIVE=1` as environmental variable to the `docker-compose.yml` file the native mode will be enabled. In case there's no native binary available (e.g on a 32 bit Raspian OS), it will fall back to the signal-cli Java application.
-
-* THIS ONLY WORKS ON A 64bit OS!*
+By adding `USE_NATIVE=1` as environmental variable to the `docker-compose.yml` file the native mode will be enabled. In case there's no native binary available (e.g on a 32 bit Raspian OS), it will fall back to the signal-cli Java application. The native mode only works on a 64bit system, when the native mode is enabled on a 32bit system, it falls back to the Java application.
 
 ## API documentation
 
