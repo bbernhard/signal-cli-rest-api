@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"strings"
-
+	"strconv"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -149,9 +149,12 @@ func main() {
 		}
 	}
 
-	swaggerPort := utils.GetEnv("PORT", "8080")
+	port := utils.GetEnv("PORT", "8080")
+	if _, err := strconv.Atoi(port); err != nil {
+		log.Fatal("Invalid PORT ", port, " set. PORT needs to be a number")
+	}
 
-	swaggerUrl := ginSwagger.URL("http://127.0.0.1:" + string(swaggerPort) + "/swagger/doc.json")
+	swaggerUrl := ginSwagger.URL("http://127.0.0.1:" + string(port) + "/swagger/doc.json")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
 
 	autoReceiveSchedule := utils.GetEnv("AUTO_RECEIVE_SCHEDULE", "")
@@ -168,7 +171,7 @@ func main() {
 				filename := filepath.Base(path)
 				if strings.HasPrefix(filename, "+") && info.Mode().IsRegular() {
 					log.Debug("AUTO_RECEIVE_SCHEDULE: Calling receive for number ", filename)
-					resp, err := http.Get("http://127.0.0.1:8080/v1/receive/"+filename)
+					resp, err := http.Get("http://127.0.0.1:" + port + "/v1/receive/"+filename)
 					if err != nil {
 						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", filename, ": ", err.Error())
 					}
