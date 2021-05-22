@@ -60,6 +60,8 @@ RUN cd /tmp/ \
 	&& git clone https://github.com/AsamK/signal-cli.git signal-cli-${SIGNAL_CLI_VERSION} \
 	&& cd signal-cli-${SIGNAL_CLI_VERSION} \
 	&& git checkout v${SIGNAL_CLI_VERSION} \
+	&& cp /tmp/libzkgroup.so ./lib/src/main/resources/libzkgroup.so \
+	&& cp /tmp/libsignal_jni.so ./lib/src/main/resources/libsignal_jni.so \
 	&& ./gradlew build \
 	&& ./gradlew installDist \
 	&& ./gradlew distTar
