@@ -204,13 +204,9 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 			return
 		}
 
-		fType, err := filetype.Get(dec)
-		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
+		mimeType := mimetype.Detect(dec)
 
-		attachmentTmpPath := attachmentTmpDir + u.String() + "." + fType.Extension
+		attachmentTmpPath := attachmentTmpDir + u.String() + "." + mimeType.Extension()
 		attachmentTmpPaths = append(attachmentTmpPaths, attachmentTmpPath)
 
 		f, err := os.Create(attachmentTmpPath)
