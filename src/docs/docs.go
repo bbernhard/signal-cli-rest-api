@@ -902,9 +902,9 @@ var doc = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "OK",
+                        "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/api.SendMessageResponse"
                         }
                     },
                     "400": {
@@ -1045,6 +1045,14 @@ var doc = `{
                 },
                 "use_voice": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api.SendMessageResponse": {
+            "type": "object",
+            "properties": {
+                "timestamp": {
+                    "type": "string"
                 }
             }
         },

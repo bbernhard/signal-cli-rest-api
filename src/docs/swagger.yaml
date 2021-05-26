@@ -84,6 +84,11 @@ definitions:
       use_voice:
         type: boolean
     type: object
+  api.SendMessageResponse:
+    properties:
+      timestamp:
+        type: string
+    type: object
   api.SendMessageV1:
     properties:
       base64_attachment:
@@ -718,9 +723,9 @@ paths:
       - application/json
       responses:
         "201":
-          description: OK
+          description: Created
           schema:
-            type: string
+            $ref: '#/definitions/api.SendMessageResponse'
         "400":
           description: Bad Request
           schema:

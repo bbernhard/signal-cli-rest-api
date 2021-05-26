@@ -118,6 +118,10 @@ type TrustIdentityRequest struct {
 	VerifiedSafetyNumber string `json:"verified_safety_number"`
 }
 
+type SendMessageResponse struct {
+	Timestamp string `json:"timestamp"`
+}
+
 func convertInternalGroupIdToGroupId(internalId string) string {
 	return groupPrefix + base64.StdEncoding.EncodeToString([]byte(internalId))
 }
@@ -235,7 +239,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 		cmd = append(cmd, attachmentTmpPaths...)
 	}
 
-	_, err := runSignalCli(true, cmd, message)
+	resp, err := runSignalCli(true, cmd, message)
 	if err != nil {
 		cleanupTmpFiles(attachmentTmpPaths)
 		if strings.Contains(err.Error(), signalCliV2GroupError) {
@@ -246,8 +250,10 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 		return
 	}
 
+	sendMessageResponse := SendMessageResponse{Timestamp: strings.TrimSuffix(resp, "\n")}
+
 	cleanupTmpFiles(attachmentTmpPaths)
-	c.Writer.WriteHeader(201)
+	c.JSON(201, sendMessageResponse)
 }
 
 func parseWhitespaceDelimitedKeyValueStringList(in string, keys []string) []map[string]string {
@@ -543,7 +549,7 @@ func (a *Api) Send(c *gin.Context) {
 // @Description Send a signal message
 // @Accept  json
 // @Produce  json
-// @Success 201 {string} string "OK"
+// @Success 201 {object} SendMessageResponse
 // @Failure 400 {object} Error
 // @Param data body SendMessageV2 true "Input Data"
 // @Router /v2/send [post]
