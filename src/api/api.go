@@ -210,7 +210,7 @@ func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, numbe
 
 		mimeType := mimetype.Detect(dec)
 
-		attachmentTmpPath := attachmentTmpDir + u.String() + "." + mimeType.Extension()
+		attachmentTmpPath := attachmentTmpDir + u.String() + mimeType.Extension()
 		attachmentTmpPaths = append(attachmentTmpPaths, attachmentTmpPath)
 
 		f, err := os.Create(attachmentTmpPath)
