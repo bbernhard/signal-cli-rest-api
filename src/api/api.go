@@ -338,8 +338,14 @@ func runSignalCli(wait bool, args []string, stdin string) (string, error) {
 		}
 	}
 
+	fullCmd := ""
+	if(stdin != "") {
+		fullCmd += "echo '" + stdin + "' | "
+	}
+	fullCmd += signalCliBinary + " " + strings.Join(args, " ")
+
 	log.Debug("*) su signal-api")
-	log.Debug("*) ", signalCliBinary, " ", strings.Join(args, " "))
+	log.Debug("*) ", fullCmd)
 
 	cmd := exec.Command(signalCliBinary, args...)
 	if stdin != "" {
