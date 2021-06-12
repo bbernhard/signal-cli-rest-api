@@ -109,6 +109,12 @@ type CreateGroupResponse struct {
 	Id string `json:"id"`
 }
 
+type UpdateContactRequest struct {
+	Name string `json:"name"`
+	Number string `json:"number"`
+	Expiration string `json:"expiration"`
+}
+
 type UpdateProfileRequest struct {
 	Name         string `json:"name"`
 	Base64Avatar string `json:"base64_avatar"`
@@ -338,14 +344,8 @@ func runSignalCli(wait bool, args []string, stdin string) (string, error) {
 		}
 	}
 
-	fullCmd := ""
-	if(stdin != "") {
-		fullCmd += "echo '" + stdin + "' | "
-	}
-	fullCmd += signalCliBinary + " " + strings.Join(args, " ")
-
 	log.Debug("*) su signal-api")
-	log.Debug("*) ", fullCmd)
+	log.Debug("*) ", signalCliBinary, " ", strings.Join(args, " "))
 
 	cmd := exec.Command(signalCliBinary, args...)
 	if stdin != "" {
@@ -469,6 +469,48 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 	}
 	c.Writer.WriteHeader(201)
 }
+
+// @Summary Update contact.
+// @Tags Contact
+// @Description Update message expiration time for a user.
+// @Accept  json
+// @Produce  json
+// @Success 201 {string} string "OK"
+// @Failure 400 {object} Error
+// @Param data body UpdateContactRequest true "Input Data"
+// @Router /v1/updatecontact [post]
+func (a *Api) UpdateContact(c *gin.Context) {
+	var req UpdateContactRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	if len(req.Number) == 0 {
+		c.JSON(400, gin.H{"error": "Couldn't process request - please provide the recipients number"})
+		return
+	}
+
+	if len(req.Name) == 0 {
+		c.JSON(400, gin.H{"error": "Couldn't process request - please provide the recipients name number"})
+	}
+
+	if len(req.Expiration) == 0 {
+		c.JSON(400, gin.H{"error": "Couldn't process request - please provide an expirty time in seconds"})
+	}
+	
+	command := []string{"--config", a.signalCliConfig, "updateContact", req.Number, "-n", req.Name, "-e", req.Expiration}	
+
+	_, err = runSignalCli(false, command, "")
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Writer.WriteHeader(201)
+}
+
 
 // @Summary Verify a registered phone number.
 // @Tags Devices

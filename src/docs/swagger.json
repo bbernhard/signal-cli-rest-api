@@ -900,6 +900,46 @@
                     }
                 }
             }
+        },
+        "/v1/updatecontact": {
+            "post": {
+                "description": "Update Contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Update Contact"
+                ],
+                "summary": "Update contact expiration",
+                "parameters": [
+                    {
+                        "description": "Input Data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateContactRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1041,6 +1081,7 @@
                 }
             }
         },
+        
         "api.SendMessageV1": {
             "type": "object",
             "properties": {
@@ -1084,6 +1125,20 @@
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "api.UpdateContactRequest": {
+            "type": "object",
+            "properties": {
+                "number": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "expiration": {
+                    "type": "string"
                 }
             }
         },

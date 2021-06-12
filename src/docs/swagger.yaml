@@ -119,6 +119,15 @@ definitions:
           type: string
         type: array
     type: object
+  api.UpdateContactRequest:
+    properties:
+      number:
+        type: string
+      name:
+        type: string
+      expiration:
+        type: string
+    type: object
   api.TrustIdentityRequest:
     properties:
       verified_safety_number:
