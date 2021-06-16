@@ -1,0 +1,43 @@
+name: Report an issue with signal-cli-rest-api
+description: Report an issue with signal-cli-rest-api.
+body:
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: The problem
+      description: >-
+        Describe the issue you are experiencing here. Tell us what you were trying to do and what happened.
+        Provide a clear and concise description of what the problem is.
+  - type: markdown
+    attributes:
+      value: |
+        ## Environment
+  - type: checkboxes 
+    id: latest_version
+    label: Are you using the latest released version?
+    attributes:
+      options: 
+        - label: Yes
+  - type: checkboxes 
+    id: read_troubleshooting
+    label: Have you read the troubleshooting page? 
+    description: Can be found [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/TROUBLESHOOTING.md)
+    attributes:
+      options: 
+        - label: Yes
+  - type: dropdown
+    validations:
+      required: true
+    attributes:
+      label: What type of installation are you running?
+      options:
+        - signal-cli-rest-api Docker Container
+        - Home Assistant Signal Addon
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: >
+        If you have any additional information for us, use the field below.
+        Please note, you can attach screenshots or screen recordings here, by
+        dragging and dropping files in the field below.
