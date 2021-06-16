@@ -14,16 +14,16 @@ body:
       value: |
         ## Environment
   - type: checkboxes 
-    id: latest_version
-    label: Are you using the latest released version?
+    id: latest_version 
     attributes:
+      label: Are you using the latest released version?
       options: 
         - label: Yes
   - type: checkboxes 
-    id: read_troubleshooting
-    label: Have you read the troubleshooting page? 
-    description: Can be found [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/TROUBLESHOOTING.md)
+    id: read_troubleshooting  
     attributes:
+      label: Have you read the troubleshooting page?
+      description: Can be found [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/TROUBLESHOOTING.md)
       options: 
         - label: Yes
   - type: dropdown
