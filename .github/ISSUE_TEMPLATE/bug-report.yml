@@ -18,14 +18,14 @@ body:
     attributes:
       label: Are you using the latest released version?
       options: 
-        - label: Yes
+        - label: "Yes"
   - type: checkboxes 
     id: read_troubleshooting  
     attributes:
       label: Have you read the troubleshooting page?
       description: Can be found [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/TROUBLESHOOTING.md)
       options: 
-        - label: Yes
+        - label: "Yes"
   - type: dropdown
     validations:
       required: true
