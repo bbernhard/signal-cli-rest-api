@@ -29,7 +29,7 @@ In case it doesn't work when using `signal-cli` directly, it's most probably an 
 
 Before you create a ticket in the `signal-cli` repository, please make sure to collect as much information as possible to make it easier for the maintainer to reproduce your bug:
 
-* Post the obfuscated(!) `signal-cli` command you tried and the output you got (please also add the `--verbose` to the `signal-cli` command in order to get more debugging output. see: https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc)
+* Post the obfuscated(!) `signal-cli` command you tried and the obfuscated(!) output you got (please also add the `--verbose` flag to the `signal-cli` command in order to get more debugging output. see: https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc)
 * Do you see any patterns? Does the issue only occur with specific phone numbers?
 * Have you tried to do a `receive` first? `signal-cli` recommends to run this command periodically. 
 * ...
