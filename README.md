@@ -49,11 +49,16 @@ By adding `USE_NATIVE=1` as environmental variable to the `docker-compose.yml` f
 
 In case there's no native binary available (e.g on a 32 bit Raspian OS), it will fall back to the signal-cli Java application. The native mode only works on a 64bit system, when the native mode is enabled on a 32bit system, it falls back to the Java application.
 
-## API documentation
+## Documentation
 
-The Swagger API documentation can be found [here](https://bbernhard.github.io/signal-cli-rest-api/). If you prefer a simple text file like API documentation have a look [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/EXAMPLES.md)
+### API Reference
 
-In case you need more functionality, please **file a ticket** or **create a PR**.
+The Swagger API documentation can be found [here](https://bbernhard.github.io/signal-cli-rest-api/). If you prefer a simple text file based API documentation have a look [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/EXAMPLES.md).
+
+### Blog Posts
+
+[Running Signal Messenger REST API in Azure Web App for Containers](https://stefanstranger.github.io/2021/06/01/RunningSignalRESTAPIinAppService/) - written by [@stefanstranger](https://github.com/stefanstranger)
+
 
 ## Clients & Libraries
 
@@ -61,3 +66,5 @@ In case you need more functionality, please **file a ticket** or **create a PR**
 | ------------- |:-------------:| :-----:|:-----:|:-----:|
 | [Shell Client](https://github.com/florian-h05/shell-script_collection/blob/main/signal-cli-rest-api_client.bash)      | X | | Shell | [@florian-h05](https://github.com/florian-h05)
 | [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/)      | | X | Python | [@bbernhard](https://github.com/bbernhard)
+
+In case you need more functionality, please **file a ticket** or **create a PR**.
