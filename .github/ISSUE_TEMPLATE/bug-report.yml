@@ -34,6 +34,26 @@ body:
       options:
         - signal-cli-rest-api Docker Container
         - Home Assistant Signal Addon
+  - type: dropdown
+    validations:
+      required: true
+    attributes:
+      label: In which mode are you using the docker container?
+      description: Hint: If you have `USE_NATIVE=1` set in your `docker-compose.yml` file then you are using the native mode.
+      options:
+        - Normal Mode
+        - Native Mode
+  - type: dropdown
+    validations: true
+      required: true
+    attributes:
+      label: What's the architecture of your host system?
+      description:
+      options:
+        - x86-64
+        - armv7
+        - arm64
+        - other
   - type: textarea
     attributes:
       label: Additional information
