@@ -44,7 +44,7 @@ body:
         - Normal Mode
         - Native Mode
   - type: dropdown
-    validations: true
+    validations:
       required: true
     attributes:
       label: What's the architecture of your host system?
