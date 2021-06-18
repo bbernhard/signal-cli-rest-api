@@ -39,7 +39,7 @@ body:
       required: true
     attributes:
       label: In which mode are you using the docker container?
-      description: Hint: If you have `USE_NATIVE=1` set in your `docker-compose.yml` file then you are using the native mode.
+      description: Hint: If you have "USE_NATIVE=1" set in your "docker-compose.yml" file then you are using the native mode.
       options:
         - Normal Mode
         - Native Mode
