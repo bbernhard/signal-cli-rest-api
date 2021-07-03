@@ -347,6 +347,12 @@ func runSignalCli(wait bool, args []string, stdin string) (string, error) {
 	log.Debug("*) su signal-api")
 	log.Debug("*) ", fullCmd)
 
+	cmdTimeout, err := utils.GetIntEnv("SIGNAL_CLI_CMD_TIMEOUT", 60)
+	if err != nil {
+		log.Error("Env variable 'SIGNAL_CLI_CMD_TIMEOUT' contains an invalid timeout...falling back to default timeout (60 seconds)")
+		cmdTimeout = 60
+	}
+
 	cmd := exec.Command(signalCliBinary, args...)
 	if stdin != "" {
 		cmd.Stdin = strings.NewReader(stdin)
@@ -367,7 +373,7 @@ func runSignalCli(wait bool, args []string, stdin string) (string, error) {
 			done <- cmd.Wait()
 		}()
 		select {
-		case <-time.After(60 * time.Second):
+		case <-time.After(time.Duration(cmdTimeout) * time.Second):
 			err := cmd.Process.Kill()
 			if err != nil {
 				return "", err

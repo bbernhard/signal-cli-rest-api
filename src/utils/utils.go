@@ -2,6 +2,7 @@ package utils
 
 import (
 	"os"
+	"strconv"
 )
 
 func GetEnv(key string, defaultVal string) string {
@@ -9,4 +10,15 @@ func GetEnv(key string, defaultVal string) string {
 		return value
 	}
 	return defaultVal
+}
+
+func GetIntEnv(key string, defaultVal int) (int, error) {
+	if value, exists := os.LookupEnv(key); exists {
+		intValue, err := strconv.Atoi(value)
+		if err != nil {
+			return 0, err
+		}
+		return intValue, nil
+	}
+	return defaultVal, nil
 }
