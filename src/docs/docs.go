@@ -950,9 +950,9 @@ var doc = `{
                 "group_link": {
                     "type": "string",
                     "enum": [
+                        "disabled",
                         "enabled",
-                        "enabled-with-approval",
-                        "disabled"
+                        "enabled-with-approval"
                     ]
                 },
                 "members": {
@@ -1030,15 +1030,15 @@ var doc = `{
                 "add_members": {
                     "type": "string",
                     "enum": [
-                        "every-member",
-                        "only-admins"
+                        "only-admins",
+                        "every-member"
                     ]
                 },
                 "edit_group": {
                     "type": "string",
                     "enum": [
-                        "every-member",
-                        "only-admins"
+                        "only-admins",
+                        "every-member"
                     ]
                 }
             }

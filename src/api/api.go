@@ -41,8 +41,8 @@ type GroupEntry struct {
 }
 
 type GroupPermissions struct {
-	AddMembers string `json:"add_members" enums:"every-member,only-admins"`
-	EditGroup string `json:"edit_group" enums:"every-member,only-admins"`
+	AddMembers string `json:"add_members" enums:"only-admins,every-member"`
+	EditGroup string `json:"edit_group" enums:"only-admins,every-member"`
 }
 
 type CreateGroupRequest struct {
@@ -50,7 +50,7 @@ type CreateGroupRequest struct {
 	Members []string `json:"members"`
 	Description string `json:"description"`
 	Permissions GroupPermissions `json:"permissions"`
-	GroupLinkState string `json:"group_link" enums:"enabled,enabled-with-approval,disabled"`
+	GroupLinkState string `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
 }
 
 type LoggingConfiguration struct {

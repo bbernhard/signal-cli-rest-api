@@ -21,9 +21,9 @@ definitions:
         type: string
       group_link:
         enum:
+        - disabled
         - enabled
         - enabled-with-approval
-        - disabled
         type: string
       members:
         items:
@@ -74,13 +74,13 @@ definitions:
     properties:
       add_members:
         enum:
-        - every-member
         - only-admins
+        - every-member
         type: string
       edit_group:
         enum:
-        - every-member
         - only-admins
+        - every-member
         type: string
     type: object
   api.IdentityEntry:
