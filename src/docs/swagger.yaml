@@ -17,12 +17,23 @@ definitions:
     type: object
   api.CreateGroupRequest:
     properties:
+      description:
+        type: string
+      group_link:
+        enum:
+        - enabled
+        - enabled-with-approval
+        - disabled
+        type: string
       members:
         items:
           type: string
         type: array
       name:
         type: string
+      permissions:
+        $ref: '#/definitions/api.GroupPermissions'
+        type: object
     type: object
   api.CreateGroupResponse:
     properties:
@@ -58,6 +69,19 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  api.GroupPermissions:
+    properties:
+      add_members:
+        enum:
+        - every-member
+        - only-admins
+        type: string
+      edit_group:
+        enum:
+        - every-member
+        - only-admins
+        type: string
     type: object
   api.IdentityEntry:
     properties:

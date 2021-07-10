@@ -40,9 +40,17 @@ type GroupEntry struct {
 	InviteLink      string   `json:"invite_link"`
 }
 
+type GroupPermissions struct {
+	AddMembers string `json:"add_members" enums:"every-member,only-admins"`
+	EditGroup string `json:"edit_group" enums:"every-member,only-admins"`
+}
+
 type CreateGroupRequest struct {
 	Name    string   `json:"name"`
 	Members []string `json:"members"`
+	Description string `json:"description"`
+	Permissions GroupPermissions `json:"permissions"`
+	GroupLinkState string `json:"group_link" enums:"enabled,enabled-with-approval,disabled"`
 }
 
 type LoggingConfiguration struct {
@@ -667,8 +675,39 @@ func (a *Api) CreateGroup(c *gin.Context) {
 		return
 	}
 
+	if req.Permissions.AddMembers != "" && !utils.StringInSlice(req.Permissions.AddMembers, []string{"every-member", "only-admins"}) {
+		c.JSON(400, gin.H{"error": "Invalid add members permission provided - only 'every-member' and 'only-admins' allowed!"})
+		return
+	}
+
+	if req.Permissions.EditGroup != "" && !utils.StringInSlice(req.Permissions.EditGroup, []string{"every-member", "only-admins"}) {
+		c.JSON(400, gin.H{"error": "Invalid edit group permissions provided - only 'every-member' and 'only-admins' allowed!"})
+		return
+	}
+
+	if req.GroupLinkState != "" && !utils.StringInSlice(req.GroupLinkState, []string{"enabled", "enabled-with-approval", "disabled"}) {
+		c.JSON(400, gin.H{"error": "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!" })
+		return
+	}
+
 	cmd := []string{"--config", a.signalCliConfig, "-u", number, "updateGroup", "-n", req.Name, "-m"}
 	cmd = append(cmd, req.Members...)
+
+	if req.Permissions.AddMembers != "" {
+		cmd = append(cmd, []string{"--set-permission-add-member", req.Permissions.AddMembers}...)
+	}
+
+	if req.Permissions.EditGroup != "" {
+		cmd = append(cmd, []string{"--set-permission-edit-details", req.Permissions.EditGroup}...)
+	}
+
+	if req.GroupLinkState != "" {
+		cmd = append(cmd, []string{"--link", req.GroupLinkState}...)
+	}
+
+	if req.Description != "" {
+		cmd = append(cmd, []string{"--description", req.Description}...)
+	}
 
 	out, err := runSignalCli(true, cmd, "")
 	if err != nil {

@@ -944,6 +944,17 @@ var doc = `{
         "api.CreateGroupRequest": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "group_link": {
+                    "type": "string",
+                    "enum": [
+                        "enabled",
+                        "enabled-with-approval",
+                        "disabled"
+                    ]
+                },
                 "members": {
                     "type": "array",
                     "items": {
@@ -952,6 +963,10 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "permissions": {
+                    "type": "object",
+                    "$ref": "#/definitions/api.GroupPermissions"
                 }
             }
         },
@@ -1006,6 +1021,25 @@ var doc = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "api.GroupPermissions": {
+            "type": "object",
+            "properties": {
+                "add_members": {
+                    "type": "string",
+                    "enum": [
+                        "every-member",
+                        "only-admins"
+                    ]
+                },
+                "edit_group": {
+                    "type": "string",
+                    "enum": [
+                        "every-member",
+                        "only-admins"
+                    ]
                 }
             }
         },
