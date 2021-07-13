@@ -139,6 +139,11 @@ func main() {
 			identities.GET(":number", api.ListIdentities)
 			identities.PUT(":number/trust/:numbertotrust", api.TrustIdentity)
 		}
+
+		contacts := v1.Group("updatecontact")
+		{
+			contacts.POST("", api.UpdateContact)
+		}
 	}
 
 	v2 := router.Group("/v2")
