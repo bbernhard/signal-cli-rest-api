@@ -574,8 +574,16 @@ func (a *Api) Send(c *gin.Context) {
 // @Param data body SendMessageV2 true "Input Data"
 // @Router /v2/send [post]
 func (a *Api) SendV2(c *gin.Context) {
+	body, err1 := ioutil.ReadAll(c.Request.Body)
+	if err1 != nil {
+		log.Error("Couldn't read request body", err1.Error())
+		c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
+		return
+	}
+	log.Info(string(body))
+
 	var req SendMessageV2
-	err := c.BindJSON(&req)
+	err := json.Unmarshal(body, &req)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
 		log.Error(err.Error())
