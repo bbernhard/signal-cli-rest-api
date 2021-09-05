@@ -3,13 +3,15 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"strings"
-	"strconv"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
-	"io/ioutil"
+	"strconv"
+	"strings"
+
 	"github.com/bbernhard/signal-cli-rest-api/api"
+	"github.com/bbernhard/signal-cli-rest-api/client"
 	_ "github.com/bbernhard/signal-cli-rest-api/docs"
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	"github.com/gin-gonic/gin"
@@ -71,7 +73,8 @@ func main() {
 		log.Fatal("Couldn't set env variable: ", err.Error())
 	}
 
-	api := api.NewApi(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir)
+	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir)
+	api := api.NewApi(signalClient)
 	v1 := router.Group("/v1")
 	{
 		about := v1.Group("/about")

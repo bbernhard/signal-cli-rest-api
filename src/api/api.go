@@ -1,44 +1,18 @@
 package api
 
 import (
-	"bufio"
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"io/ioutil"
 	"net/http"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"strconv"
-	"strings"
-	"time"
 
-	"github.com/cyphar/filepath-securejoin"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
-	uuid "github.com/gofrs/uuid"
-	"github.com/h2non/filetype"
 	log "github.com/sirupsen/logrus"
-	qrcode "github.com/skip2/go-qrcode"
+
+	"github.com/bbernhard/signal-cli-rest-api/client"
 	utils "github.com/bbernhard/signal-cli-rest-api/utils"
 )
-
-const signalCliV2GroupError = "Cannot create a V2 group as self does not have a versioned profile"
-
-const groupPrefix = "group."
-
-type GroupEntry struct {
-	Name            string   `json:"name"`
-	Id              string   `json:"id"`
-	InternalId      string   `json:"internal_id"`
-	Members         []string `json:"members"`
-	Blocked         bool     `json:"blocked"`
-	PendingInvites  []string `json:"pending_invites"`
-	PendingRequests []string `json:"pending_requests"`
-	InviteLink      string   `json:"invite_link"`
-}
 
 type GroupPermissions struct {
 	AddMembers string `json:"add_members" enums:"only-admins,every-member"`
@@ -59,25 +33,6 @@ type LoggingConfiguration struct {
 
 type Configuration struct {
 	Logging            LoggingConfiguration   `json:"logging"`
-}
-
-type SignalCliGroupEntry struct {
-	Name              string   `json:"name"`
-	Id                string   `json:"id"`
-	IsMember          bool     `json:"isMember"`
-	IsBlocked         bool     `json:"isBlocked"`
-	Members           []string `json:"members"`
-	PendingMembers    []string `json:"pendingMembers"`
-	RequestingMembers []string `json:"requestingMembers"`
-	GroupInviteLink   string   `json:"groupInviteLink"`
-}
-
-type IdentityEntry struct {
-	Number       string `json:"number"`
-	Status       string `json:"status"`
-	Fingerprint  string `json:"fingerprint"`
-	Added        string `json:"added"`
-	SafetyNumber string `json:"safety_number"`
 }
 
 type RegisterNumberRequest struct {
@@ -108,10 +63,7 @@ type Error struct {
 	Msg string `json:"error"`
 }
 
-type About struct {
-	SupportedApiVersions []string `json:"versions"`
-	BuildNr              int      `json:"build"`
-}
+
 
 type CreateGroupResponse struct {
 	Id string `json:"id"`
@@ -130,293 +82,13 @@ type SendMessageResponse struct {
 	Timestamp string `json:"timestamp"`
 }
 
-func convertInternalGroupIdToGroupId(internalId string) string {
-	return groupPrefix + base64.StdEncoding.EncodeToString([]byte(internalId))
-}
-
-func convertGroupIdToInternalGroupId(id string) (string, error) {
-	groupIdWithoutPrefix := strings.TrimPrefix(id, groupPrefix)
-	internalGroupId, err := base64.StdEncoding.DecodeString(groupIdWithoutPrefix)
-	if err != nil {
-		return "", errors.New("Invalid group id")
-	}
-
-	return string(internalGroupId), err
-}
-
-func getStringInBetween(str string, start string, end string) (result string) {
-	i := strings.Index(str, start)
-	if i == -1 {
-		return
-	}
-	i += len(start)
-	j := strings.Index(str[i:], end)
-	if j == -1 {
-		return
-	}
-	return str[i : i+j]
-}
-
-func cleanupTmpFiles(paths []string) {
-	for _, path := range paths {
-		os.Remove(path)
-	}
-}
-
-func getContainerId() (string, error) {
-	data, err := ioutil.ReadFile("/proc/1/cpuset")
-	if err != nil {
-		return "", err
-	}
-	lines := strings.Split(string(data), "\n")
-	if len(lines) == 0 {
-		return "", errors.New("Couldn't get docker container id (empty)")
-	}
-	containerId := strings.Replace(lines[0], "/docker/", "", -1)
-	return containerId, nil
-}
-
-func send(c *gin.Context, attachmentTmpDir string, signalCliConfig string, number string, message string,
-	recipients []string, base64Attachments []string, isGroup bool) {
-	cmd := []string{"--config", signalCliConfig, "-u", number, "send"}
-
-	if len(recipients) == 0 {
-		c.JSON(400, gin.H{"error": "Please specify at least one recipient"})
-		return
-	}
-
-	if !isGroup {
-		cmd = append(cmd, recipients...)
-	} else {
-		if len(recipients) > 1 {
-			c.JSON(400, gin.H{"error": "More than one recipient is currently not allowed"})
-			return
-		}
-
-		groupId, err := base64.StdEncoding.DecodeString(recipients[0])
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid group id"})
-			return
-		}
-
-		cmd = append(cmd, []string{"-g", string(groupId)}...)
-	}
-
-	attachmentTmpPaths := []string{}
-	for _, base64Attachment := range base64Attachments {
-		u, err := uuid.NewV4()
-		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-
-		dec, err := base64.StdEncoding.DecodeString(base64Attachment)
-		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-
-		mimeType := mimetype.Detect(dec)
-
-		attachmentTmpPath := attachmentTmpDir + u.String() + mimeType.Extension()
-		attachmentTmpPaths = append(attachmentTmpPaths, attachmentTmpPath)
-
-		f, err := os.Create(attachmentTmpPath)
-		if err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-		defer f.Close()
-
-		if _, err := f.Write(dec); err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-		if err := f.Sync(); err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-
-		f.Close()
-	}
-
-	if len(attachmentTmpPaths) > 0 {
-		cmd = append(cmd, "-a")
-		cmd = append(cmd, attachmentTmpPaths...)
-	}
-
-	resp, err := runSignalCli(true, cmd, message)
-	if err != nil {
-		cleanupTmpFiles(attachmentTmpPaths)
-		if strings.Contains(err.Error(), signalCliV2GroupError) {
-			c.JSON(400, Error{Msg: "Cannot send message to group - please first update your profile."})
-		} else {
-			c.JSON(400, Error{Msg: err.Error()})
-		}
-		return
-	}
-
-	sendMessageResponse := SendMessageResponse{Timestamp: strings.TrimSuffix(resp, "\n")}
-
-	cleanupTmpFiles(attachmentTmpPaths)
-	c.JSON(201, sendMessageResponse)
-}
-
-func parseWhitespaceDelimitedKeyValueStringList(in string, keys []string) []map[string]string {
-	l := []map[string]string{}
-	lines := strings.Split(in, "\n")
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-
-		m := make(map[string]string)
-
-		temp := line
-		for i, key := range keys {
-			if i == 0 {
-				continue
-			}
-
-			idx := strings.Index(temp, " "+key+": ")
-			pair := temp[:idx]
-			value := strings.TrimPrefix(pair, key+": ")
-			temp = strings.TrimLeft(temp[idx:], " "+key+": ")
-
-			m[keys[i-1]] = value
-		}
-		m[keys[len(keys)-1]] = temp
-
-		l = append(l, m)
-	}
-	return l
-}
-
-func getGroups(number string, signalCliConfig string) ([]GroupEntry, error) {
-	groupEntries := []GroupEntry{}
-
-	out, err := runSignalCli(true, []string{"--config", signalCliConfig, "--output", "json", "-u", number, "listGroups", "-d"}, "")
-	if err != nil {
-		return groupEntries, err
-	}
-
-	var signalCliGroupEntries []SignalCliGroupEntry
-
-	err = json.Unmarshal([]byte(out), &signalCliGroupEntries)
-	if err != nil {
-		return groupEntries, err
-	}
-
-	for _, signalCliGroupEntry := range signalCliGroupEntries {
-		var groupEntry GroupEntry
-		groupEntry.InternalId = signalCliGroupEntry.Id
-		groupEntry.Name = signalCliGroupEntry.Name
-		groupEntry.Id = convertInternalGroupIdToGroupId(signalCliGroupEntry.Id)
-		groupEntry.Blocked = signalCliGroupEntry.IsBlocked
-		groupEntry.Members = signalCliGroupEntry.Members
-		groupEntry.PendingRequests = signalCliGroupEntry.PendingMembers
-		groupEntry.PendingInvites = signalCliGroupEntry.RequestingMembers
-		groupEntry.InviteLink = signalCliGroupEntry.GroupInviteLink
-
-		groupEntries = append(groupEntries, groupEntry)
-	}
-
-	return groupEntries, nil
-}
-
-func runSignalCli(wait bool, args []string, stdin string) (string, error) {
-	containerId, err := getContainerId()
-
-	log.Debug("If you want to run this command manually, run the following steps on your host system:")
-	if err == nil {
-		log.Debug("*) docker exec -it ", containerId, " /bin/bash")
-	} else {
-		log.Debug("*) docker exec -it <container id> /bin/bash")
-	}
-
-	signalCliBinary := "signal-cli"
-	if utils.GetEnv("USE_NATIVE", "0") == "1" {
-		if utils.GetEnv("SUPPORTS_NATIVE", "0") == "1" {
-			signalCliBinary = "signal-cli-native"
-		} else {
-			log.Error("signal-cli-native is not support on this system...falling back to signal-cli")
-			signalCliBinary = "signal-cli"
-		}
-	}
-
-	fullCmd := ""
-	if(stdin != "") {
-		fullCmd += "echo '" + stdin + "' | "
-	}
-	fullCmd += signalCliBinary + " " + strings.Join(args, " ")
-
-	log.Debug("*) su signal-api")
-	log.Debug("*) ", fullCmd)
-
-	cmdTimeout, err := utils.GetIntEnv("SIGNAL_CLI_CMD_TIMEOUT", 120)
-	if err != nil {
-		log.Error("Env variable 'SIGNAL_CLI_CMD_TIMEOUT' contains an invalid timeout...falling back to default timeout (120 seconds)")
-		cmdTimeout = 120
-	}
-
-	cmd := exec.Command(signalCliBinary, args...)
-	if stdin != "" {
-		cmd.Stdin = strings.NewReader(stdin)
-	}
-	if wait {
-		var errBuffer bytes.Buffer
-		var outBuffer bytes.Buffer
-		cmd.Stderr = &errBuffer
-		cmd.Stdout = &outBuffer
-
-		err := cmd.Start()
-		if err != nil {
-			return "", err
-		}
-
-		done := make(chan error, 1)
-		go func() {
-			done <- cmd.Wait()
-		}()
-		select {
-		case <-time.After(time.Duration(cmdTimeout) * time.Second):
-			err := cmd.Process.Kill()
-			if err != nil {
-				return "", err
-			}
-			return "", errors.New("process killed as timeout reached")
-		case err := <-done:
-			if err != nil {
-				return "", errors.New(errBuffer.String())
-			}
-		}
-
-		return outBuffer.String(), nil
-	} else {
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return "", err
-		}
-		cmd.Start()
-		buf := bufio.NewReader(stdout) // Notice that this is not in a loop
-		line, _, _ := buf.ReadLine()
-		return string(line), nil
-	}
-}
-
 type Api struct {
-	signalCliConfig  string
-	attachmentTmpDir string
-	avatarTmpDir     string
+	signalClient  *client.SignalClient
 }
 
-func NewApi(signalCliConfig string, attachmentTmpDir string, avatarTmpDir string) *Api {
+func NewApi(signalClient *client.SignalClient) *Api {
 	return &Api{
-		signalCliConfig:  signalCliConfig,
-		attachmentTmpDir: attachmentTmpDir,
-		avatarTmpDir:     avatarTmpDir,
+		signalClient:  signalClient,
 	}
 }
 
@@ -427,9 +99,7 @@ func NewApi(signalCliConfig string, attachmentTmpDir string, avatarTmpDir string
 // @Success 200 {object} About
 // @Router /v1/about [get]
 func (a *Api) About(c *gin.Context) {
-
-	about := About{SupportedApiVersions: []string{"v1", "v2"}, BuildNr: 2}
-	c.JSON(200, about)
+	c.JSON(200, a.signalClient.About())
 }
 
 // @Summary Register a phone number.
@@ -466,17 +136,7 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 		return
 	}
 
-	command := []string{"--config", a.signalCliConfig, "-u", number, "register"}
-
-	if req.UseVoice == true {
-		command = append(command, "--voice")
-	}
-
-	if req.Captcha != "" {
-		command = append(command, []string{"--captcha", req.Captcha}...)
-	}
-
-	_, err := runSignalCli(true, command, "")
+	err := a.signalClient.RegisterNumber(number, req.UseVoice, req.Captcha)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -523,13 +183,7 @@ func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 		return
 	}
 
-	cmd := []string{"--config", a.signalCliConfig, "-u", number, "verify", token}
-	if pin != "" {
-		cmd = append(cmd, "--pin")
-		cmd = append(cmd, pin)
-	}
-
-	_, err := runSignalCli(true, cmd, "")
+	err := a.signalClient.VerifyRegisteredNumber(number, token, pin)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -552,7 +206,7 @@ func (a *Api) Send(c *gin.Context) {
 	var req SendMessageV1
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
 		return
 	}
 
@@ -561,7 +215,12 @@ func (a *Api) Send(c *gin.Context) {
 		base64Attachments = append(base64Attachments, req.Base64Attachment)
 	}
 
-	send(c, a.signalCliConfig, a.signalCliConfig, req.Number, req.Message, req.Recipients, base64Attachments, req.IsGroup)
+	timestamp, err := a.signalClient.SendV1(req.Number, req.Message, req.Recipients, base64Attachments, req.IsGroup)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.JSON(201, SendMessageResponse{Timestamp: timestamp})
 }
 
 // @Summary Send a signal message.
@@ -587,34 +246,18 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
-	groups := []string{}
-	recipients := []string{}
-
-	for _, recipient := range req.Recipients {
-		if strings.HasPrefix(recipient, groupPrefix) {
-			groups = append(groups, strings.TrimPrefix(recipient, groupPrefix))
-		} else {
-			recipients = append(recipients, recipient)
-		}
-	}
-
-	if len(recipients) > 0 && len(groups) > 0 {
-		c.JSON(400, gin.H{"error": "Signal Messenger Groups and phone numbers cannot be specified together in one request! Please split them up into multiple REST API calls."})
+	if req.Number == "" {
+		c.JSON(400, gin.H{"error": "Couldn't process request - please provide a valid number"})
 		return
 	}
 
-	if len(groups) > 1 {
-		c.JSON(400, gin.H{"error": "A signal message cannot be sent to more than one group at once! Please use multiple REST API calls for that."})
+	timestamps, err := a.signalClient.SendV2(req.Number, req.Message, req.Recipients, req.Base64Attachments)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
-	for _, group := range groups {
-		send(c, a.attachmentTmpDir, a.signalCliConfig, req.Number, req.Message, []string{group}, req.Base64Attachments, true)
-	}
-
-	if len(recipients) > 0 {
-		send(c, a.attachmentTmpDir, a.signalCliConfig, req.Number, req.Message, recipients, req.Base64Attachments, false)
-	}
+	c.JSON(201, SendMessageResponse{Timestamp: timestamps[0]})
 }
 
 // @Summary Receive Signal Messages.
@@ -631,25 +274,17 @@ func (a *Api) Receive(c *gin.Context) {
 	number := c.Param("number")
 
 	timeout := c.DefaultQuery("timeout", "1")
-
-	command := []string{"--config", a.signalCliConfig, "--output", "json", "-u", number, "receive", "-t", timeout}
-	out, err := runSignalCli(true, command, "")
+	timeoutInt, err := strconv.ParseInt(timeout, 10, 32)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(400, Error{Msg: "Couldn't process request - timeout needs to be numeric!"})
 		return
 	}
 
-	out = strings.Trim(out, "\n")
-	lines := strings.Split(out, "\n")
-
-	jsonStr := "["
-	for i, line := range lines {
-		jsonStr += line
-		if i != (len(lines) - 1) {
-			jsonStr += ","
-		}
+	jsonStr, err := a.signalClient.Receive(number, timeoutInt)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
 	}
-	jsonStr += "]"
 
 	c.String(200, jsonStr)
 }
@@ -670,57 +305,36 @@ func (a *Api) CreateGroup(c *gin.Context) {
 	var req CreateGroupRequest
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
-		log.Error(err.Error())
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
 		return
 	}
 
 	if req.Permissions.AddMembers != "" && !utils.StringInSlice(req.Permissions.AddMembers, []string{"every-member", "only-admins"}) {
-		c.JSON(400, gin.H{"error": "Invalid add members permission provided - only 'every-member' and 'only-admins' allowed!"})
+		c.JSON(400, Error{Msg: "Invalid add members permission provided - only 'every-member' and 'only-admins' allowed!"})
 		return
 	}
 
 	if req.Permissions.EditGroup != "" && !utils.StringInSlice(req.Permissions.EditGroup, []string{"every-member", "only-admins"}) {
-		c.JSON(400, gin.H{"error": "Invalid edit group permissions provided - only 'every-member' and 'only-admins' allowed!"})
+		c.JSON(400, Error{Msg: "Invalid edit group permissions provided - only 'every-member' and 'only-admins' allowed!"})
 		return
 	}
 
 	if req.GroupLinkState != "" && !utils.StringInSlice(req.GroupLinkState, []string{"enabled", "enabled-with-approval", "disabled"}) {
-		c.JSON(400, gin.H{"error": "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!" })
+		c.JSON(400, Error{Msg: "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!" })
 		return
 	}
 
-	cmd := []string{"--config", a.signalCliConfig, "-u", number, "updateGroup", "-n", req.Name, "-m"}
-	cmd = append(cmd, req.Members...)
+	editGroupPermission := client.DefaultGroupPermission
+	addMembersPermission := client.DefaultGroupPermission
+	groupLinkState := client.DefaultGroupLinkState
 
-	if req.Permissions.AddMembers != "" {
-		cmd = append(cmd, []string{"--set-permission-add-member", req.Permissions.AddMembers}...)
-	}
-
-	if req.Permissions.EditGroup != "" {
-		cmd = append(cmd, []string{"--set-permission-edit-details", req.Permissions.EditGroup}...)
-	}
-
-	if req.GroupLinkState != "" {
-		cmd = append(cmd, []string{"--link", req.GroupLinkState}...)
-	}
-
-	if req.Description != "" {
-		cmd = append(cmd, []string{"--description", req.Description}...)
-	}
-
-	out, err := runSignalCli(true, cmd, "")
+	groupId, err := a.signalClient.CreateGroup(number, req.Name, req.Members, req.Description, editGroupPermission, addMembersPermission, groupLinkState)
 	if err != nil {
-		if strings.Contains(err.Error(), signalCliV2GroupError) {
-			c.JSON(400, Error{Msg: "Cannot create group - please first update your profile."})
-		} else {
-			c.JSON(400, Error{Msg: err.Error()})
-		}
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
-	internalGroupId := getStringInBetween(out, `"`, `"`)
-	c.JSON(201, CreateGroupResponse{Id: convertInternalGroupIdToGroupId(internalGroupId)})
+	c.JSON(201, CreateGroupResponse{Id: groupId})
 }
 
 // @Summary List all Signal Groups.
@@ -735,9 +349,9 @@ func (a *Api) CreateGroup(c *gin.Context) {
 func (a *Api) GetGroups(c *gin.Context) {
 	number := c.Param("number")
 
-	groups, err := getGroups(number, a.signalCliConfig)
+	groups, err := a.signalClient.GetGroups(number)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -758,20 +372,17 @@ func (a *Api) GetGroup(c *gin.Context) {
 	number := c.Param("number")
 	groupId := c.Param("groupid")
 
-	groups, err := getGroups(number, a.signalCliConfig)
+	groupEntry, err := a.signalClient.GetGroup(number, groupId)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
-	for _, group := range groups {
-		if group.Id == groupId {
-			c.JSON(200, group)
-			return
-		}
+	if groupEntry != nil {
+		c.JSON(200, groupEntry)
+	} else {
+		c.JSON(404, Error{Msg: "No group with that id found"})
 	}
-
-	c.JSON(404, Error{Msg: "No group with that id found"})
 }
 
 // @Summary Delete a Signal Group.
@@ -789,19 +400,19 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 	number := c.Param("number")
 
 	if base64EncodedGroupId == "" {
-		c.JSON(400, gin.H{"error": "Please specify a group id"})
+		c.JSON(400, Error{Msg: "Please specify a group id"})
 		return
 	}
 
-	groupId, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(base64EncodedGroupId, groupPrefix))
+	groupId, err := client.ConvertGroupIdToInternalGroupId(base64EncodedGroupId)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "Invalid group id"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
-	_, err = runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "quitGroup", "-g", string(groupId)}, "")
+	err = a.signalClient.DeleteGroup(number, groupId)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 }
@@ -818,32 +429,13 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 	deviceName := c.Query("device_name")
 
 	if deviceName == "" {
-		c.JSON(400, gin.H{"error": "Please provide a name for the device"})
+		c.JSON(400, Error{Msg: "Please provide a name for the device"})
 		return
 	}
 
-	command := []string{"--config", a.signalCliConfig, "link", "-n", deviceName}
-
-	tsdeviceLink, err := runSignalCli(false, command, "")
+	png, err := a.signalClient.GetQrCodeLink(deviceName)
 	if err != nil {
-		log.Error("Couldn't create QR code: ", err.Error())
-		c.JSON(400, Error{Msg: "Couldn't create QR code: " + err.Error()})
-		return
-	}
-
-	q, err := qrcode.New(string(tsdeviceLink), qrcode.Medium)
-	if err != nil {
-		log.Error("Couldn't create QR code: ", err.Error())
-		c.JSON(400, Error{Msg: "Couldn't create QR code: " + err.Error()})
-		return
-	}
-
-	q.DisableBorder = false
-	var png []byte
-	png, err = q.PNG(256)
-	if err != nil {
-		log.Error("Couldn't create QR code: ", err.Error())
-		c.JSON(400, Error{Msg: "Couldn't create QR code: " + err.Error()})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -858,15 +450,7 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/attachments [get]
 func (a *Api) GetAttachments(c *gin.Context) {
-	files := []string{}
-	err := filepath.Walk(a.signalCliConfig+"/attachments/", func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
-		}
-		files = append(files, filepath.Base(path))
-		return nil
-	})
-
+	files, err := a.signalClient.GetAttachments()
 	if err != nil {
 		c.JSON(500, Error{Msg: "Couldn't get list of attachments: " + err.Error()})
 		return
@@ -885,21 +469,25 @@ func (a *Api) GetAttachments(c *gin.Context) {
 // @Router /v1/attachments/{attachment} [delete]
 func (a *Api) RemoveAttachment(c *gin.Context) {
 	attachment := c.Param("attachment")
-	path, err := securejoin.SecureJoin(a.signalCliConfig+"/attachments/", attachment)
+
+	err := a.signalClient.RemoveAttachment(attachment)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Please provide a valid attachment name"})
-		return
+		switch err.(type) {
+			case *client.InvalidNameError:
+				c.JSON(400, Error{Msg: err.Error()})
+				return
+			case *client.NotFoundError:
+				c.JSON(404, Error{Msg: err.Error()})
+				return
+			case *client.InternalError:
+				c.JSON(500, Error{Msg: err.Error()})
+				return
+			default:
+				c.JSON(500, Error{Msg: err.Error()})
+				return
+		}
 	}
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		c.JSON(404, Error{Msg: "No attachment with that name found"})
-		return
-	}
-	err = os.Remove(path)
-	if err != nil {
-		c.JSON(500, Error{Msg: "Couldn't delete attachment - please try again later"})
-		return
-	}
 	c.Status(http.StatusNoContent)
 }
 
@@ -913,32 +501,34 @@ func (a *Api) RemoveAttachment(c *gin.Context) {
 // @Router /v1/attachments/{attachment} [get]
 func (a *Api) ServeAttachment(c *gin.Context) {
 	attachment := c.Param("attachment")
-	path, err := securejoin.SecureJoin(a.signalCliConfig+"/attachments/", attachment)
+
+	attachmentBytes, err := a.signalClient.GetAttachment(attachment)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Please provide a valid attachment name"})
-		return
+		switch err.(type) {
+			case *client.InvalidNameError:
+				c.JSON(400, Error{Msg: err.Error()})
+				return
+			case *client.NotFoundError:
+				c.JSON(404, Error{Msg: err.Error()})
+				return
+			case *client.InternalError:
+				c.JSON(500, Error{Msg: err.Error()})
+				return
+			default:
+				c.JSON(500, Error{Msg: err.Error()})
+				return
+		}
 	}
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		c.JSON(404, Error{Msg: "No attachment with that name found"})
-		return
-	}
-
-	imgBytes, err := ioutil.ReadFile(path)
-	if err != nil {
-		c.JSON(500, Error{Msg: "Couldn't read attachment - please try again later"})
-		return
-	}
-
-	mime, err := mimetype.DetectReader(bytes.NewReader(imgBytes))
+	mime, err := mimetype.DetectReader(bytes.NewReader(attachmentBytes))
 	if err != nil {
 		c.JSON(500, Error{Msg: "Couldn't detect MIME type for attachment"})
 		return
 	}
 
 	c.Writer.Header().Set("Content-Type", mime.String())
-	c.Writer.Header().Set("Content-Length", strconv.Itoa(len(imgBytes)))
-	_, err = c.Writer.Write(imgBytes)
+	c.Writer.Header().Set("Content-Length", strconv.Itoa(len(attachmentBytes)))
+	_, err = c.Writer.Write(attachmentBytes)
 	if err != nil {
 		c.JSON(500, Error{Msg: "Couldn't serve attachment - please try again later"})
 		return
@@ -974,63 +564,13 @@ func (a *Api) UpdateProfile(c *gin.Context) {
 		c.JSON(400, Error{Msg: "Couldn't process request - profile name missing"})
 		return
 	}
-	cmd := []string{"--config", a.signalCliConfig, "-u", number, "updateProfile", "--name", req.Name}
 
-	avatarTmpPaths := []string{}
-	if req.Base64Avatar == "" {
-		cmd = append(cmd, "--remove-avatar")
-	} else {
-		u, err := uuid.NewV4()
-		if err != nil {
-			c.JSON(400, Error{Msg: err.Error()})
-			return
-		}
-
-		avatarBytes, err := base64.StdEncoding.DecodeString(req.Base64Avatar)
-		if err != nil {
-			c.JSON(400, Error{Msg: "Couldn't decode base64 encoded avatar"})
-			return
-		}
-
-		fType, err := filetype.Get(avatarBytes)
-		if err != nil {
-			c.JSON(400, Error{Msg: err.Error()})
-			return
-		}
-
-		avatarTmpPath := a.avatarTmpDir + u.String() + "." + fType.Extension
-
-		f, err := os.Create(avatarTmpPath)
-		if err != nil {
-			c.JSON(400, Error{Msg: err.Error()})
-			return
-		}
-		defer f.Close()
-
-		if _, err := f.Write(avatarBytes); err != nil {
-			cleanupTmpFiles(avatarTmpPaths)
-			c.JSON(400, Error{Msg: err.Error()})
-			return
-		}
-		if err := f.Sync(); err != nil {
-			cleanupTmpFiles(avatarTmpPaths)
-			c.JSON(400, Error{Msg: err.Error()})
-			return
-		}
-		f.Close()
-
-		cmd = append(cmd, []string{"--avatar", avatarTmpPath}...)
-		avatarTmpPaths = append(avatarTmpPaths, avatarTmpPath)
-	}
-
-	_, err = runSignalCli(true, cmd, "")
+	err = a.signalClient.UpdateProfile(number, req.Name, req.Base64Avatar)
 	if err != nil {
-		cleanupTmpFiles(avatarTmpPaths)
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
-	cleanupTmpFiles(avatarTmpPaths)
 	c.Status(http.StatusNoContent)
 }
 
@@ -1059,25 +599,10 @@ func (a *Api) ListIdentities(c *gin.Context) {
 		return
 	}
 
-	out, err := runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "listIdentities"}, "")
+	identityEntries, err := a.signalClient.ListIdentities(number)
 	if err != nil {
 		c.JSON(500, Error{Msg: err.Error()})
 		return
-	}
-
-	identityEntries := []IdentityEntry{}
-	keyValuePairs := parseWhitespaceDelimitedKeyValueStringList(out, []string{"NumberAndTrustStatus", "Added", "Fingerprint", "Safety Number"})
-	for _, keyValuePair := range keyValuePairs {
-		numberAndTrustStatus := keyValuePair["NumberAndTrustStatus"]
-		numberAndTrustStatusSplitted := strings.Split(numberAndTrustStatus, ":")
-
-		identityEntry := IdentityEntry{Number: strings.Trim(numberAndTrustStatusSplitted[0], " "),
-			Status:       strings.Trim(numberAndTrustStatusSplitted[1], " "),
-			Added:        keyValuePair["Added"],
-			Fingerprint:  strings.Trim(keyValuePair["Fingerprint"], " "),
-			SafetyNumber: strings.Trim(keyValuePair["Safety Number"], " "),
-		}
-		identityEntries = append(identityEntries, identityEntry)
 	}
 
 	c.JSON(200, identityEntries)
@@ -1119,12 +644,12 @@ func (a *Api) TrustIdentity(c *gin.Context) {
 		return
 	}
 
-	cmd := []string{"--config", a.signalCliConfig, "-u", number, "trust", numberToTrust, "--verified-safety-number", req.VerifiedSafetyNumber}
-	_, err = runSignalCli(true, cmd, "")
+	err = a.signalClient.TrustIdentity(number, numberToTrust, req.VerifiedSafetyNumber)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
+
 	c.Status(http.StatusNoContent)
 }
 
@@ -1201,17 +726,18 @@ func (a *Api) BlockGroup(c *gin.Context) {
 	}
 
 	groupId := c.Param("groupid")
-	internalGroupId, err := convertGroupIdToInternalGroupId(groupId)
+	internalGroupId, err := client.ConvertGroupIdToInternalGroupId(groupId)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
-	_, err = runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "block", "-g", internalGroupId}, "")
+	err = a.signalClient.BlockGroup(number, internalGroupId)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
+
 	c.Status(http.StatusNoContent)
 }
 
@@ -1233,17 +759,18 @@ func (a *Api) JoinGroup(c *gin.Context) {
 	}
 
 	groupId := c.Param("groupid")
-	internalGroupId, err := convertGroupIdToInternalGroupId(groupId)
+	internalGroupId, err := client.ConvertGroupIdToInternalGroupId(groupId)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
-	_, err = runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "updateGroup", "-g", internalGroupId}, "")
+	err = a.signalClient.JoinGroup(number, internalGroupId)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
+
 	c.Status(http.StatusNoContent)
 }
 
@@ -1265,13 +792,13 @@ func (a *Api) QuitGroup(c *gin.Context) {
 	}
 
 	groupId := c.Param("groupid")
-	internalGroupId, err := convertGroupIdToInternalGroupId(groupId)
+	internalGroupId, err := client.ConvertGroupIdToInternalGroupId(groupId)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
-	_, err = runSignalCli(true, []string{"--config", a.signalCliConfig, "-u", number, "quitGroup", "-g", internalGroupId}, "")
+	err = a.signalClient.QuitGroup(number, internalGroupId)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
