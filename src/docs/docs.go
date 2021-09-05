@@ -39,7 +39,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.About"
+                            "$ref": "#/definitions/client.About"
                         }
                     }
                 }
@@ -237,7 +237,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.GroupEntry"
+                                "$ref": "#/definitions/client.GroupEntry"
                             }
                         }
                     },
@@ -328,7 +328,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.GroupEntry"
+                            "$ref": "#/definitions/client.GroupEntry"
                         }
                     },
                     "400": {
@@ -563,7 +563,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.IdentityEntry"
+                                "$ref": "#/definitions/client.IdentityEntry"
                             }
                         }
                     }
@@ -918,20 +918,6 @@ var doc = `{
         }
     },
     "definitions": {
-        "api.About": {
-            "type": "object",
-            "properties": {
-                "build": {
-                    "type": "integer"
-                },
-                "versions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "api.Configuration": {
             "type": "object",
             "properties": {
@@ -986,44 +972,6 @@ var doc = `{
                 }
             }
         },
-        "api.GroupEntry": {
-            "type": "object",
-            "properties": {
-                "blocked": {
-                    "type": "boolean"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "internal_id": {
-                    "type": "string"
-                },
-                "invite_link": {
-                    "type": "string"
-                },
-                "members": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "pending_invites": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "pending_requests": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "api.GroupPermissions": {
             "type": "object",
             "properties": {
@@ -1040,26 +988,6 @@ var doc = `{
                         "only-admins",
                         "every-member"
                     ]
-                }
-            }
-        },
-        "api.IdentityEntry": {
-            "type": "object",
-            "properties": {
-                "added": {
-                    "type": "string"
-                },
-                "fingerprint": {
-                    "type": "string"
-                },
-                "number": {
-                    "type": "string"
-                },
-                "safety_number": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
                 }
             }
         },
@@ -1159,6 +1087,78 @@ var doc = `{
             "type": "object",
             "properties": {
                 "pin": {
+                    "type": "string"
+                }
+            }
+        },
+        "client.About": {
+            "type": "object",
+            "properties": {
+                "build": {
+                    "type": "integer"
+                },
+                "versions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "client.GroupEntry": {
+            "type": "object",
+            "properties": {
+                "blocked": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "internal_id": {
+                    "type": "string"
+                },
+                "invite_link": {
+                    "type": "string"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pending_invites": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pending_requests": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "client.IdentityEntry": {
+            "type": "object",
+            "properties": {
+                "added": {
+                    "type": "string"
+                },
+                "fingerprint": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "safety_number": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 }
             }

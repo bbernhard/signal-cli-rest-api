@@ -96,7 +96,7 @@ func NewApi(signalClient *client.SignalClient) *Api {
 // @Tags General
 // @Description Returns the supported API versions and the internal build nr
 // @Produce  json
-// @Success 200 {object} About
+// @Success 200 {object} client.About
 // @Router /v1/about [get]
 func (a *Api) About(c *gin.Context) {
 	c.JSON(200, a.signalClient.About())
@@ -342,7 +342,7 @@ func (a *Api) CreateGroup(c *gin.Context) {
 // @Description List all Signal Groups.
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} []GroupEntry
+// @Success 200 {object} []client.GroupEntry
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Router /v1/groups/{number} [get]
@@ -363,7 +363,7 @@ func (a *Api) GetGroups(c *gin.Context) {
 // @Description List a specific Signal Group.
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} GroupEntry
+// @Success 200 {object} client.GroupEntry
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param groupid path string true "Group ID"
@@ -588,7 +588,7 @@ func (a *Api) Health(c *gin.Context) {
 // @Tags Identities
 // @Description List all identities for the given number.
 // @Produce  json
-// @Success 200 {object} []IdentityEntry
+// @Success 200 {object} []client.IdentityEntry
 // @Param number path string true "Registered Phone Number"
 // @Router /v1/identities/{number} [get]
 func (a *Api) ListIdentities(c *gin.Context) {
