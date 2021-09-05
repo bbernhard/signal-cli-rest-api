@@ -125,6 +125,7 @@ RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/ \
 
 
 COPY src/api /tmp/signal-cli-rest-api-src/api
+COPY src/client /tmp/signal-cli-rest-api-src/client
 COPY src/utils /tmp/signal-cli-rest-api-src/utils
 COPY src/main.go /tmp/signal-cli-rest-api-src/
 COPY src/go.mod /tmp/signal-cli-rest-api-src/
