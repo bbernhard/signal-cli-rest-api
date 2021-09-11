@@ -1,12 +1,12 @@
 package client
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
-	"net"
-	"bufio"
 	uuid "github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
+	"net"
 )
 
 type JsonRpc2Client struct {
@@ -14,37 +14,36 @@ type JsonRpc2Client struct {
 }
 
 func NewJsonRpc2Client() *JsonRpc2Client {
-	return &JsonRpc2Client{
-	}
+	return &JsonRpc2Client{}
 }
 
 func (r *JsonRpc2Client) Dial(address string) error {
 	var err error
 	r.conn, err = net.Dial("tcp", address)
-    if err != nil {
-        return err
-    }
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (r *JsonRpc2Client) getRaw(command string, args interface{}) (string, error) {
 	type Request struct {
-		JsonRpc  string `json:"jsonrpc"`
-		Method string `json:"method"`
-		Id string `json:"id"`
-		Params interface{} `json:"params,omitempty"`
+		JsonRpc string      `json:"jsonrpc"`
+		Method  string      `json:"method"`
+		Id      string      `json:"id"`
+		Params  interface{} `json:"params,omitempty"`
 	}
 
 	type Error struct {
-		Code int `json:"code"`
+		Code    int    `json:"code"`
 		Message string `json:"message"`
 	}
 
 	type Response struct {
-		Id string `json:"id"`
+		Id     string          `json:"id"`
 		Result json.RawMessage `json:"result"`
-		Err Error `json:"error"`
+		Err    Error           `json:"error"`
 	}
 
 	u, err := uuid.NewV4()
@@ -65,9 +64,9 @@ func (r *JsonRpc2Client) getRaw(command string, args interface{}) (string, error
 	log.Info("request = ", string(fullCommandBytes))
 
 	_, err = r.conn.Write([]byte(string(fullCommandBytes) + "\n"))
-    if err != nil {
-        return "", err
-    }
+	if err != nil {
+		return "", err
+	}
 
 	connbuf := bufio.NewReader(r.conn)
 	for {
