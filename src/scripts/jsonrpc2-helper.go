@@ -2,15 +2,15 @@ package main
 
 import (
 	"flag"
-	"strings"
-	"strconv"
-	"os"
 	"fmt"
-	"os/exec"
-	"io/ioutil"
-	"path/filepath"
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 const supervisorctlConfigTemplate = `
@@ -45,7 +45,7 @@ func main() {
 		if strings.HasPrefix(filename, "+") && info.Mode().IsRegular() {
 			fifoPathname := fifoBasePathName + strconv.FormatInt(ctr, 10)
 			tcpPort := tcpBasePort + ctr
-			jsonRpc2ClientConfig.AddEntry(filename, utils.ConfigEntry{TcpPort: tcpPort,  FifoPathname: fifoPathname})
+			jsonRpc2ClientConfig.AddEntry(filename, utils.ConfigEntry{TcpPort: tcpPort, FifoPathname: fifoPathname})
 			ctr += 1
 			_, err = exec.Command("mkfifo", fifoPathname).Output()
 			if err != nil {
@@ -65,9 +65,9 @@ func main() {
 			}
 
 			//write supervisorctl config
-			supervisorctlConfigFilename := "/etc/supervisor/conf.d/"+"signal-cli-json-rpc-" + strconv.FormatInt(ctr, 10) + ".conf"
+			supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-" + strconv.FormatInt(ctr, 10) + ".conf"
 			supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
-												tcpPort, fifoPathname, filename, fifoPathname, supervisorctlProgramName, supervisorctlProgramName)
+				tcpPort, fifoPathname, filename, fifoPathname, supervisorctlProgramName, supervisorctlProgramName)
 			log.Info(supervisorctlConfig)
 			err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
 			if err != nil {
