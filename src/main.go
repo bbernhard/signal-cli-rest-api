@@ -107,6 +107,11 @@ func main() {
 		if autoReceiveScheduleEnvVariableSet {
 			log.Fatal("Env variable AUTO_RECEIVE_SCHEDULE can't be used with mode json-rpc")
 		}
+
+		_, signalCliCommandTimeoutEnvVariableSet := os.LookupEnv("SIGNAL_CLI_CMD_TIMEOUT")
+		if signalCliCommandTimeoutEnvVariableSet {
+			log.Fatal("Env variable SIGNAL_CLI_CMD_TIMEOUT can't be used with mode json-rpc")
+		}
 	}
 
 
