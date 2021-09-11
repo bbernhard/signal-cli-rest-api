@@ -17,6 +17,7 @@ import (
 	"github.com/cyphar/filepath-securejoin"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/h2non/filetype"
+	//"github.com/sourcegraph/jsonrpc2"//"net/rpc/jsonrpc"
 	log "github.com/sirupsen/logrus"
 
 	uuid "github.com/gofrs/uuid"
@@ -30,26 +31,36 @@ const groupPrefix = "group."
 const signalCliV2GroupError = "Cannot create a V2 group as self does not have a versioned profile"
 
 type GroupPermission int
+
 const (
-	DefaultGroupPermission      GroupPermission = iota + 1
+	DefaultGroupPermission GroupPermission = iota + 1
 	EveryMember
 	OnlyAdmins
 )
 
-type GroupLinkState int
+type SignalCliMode int
+
 const (
-	DefaultGroupLinkState    GroupLinkState = iota + 1
+	Normal SignalCliMode = iota + 1
+	Native
+	JsonRpc
+)
+
+type GroupLinkState int
+
+const (
+	DefaultGroupLinkState GroupLinkState = iota + 1
 	Enabled
 	EnabledWithApproval
 	Disabled
 )
 
 func (g GroupPermission) String() string {
-    return []string{"", "default", "every-member", "only-admins"}[g]
+	return []string{"", "default", "every-member", "only-admins"}[g]
 }
 
 func (g GroupLinkState) String() string {
-    return []string{"", "enabled", "enabled-with-approval", "disabled"}[g]
+	return []string{"", "enabled", "enabled-with-approval", "disabled"}[g]
 }
 
 type GroupEntry struct {
@@ -71,15 +82,30 @@ type IdentityEntry struct {
 	SafetyNumber string `json:"safety_number"`
 }
 
+type SignalCliGroupMember struct {
+	Number string `json:"number"`
+	Uuid   string `json:"uuid"`
+}
+
 type SignalCliGroupEntry struct {
-	Name              string   `json:"name"`
-	Id                string   `json:"id"`
-	IsMember          bool     `json:"isMember"`
-	IsBlocked         bool     `json:"isBlocked"`
-	Members           []string `json:"members"`
-	PendingMembers    []string `json:"pendingMembers"`
-	RequestingMembers []string `json:"requestingMembers"`
-	GroupInviteLink   string   `json:"groupInviteLink"`
+	Name              string                 `json:"name"`
+	Id                string                 `json:"id"`
+	IsMember          bool                   `json:"isMember"`
+	IsBlocked         bool                   `json:"isBlocked"`
+	Members           []SignalCliGroupMember `json:"members"`
+	PendingMembers    []string               `json:"pendingMembers"`
+	RequestingMembers []string               `json:"requestingMembers"`
+	GroupInviteLink   string                 `json:"groupInviteLink"`
+}
+
+type SignalCliIdentityEntry struct {
+	Number                string `json:"number"`
+	Uuid                  string `json:"uuid"`
+	Fingerprint           string `json:"fingerprint"`
+	SafetyNumber          string `json:"safetyNumber"`
+	ScannableSafetyNumber string `json:"scannableSafetyNumber"`
+	TrustLevel            string `json:"trustLevel"`
+	AddedTimestamp        int64  `json:"addedTimestamp"`
 }
 
 type About struct {
@@ -252,7 +278,7 @@ func runSignalCli(wait bool, args []string, stdin string) (string, error) {
 	}
 
 	fullCmd := ""
-	if(stdin != "") {
+	if stdin != "" {
 		fullCmd += "echo '" + stdin + "' | "
 	}
 	fullCmd += signalCliBinary + " " + strings.Join(args, " ")
@@ -323,17 +349,45 @@ func ConvertGroupIdToInternalGroupId(id string) (string, error) {
 }
 
 type SignalClient struct {
-	signalCliConfig  string
-	attachmentTmpDir string
-	avatarTmpDir     string
+	signalCliConfig          string
+	attachmentTmpDir         string
+	avatarTmpDir             string
+	signalCliMode            SignalCliMode
+	jsonRpc2ClientConfig     *utils.JsonRpc2ClientConfig
+	jsonRpc2ClientConfigPath string
+	jsonRpc2Clients          map[string]*JsonRpc2Client
 }
 
-func NewSignalClient(signalCliConfig string, attachmentTmpDir string, avatarTmpDir string) *SignalClient {
+func NewSignalClient(signalCliConfig string, attachmentTmpDir string, avatarTmpDir string, signalCliMode SignalCliMode,
+	jsonRpc2ClientConfigPath string) *SignalClient {
 	return &SignalClient{
-		signalCliConfig:  signalCliConfig,
-		attachmentTmpDir: attachmentTmpDir,
-		avatarTmpDir:     avatarTmpDir,
+		signalCliConfig:          signalCliConfig,
+		attachmentTmpDir:         attachmentTmpDir,
+		avatarTmpDir:             avatarTmpDir,
+		signalCliMode:            signalCliMode,
+		jsonRpc2ClientConfigPath: jsonRpc2ClientConfigPath,
+		jsonRpc2Clients:          make(map[string]*JsonRpc2Client),
 	}
+}
+
+func (s *SignalClient) Init() error {
+	if s.signalCliMode == JsonRpc {
+		s.jsonRpc2ClientConfig = utils.NewJsonRpc2ClientConfig()
+		err := s.jsonRpc2ClientConfig.Load(s.jsonRpc2ClientConfigPath)
+		if err != nil {
+			return err
+		}
+
+		tcpPortsNumberMapping := s.jsonRpc2ClientConfig.GetTcpPortsForNumbers()
+		for number, tcpPort := range tcpPortsNumberMapping {
+			s.jsonRpc2Clients[number] = NewJsonRpc2Client()
+			err := s.jsonRpc2Clients[number].Dial("127.0.0.1:" + strconv.FormatInt(tcpPort, 10))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (s *SignalClient) About() About {
@@ -370,6 +424,13 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (string, error) {
 	timestamp, err := send(s.attachmentTmpDir, s.signalCliConfig, number, message, recipients, base64Attachments, isGroup)
 	return timestamp, err
+}
+
+func (s *SignalClient) getJsonRpc2Client(number string) (*JsonRpc2Client, error) {
+	if val, ok := s.jsonRpc2Clients[number]; ok {
+		return val, nil
+	}
+	return nil, errors.New("Number not registered with JSON-RPC")
 }
 
 func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string) ([]string, error) {
@@ -444,49 +505,81 @@ func (s *SignalClient) Receive(number string, timeout int64) (string, error) {
 }
 
 func (s *SignalClient) CreateGroup(number string, name string, members []string, description string, editGroupPermission GroupPermission, addMembersPermission GroupPermission, groupLinkState GroupLinkState) (string, error) {
-	cmd := []string{"--config", s.signalCliConfig, "-u", number, "updateGroup", "-n", name, "-m"}
-	cmd = append(cmd, members...)
-
-	if addMembersPermission != DefaultGroupPermission {
-		cmd = append(cmd, []string{"--set-permission-add-member", addMembersPermission.String()}...)
-	}
-
-	if editGroupPermission != DefaultGroupPermission {
-		cmd = append(cmd, []string{"--set-permission-edit-details", editGroupPermission.String()}...)
-	}
-
-	if groupLinkState != DefaultGroupLinkState {
-		cmd = append(cmd, []string{"--link", groupLinkState.String()}...)
-	}
-
-	if description != "" {
-		cmd = append(cmd, []string{"--description", description}...)
-	}
-
-	out, err := runSignalCli(true, cmd, "")
-	if err != nil {
-		if strings.Contains(err.Error(), signalCliV2GroupError) {
-			return "", errors.New("Cannot create group - please first update your profile.")
+	var err error
+	var rawData string
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Name    string   `json:"name"`
+			Members []string `json:"members"`
 		}
-		return "", err
-	}
+		request := Request{Name: name, Members: members}
 
-	internalGroupId := getStringInBetween(out, `"`, `"`)
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return "", err
+		}
+		rawData, err = jsonRpc2Client.getRaw("updateGroup", request)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "updateGroup", "-n", name, "-m"}
+		cmd = append(cmd, members...)
+
+		if addMembersPermission != DefaultGroupPermission {
+			cmd = append(cmd, []string{"--set-permission-add-member", addMembersPermission.String()}...)
+		}
+
+		if editGroupPermission != DefaultGroupPermission {
+			cmd = append(cmd, []string{"--set-permission-edit-details", editGroupPermission.String()}...)
+		}
+
+		if groupLinkState != DefaultGroupLinkState {
+			cmd = append(cmd, []string{"--link", groupLinkState.String()}...)
+		}
+
+		if description != "" {
+			cmd = append(cmd, []string{"--description", description}...)
+		}
+
+		rawData, err = runSignalCli(true, cmd, "")
+		if err != nil {
+			if strings.Contains(err.Error(), signalCliV2GroupError) {
+				return "", errors.New("Cannot create group - please first update your profile.")
+			}
+			return "", err
+		}
+	}
+	internalGroupId := getStringInBetween(rawData, `"`, `"`)
 	groupId := convertInternalGroupIdToGroupId(internalGroupId)
+
 	return groupId, nil
 }
 
 func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 	groupEntries := []GroupEntry{}
 
-	out, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "--output", "json", "-u", number, "listGroups", "-d"}, "")
-	if err != nil {
-		return groupEntries, err
+	var signalCliGroupEntries []SignalCliGroupEntry
+	var err error
+	var rawData string
+
+	if s.signalCliMode == JsonRpc {
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return groupEntries, err
+		}
+		rawData, err = jsonRpc2Client.getRaw("listGroups", nil)
+		if err != nil {
+			return groupEntries, err
+		}
+	} else {
+		rawData, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "--output", "json", "-u", number, "listGroups", "-d"}, "")
+		if err != nil {
+			return groupEntries, err
+		}
 	}
 
-	var signalCliGroupEntries []SignalCliGroupEntry
-
-	err = json.Unmarshal([]byte(out), &signalCliGroupEntries)
+	err = json.Unmarshal([]byte(rawData), &signalCliGroupEntries)
 	if err != nil {
 		return groupEntries, err
 	}
@@ -497,7 +590,13 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 		groupEntry.Name = signalCliGroupEntry.Name
 		groupEntry.Id = convertInternalGroupIdToGroupId(signalCliGroupEntry.Id)
 		groupEntry.Blocked = signalCliGroupEntry.IsBlocked
-		groupEntry.Members = signalCliGroupEntry.Members
+
+		members := []string{}
+		for _, val := range signalCliGroupEntry.Members {
+			members = append(members, val.Number)
+		}
+		groupEntry.Members = members
+
 		groupEntry.PendingRequests = signalCliGroupEntry.PendingMembers
 		groupEntry.PendingInvites = signalCliGroupEntry.RequestingMembers
 		groupEntry.InviteLink = signalCliGroupEntry.GroupInviteLink
@@ -602,12 +701,9 @@ func (s *SignalClient) GetAttachment(attachment string) ([]byte, error) {
 }
 
 func (s *SignalClient) UpdateProfile(number string, profileName string, base64Avatar string) error {
-	cmd := []string{"--config", s.signalCliConfig, "-u", number, "updateProfile", "--name", profileName}
-
-	avatarTmpPaths := []string{}
-	if base64Avatar == "" {
-		cmd = append(cmd, "--remove-avatar")
-	} else {
+	var err error
+	var avatarTmpPath string
+	if base64Avatar != "" {
 		u, err := uuid.NewV4()
 		if err != nil {
 			return err
@@ -615,7 +711,7 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 
 		avatarBytes, err := base64.StdEncoding.DecodeString(base64Avatar)
 		if err != nil {
-			return errors.New("Couldn't decode base64 encoded avatar: " +err.Error())
+			return errors.New("Couldn't decode base64 encoded avatar: " + err.Error())
 		}
 
 		fType, err := filetype.Get(avatarBytes)
@@ -632,51 +728,113 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 		defer f.Close()
 
 		if _, err := f.Write(avatarBytes); err != nil {
-			cleanupTmpFiles(avatarTmpPaths)
+			cleanupTmpFiles([]string{avatarTmpPath})
 			return err
 		}
 		if err := f.Sync(); err != nil {
-			cleanupTmpFiles(avatarTmpPaths)
+			cleanupTmpFiles([]string{avatarTmpPath})
 			return err
 		}
 		f.Close()
-
-		cmd = append(cmd, []string{"--avatar", avatarTmpPath}...)
-		avatarTmpPaths = append(avatarTmpPaths, avatarTmpPath)
 	}
 
-	_, err := runSignalCli(true, cmd, "")
-	cleanupTmpFiles(avatarTmpPaths)
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Name         string `json:"name"`
+			Avatar       string `json:"avatar,omitempty"`
+			RemoveAvatar bool   `json:"remove-avatar"`
+		}
+		request := Request{Name: profileName}
+		if base64Avatar == "" {
+			request.RemoveAvatar = true
+		} else {
+			request.Avatar = avatarTmpPath
+			request.RemoveAvatar = false
+		}
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("updateProfile", request)
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "updateProfile", "--name", profileName}
+		if base64Avatar == "" {
+			cmd = append(cmd, "--remove-avatar")
+		} else {
+			cmd = append(cmd, []string{"--avatar", avatarTmpPath}...)
+		}
+
+		_, err = runSignalCli(true, cmd, "")
+	}
+
+	cleanupTmpFiles([]string{avatarTmpPath})
 	return err
 }
 
 func (s *SignalClient) ListIdentities(number string) (*[]IdentityEntry, error) {
-	out, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "listIdentities"}, "")
-	if err != nil {
-		return nil, err
-	}
-
 	identityEntries := []IdentityEntry{}
-	keyValuePairs := parseWhitespaceDelimitedKeyValueStringList(out, []string{"NumberAndTrustStatus", "Added", "Fingerprint", "Safety Number"})
-	for _, keyValuePair := range keyValuePairs {
-		numberAndTrustStatus := keyValuePair["NumberAndTrustStatus"]
-		numberAndTrustStatusSplitted := strings.Split(numberAndTrustStatus, ":")
-
-		identityEntry := IdentityEntry{Number: strings.Trim(numberAndTrustStatusSplitted[0], " "),
-			Status:       strings.Trim(numberAndTrustStatusSplitted[1], " "),
-			Added:        keyValuePair["Added"],
-			Fingerprint:  strings.Trim(keyValuePair["Fingerprint"], " "),
-			SafetyNumber: strings.Trim(keyValuePair["Safety Number"], " "),
+	if s.signalCliMode == JsonRpc {
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return nil, err
 		}
-		identityEntries = append(identityEntries, identityEntry)
+		rawData, err := jsonRpc2Client.getRaw("listIdentities", nil)
+		signalCliIdentityEntries := []SignalCliIdentityEntry{}
+		err = json.Unmarshal([]byte(rawData), &signalCliIdentityEntries)
+		if err != nil {
+			return nil, err
+		}
+		for _, signalCliIdentityEntry := range signalCliIdentityEntries {
+			identityEntry := IdentityEntry{
+				Number:       signalCliIdentityEntry.Number,
+				Status:       signalCliIdentityEntry.TrustLevel,
+				Added:        strconv.FormatInt(signalCliIdentityEntry.AddedTimestamp, 10),
+				Fingerprint:  signalCliIdentityEntry.Fingerprint,
+				SafetyNumber: signalCliIdentityEntry.SafetyNumber,
+			}
+			identityEntries = append(identityEntries, identityEntry)
+		}
+	} else {
+		rawData, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "listIdentities"}, "")
+		if err != nil {
+			return nil, err
+		}
+
+		keyValuePairs := parseWhitespaceDelimitedKeyValueStringList(rawData, []string{"NumberAndTrustStatus", "Added", "Fingerprint", "Safety Number"})
+		for _, keyValuePair := range keyValuePairs {
+			numberAndTrustStatus := keyValuePair["NumberAndTrustStatus"]
+			numberAndTrustStatusSplitted := strings.Split(numberAndTrustStatus, ":")
+
+			identityEntry := IdentityEntry{Number: strings.Trim(numberAndTrustStatusSplitted[0], " "),
+				Status:       strings.Trim(numberAndTrustStatusSplitted[1], " "),
+				Added:        keyValuePair["Added"],
+				Fingerprint:  strings.Trim(keyValuePair["Fingerprint"], " "),
+				SafetyNumber: strings.Trim(keyValuePair["Safety Number"], " "),
+			}
+			identityEntries = append(identityEntries, identityEntry)
+		}
 	}
 
 	return &identityEntries, nil
 }
 
 func (s *SignalClient) TrustIdentity(number string, numberToTrust string, verifiedSafetyNumber string) error {
-	cmd := []string{"--config", s.signalCliConfig, "-u", number, "trust", numberToTrust, "--verified-safety-number", verifiedSafetyNumber}
-	_, err := runSignalCli(true, cmd, "")
+	var err error
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			VerifiedSafetyNumber string `json:"verified-safety-number"`
+			Recipient            string `json:"recipient"`
+		}
+		request := Request{VerifiedSafetyNumber: verifiedSafetyNumber, Recipient: numberToTrust}
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("trust", request)
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "trust", numberToTrust, "--verified-safety-number", verifiedSafetyNumber}
+		_, err = runSignalCli(true, cmd, "")
+	}
 	return err
 }
 
@@ -686,11 +844,37 @@ func (s *SignalClient) BlockGroup(number string, groupId string) error {
 }
 
 func (s *SignalClient) JoinGroup(number string, groupId string) error {
-	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "updateGroup", "-g", groupId}, "")
+	var err error
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			GroupId string `json:"groupId"`
+		}
+		request := Request{GroupId: groupId}
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("updateGroup", request)
+	} else {
+		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "updateGroup", "-g", groupId}, "")
+	}
 	return err
 }
 
 func (s *SignalClient) QuitGroup(number string, groupId string) error {
-	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "quitGroup", "-g", groupId}, "")
+	var err error
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			GroupId string `json:"groupId"`
+		}
+		request := Request{GroupId: groupId}
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("quitGroup", request)
+	} else {
+		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "quitGroup", "-g", groupId}, "")
+	}
 	return err
 }

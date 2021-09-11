@@ -18,5 +18,10 @@ EOF
 cap_prefix="-cap_"
 caps="$cap_prefix$(seq -s ",$cap_prefix" 0 $(cat /proc/sys/kernel/cap_last_cap))"
 
+# TODO: check mode
+/usr/bin/jsonrpc2-helper
+service supervisor start
+supervisorctl start all
+
 # Start API as signal-api user
 exec setpriv --reuid=1000 --regid=1000 --init-groups --inh-caps=$caps signal-cli-rest-api -signal-cli-config=${SIGNAL_CLI_CONFIG_DIR}
