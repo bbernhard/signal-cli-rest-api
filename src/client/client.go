@@ -180,7 +180,7 @@ func getContainerId() (string, error) {
 }
 
 func send(attachmentTmpDir string, signalCliConfig string, number string, message string,
-	recipients []string, base64Attachments []string, isGroup bool) (string, error) {
+	recipients []string, base64Attachments []string, isGroup bool, signalCliMode SignalCliMode) (string, error) {
 
 	cmd := []string{"--config", signalCliConfig, "-u", number, "send"}
 
@@ -243,7 +243,7 @@ func send(attachmentTmpDir string, signalCliConfig string, number string, messag
 		cmd = append(cmd, attachmentTmpPaths...)
 	}
 
-	resp, err := runSignalCli(true, cmd, message)
+	resp, err := runSignalCli(true, cmd, message, signalCliMode)
 	if err != nil {
 		cleanupTmpFiles(attachmentTmpPaths)
 		if strings.Contains(err.Error(), signalCliV2GroupError) {
@@ -257,7 +257,7 @@ func send(attachmentTmpDir string, signalCliConfig string, number string, messag
 	return strings.TrimSuffix(resp, "\n"), nil
 }
 
-func runSignalCli(wait bool, args []string, stdin string) (string, error) {
+func runSignalCli(wait bool, args []string, stdin string, signalCliMode SignalCliMode) (string, error) {
 	containerId, err := getContainerId()
 
 	log.Debug("If you want to run this command manually, run the following steps on your host system:")
@@ -267,14 +267,13 @@ func runSignalCli(wait bool, args []string, stdin string) (string, error) {
 		log.Debug("*) docker exec -it <container id> /bin/bash")
 	}
 
-	signalCliBinary := "signal-cli"
-	if utils.GetEnv("USE_NATIVE", "0") == "1" {
-		if utils.GetEnv("SUPPORTS_NATIVE", "0") == "1" {
-			signalCliBinary = "signal-cli-native"
-		} else {
-			log.Error("signal-cli-native is not support on this system...falling back to signal-cli")
-			signalCliBinary = "signal-cli"
-		}
+	signalCliBinary := ""
+	if signalCliMode == Normal {
+		signalCliBinary = "signal-cli"
+	} else if signalCliMode == Native {
+		signalCliBinary = "signal-cli-native"
+	} else {
+		return "", errors.New("Invalid signal-cli mode")
 	}
 
 	fullCmd := ""
@@ -406,7 +405,7 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 		command = append(command, []string{"--captcha", captcha}...)
 	}
 
-	_, err := runSignalCli(true, command, "")
+	_, err := runSignalCli(true, command, "", s.signalCliMode)
 	return err
 }
 
@@ -417,12 +416,12 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 		cmd = append(cmd, pin)
 	}
 
-	_, err := runSignalCli(true, cmd, "")
+	_, err := runSignalCli(true, cmd, "", s.signalCliMode)
 	return err
 }
 
 func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (string, error) {
-	timestamp, err := send(s.attachmentTmpDir, s.signalCliConfig, number, message, recipients, base64Attachments, isGroup)
+	timestamp, err := send(s.attachmentTmpDir, s.signalCliConfig, number, message, recipients, base64Attachments, isGroup, s.signalCliMode)
 	return timestamp, err
 }
 
@@ -463,7 +462,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 
 	timestamps := []string{}
 	for _, group := range groups {
-		timestamp, err := send(s.attachmentTmpDir, s.signalCliConfig, number, message, []string{group}, base64Attachments, true)
+		timestamp, err := send(s.attachmentTmpDir, s.signalCliConfig, number, message, []string{group}, base64Attachments, true, s.signalCliMode)
 		if err != nil {
 			return timestamps, err
 		}
@@ -471,7 +470,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	}
 
 	if len(recipients) > 0 {
-		timestamp, err := send(s.attachmentTmpDir, s.signalCliConfig, number, message, recipients, base64Attachments, false)
+		timestamp, err := send(s.attachmentTmpDir, s.signalCliConfig, number, message, recipients, base64Attachments, false, s.signalCliMode)
 		if err != nil {
 			return timestamps, err
 		}
@@ -484,7 +483,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 func (s *SignalClient) Receive(number string, timeout int64) (string, error) {
 	command := []string{"--config", s.signalCliConfig, "--output", "json", "-u", number, "receive", "-t", strconv.FormatInt(timeout, 10)}
 
-	out, err := runSignalCli(true, command, "")
+	out, err := runSignalCli(true, command, "", s.signalCliMode)
 	if err != nil {
 		return "", err
 	}
@@ -542,7 +541,7 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 			cmd = append(cmd, []string{"--description", description}...)
 		}
 
-		rawData, err = runSignalCli(true, cmd, "")
+		rawData, err = runSignalCli(true, cmd, "", s.signalCliMode)
 		if err != nil {
 			if strings.Contains(err.Error(), signalCliV2GroupError) {
 				return "", errors.New("Cannot create group - please first update your profile.")
@@ -573,7 +572,7 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 			return groupEntries, err
 		}
 	} else {
-		rawData, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "--output", "json", "-u", number, "listGroups", "-d"}, "")
+		rawData, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "--output", "json", "-u", number, "listGroups", "-d"}, "", s.signalCliMode)
 		if err != nil {
 			return groupEntries, err
 		}
@@ -625,14 +624,14 @@ func (s *SignalClient) GetGroup(number string, groupId string) (*GroupEntry, err
 }
 
 func (s *SignalClient) DeleteGroup(number string, groupId string) error {
-	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "quitGroup", "-g", string(groupId)}, "")
+	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "quitGroup", "-g", string(groupId)}, "", s.signalCliMode)
 	return err
 }
 
 func (s *SignalClient) GetQrCodeLink(deviceName string) ([]byte, error) {
 	command := []string{"--config", s.signalCliConfig, "link", "-n", deviceName}
 
-	tsdeviceLink, err := runSignalCli(false, command, "")
+	tsdeviceLink, err := runSignalCli(false, command, "", s.signalCliMode)
 	if err != nil {
 		return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
 	}
@@ -764,7 +763,7 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 			cmd = append(cmd, []string{"--avatar", avatarTmpPath}...)
 		}
 
-		_, err = runSignalCli(true, cmd, "")
+		_, err = runSignalCli(true, cmd, "", s.signalCliMode)
 	}
 
 	cleanupTmpFiles([]string{avatarTmpPath})
@@ -795,7 +794,7 @@ func (s *SignalClient) ListIdentities(number string) (*[]IdentityEntry, error) {
 			identityEntries = append(identityEntries, identityEntry)
 		}
 	} else {
-		rawData, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "listIdentities"}, "")
+		rawData, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "listIdentities"}, "", s.signalCliMode)
 		if err != nil {
 			return nil, err
 		}
@@ -833,13 +832,13 @@ func (s *SignalClient) TrustIdentity(number string, numberToTrust string, verifi
 		_, err = jsonRpc2Client.getRaw("trust", request)
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-u", number, "trust", numberToTrust, "--verified-safety-number", verifiedSafetyNumber}
-		_, err = runSignalCli(true, cmd, "")
+		_, err = runSignalCli(true, cmd, "", s.signalCliMode)
 	}
 	return err
 }
 
 func (s *SignalClient) BlockGroup(number string, groupId string) error {
-	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "block", "-g", groupId}, "")
+	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "block", "-g", groupId}, "", s.signalCliMode)
 	return err
 }
 
@@ -856,7 +855,7 @@ func (s *SignalClient) JoinGroup(number string, groupId string) error {
 		}
 		_, err = jsonRpc2Client.getRaw("updateGroup", request)
 	} else {
-		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "updateGroup", "-g", groupId}, "")
+		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "updateGroup", "-g", groupId}, "", s.signalCliMode)
 	}
 	return err
 }
@@ -874,7 +873,7 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 		}
 		_, err = jsonRpc2Client.getRaw("quitGroup", request)
 	} else {
-		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "quitGroup", "-g", groupId}, "")
+		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "quitGroup", "-g", groupId}, "", s.signalCliMode)
 	}
 	return err
 }
