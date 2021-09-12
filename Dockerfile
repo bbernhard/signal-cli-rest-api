@@ -6,7 +6,7 @@ ARG SWAG_VERSION=1.6.7
 ARG GRAALVM_JAVA_VERSION=11
 ARG GRAALVM_VERSION=21.0.0
 
-FROM golang:1.14-buster AS buildcontainer
+FROM golang:1.17-bullseye AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
 ARG ZKGROUP_VERSION
@@ -140,7 +140,7 @@ RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper
 
 
 # Start a fresh container for release container
-FROM adoptopenjdk:11-jre-hotspot-bionic
+FROM eclipse-temurin:11-jre-focal
 
 ENV GIN_MODE=release
 
@@ -149,7 +149,7 @@ ENV PORT=8080
 ARG SIGNAL_CLI_VERSION
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends setpriv supervisor netcat \
+	&& apt-get install -y --no-install-recommends util-linux supervisor netcat \
 	&& rm -rf /var/lib/apt/lists/* 
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
