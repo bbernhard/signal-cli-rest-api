@@ -19,7 +19,8 @@ cap_prefix="-cap_"
 caps="$cap_prefix$(seq -s ",$cap_prefix" 0 $(cat /proc/sys/kernel/cap_last_cap))"
 
 # TODO: check mode
-if [ "$MODE" == "json-rpc" ]
+if [ "$MODE" = "json-rpc" ]
+then
 /usr/bin/jsonrpc2-helper
 service supervisor start
 supervisorctl start all
