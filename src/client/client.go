@@ -108,6 +108,10 @@ type SignalCliIdentityEntry struct {
 	AddedTimestamp        int64  `json:"addedTimestamp"`
 }
 
+type SendResponse struct {
+	Timestamp int64 `json:"timestamp"`
+}
+
 type About struct {
 	SupportedApiVersions []string `json:"versions"`
 	BuildNr              int      `json:"build"`
@@ -177,84 +181,6 @@ func getContainerId() (string, error) {
 	}
 	containerId := strings.Replace(lines[0], "/docker/", "", -1)
 	return containerId, nil
-}
-
-func send(attachmentTmpDir string, signalCliConfig string, number string, message string,
-	recipients []string, base64Attachments []string, isGroup bool, signalCliMode SignalCliMode) (string, error) {
-
-	cmd := []string{"--config", signalCliConfig, "-u", number, "send"}
-
-	if len(recipients) == 0 {
-		return "", errors.New("Please specify at least one recipient")
-	}
-
-	if !isGroup {
-		cmd = append(cmd, recipients...)
-	} else {
-		if len(recipients) > 1 {
-			return "", errors.New("More than one recipient is currently not allowed")
-		}
-
-		groupId, err := base64.StdEncoding.DecodeString(recipients[0])
-		if err != nil {
-			return "", errors.New("Invalid group id")
-		}
-
-		cmd = append(cmd, []string{"-g", string(groupId)}...)
-	}
-
-	attachmentTmpPaths := []string{}
-	for _, base64Attachment := range base64Attachments {
-		u, err := uuid.NewV4()
-		if err != nil {
-			return "", err
-		}
-
-		dec, err := base64.StdEncoding.DecodeString(base64Attachment)
-		if err != nil {
-			return "", err
-		}
-
-		mimeType := mimetype.Detect(dec)
-
-		attachmentTmpPath := attachmentTmpDir + u.String() + mimeType.Extension()
-		attachmentTmpPaths = append(attachmentTmpPaths, attachmentTmpPath)
-
-		f, err := os.Create(attachmentTmpPath)
-		if err != nil {
-			return "", err
-		}
-		defer f.Close()
-
-		if _, err := f.Write(dec); err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
-			return "", err
-		}
-		if err := f.Sync(); err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
-			return "", err
-		}
-
-		f.Close()
-	}
-
-	if len(attachmentTmpPaths) > 0 {
-		cmd = append(cmd, "-a")
-		cmd = append(cmd, attachmentTmpPaths...)
-	}
-
-	resp, err := runSignalCli(true, cmd, message, signalCliMode)
-	if err != nil {
-		cleanupTmpFiles(attachmentTmpPaths)
-		if strings.Contains(err.Error(), signalCliV2GroupError) {
-			return "", errors.New("Cannot send message to group - please first update your profile.")
-		}
-		return "", err
-	}
-
-	cleanupTmpFiles(attachmentTmpPaths)
-
-	return strings.TrimSuffix(resp, "\n"), nil
 }
 
 func runSignalCli(wait bool, args []string, stdin string, signalCliMode SignalCliMode) (string, error) {
@@ -389,6 +315,132 @@ func (s *SignalClient) Init() error {
 	return nil
 }
 
+func (s *SignalClient) send(number string, message string,
+	recipients []string, base64Attachments []string, isGroup bool) (*SendResponse, error) {
+
+	var resp SendResponse
+
+	if len(recipients) == 0 {
+		return nil, errors.New("Please specify at least one recipient")
+	}
+
+	var groupId string = ""
+	if isGroup {
+		if len(recipients) > 1 {
+			return nil, errors.New("More than one recipient is currently not allowed")
+		}
+
+		grpId, err := base64.StdEncoding.DecodeString(recipients[0])
+		if err != nil {
+			return nil, errors.New("Invalid group id")
+		}
+		groupId = string(grpId)
+	}
+
+	attachmentTmpPaths := []string{}
+	for _, base64Attachment := range base64Attachments {
+		u, err := uuid.NewV4()
+		if err != nil {
+			return nil, err
+		}
+
+		dec, err := base64.StdEncoding.DecodeString(base64Attachment)
+		if err != nil {
+			return nil, err
+		}
+
+		mimeType := mimetype.Detect(dec)
+
+		attachmentTmpPath := s.attachmentTmpDir + u.String() + mimeType.Extension()
+		attachmentTmpPaths = append(attachmentTmpPaths, attachmentTmpPath)
+
+		f, err := os.Create(attachmentTmpPath)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+
+		if _, err := f.Write(dec); err != nil {
+			cleanupTmpFiles(attachmentTmpPaths)
+			return nil, err
+		}
+		if err := f.Sync(); err != nil {
+			cleanupTmpFiles(attachmentTmpPaths)
+			return nil, err
+		}
+
+		f.Close()
+	}
+
+	if s.signalCliMode == JsonRpc {
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return nil, err
+		}
+
+		type Request struct {
+			Recipients  []string `json:"recipient,omitempty"`
+			Message     string   `json:"message"`
+			GroupId     string   `json:"group-id,omitempty"`
+			Attachments []string `json:"attachment,omitempty"`
+		}
+
+		request := Request{Message: message}
+		if isGroup {
+			request.GroupId = groupId
+		} else {
+			request.Recipients = recipients
+		}
+		if len(attachmentTmpPaths) > 0 {
+			request.Attachments = append(request.Attachments, attachmentTmpPaths...)
+		}
+
+		rawData, err := jsonRpc2Client.getRaw("send", request)
+		if err != nil {
+			cleanupTmpFiles(attachmentTmpPaths)
+			return nil, err
+		}
+
+		err = json.Unmarshal([]byte(rawData), &resp)
+		if err != nil {
+			if strings.Contains(err.Error(), signalCliV2GroupError) {
+				return nil, errors.New("Cannot send message to group - please first update your profile.")
+			}
+			return nil, err
+		}
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "send"}
+		if !isGroup {
+			cmd = append(cmd, recipients...)
+		} else {
+			cmd = append(cmd, []string{"-g", groupId}...)
+		}
+
+		if len(attachmentTmpPaths) > 0 {
+			cmd = append(cmd, "-a")
+			cmd = append(cmd, attachmentTmpPaths...)
+		}
+
+		rawData, err := runSignalCli(true, cmd, message, s.signalCliMode)
+		if err != nil {
+			cleanupTmpFiles(attachmentTmpPaths)
+			if strings.Contains(err.Error(), signalCliV2GroupError) {
+				return nil, errors.New("Cannot send message to group - please first update your profile.")
+			}
+			return nil, err
+		}
+		resp.Timestamp, err = strconv.ParseInt(strings.TrimSuffix(rawData, "\n"), 10, 64)
+		if err != nil {
+			cleanupTmpFiles(attachmentTmpPaths)
+			return nil, err
+		}
+	}
+
+	cleanupTmpFiles(attachmentTmpPaths)
+
+	return &resp, nil
+}
+
 func (s *SignalClient) About() About {
 	about := About{SupportedApiVersions: []string{"v1", "v2"}, BuildNr: 2}
 	return about
@@ -420,8 +472,8 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 	return err
 }
 
-func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (string, error) {
-	timestamp, err := send(s.attachmentTmpDir, s.signalCliConfig, number, message, recipients, base64Attachments, isGroup, s.signalCliMode)
+func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (*SendResponse, error) {
+	timestamp, err := s.send(number, message, recipients, base64Attachments, isGroup)
 	return timestamp, err
 }
 
@@ -432,13 +484,13 @@ func (s *SignalClient) getJsonRpc2Client(number string) (*JsonRpc2Client, error)
 	return nil, errors.New("Number not registered with JSON-RPC")
 }
 
-func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string) ([]string, error) {
+func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string) (*[]SendResponse, error) {
 	if len(recps) == 0 {
-		return []string{}, errors.New("Please provide at least one recipient")
+		return nil, errors.New("Please provide at least one recipient")
 	}
 
 	if number == "" {
-		return []string{}, errors.New("Please provide a valid number")
+		return nil, errors.New("Please provide a valid number")
 	}
 
 	groups := []string{}
@@ -453,31 +505,31 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	}
 
 	if len(recipients) > 0 && len(groups) > 0 {
-		return []string{}, errors.New("Signal Messenger Groups and phone numbers cannot be specified together in one request! Please split them up into multiple REST API calls.")
+		return nil, errors.New("Signal Messenger Groups and phone numbers cannot be specified together in one request! Please split them up into multiple REST API calls.")
 	}
 
 	if len(groups) > 1 {
-		return []string{}, errors.New("A signal message cannot be sent to more than one group at once! Please use multiple REST API calls for that.")
+		return nil, errors.New("A signal message cannot be sent to more than one group at once! Please use multiple REST API calls for that.")
 	}
 
-	timestamps := []string{}
+	timestamps := []SendResponse{}
 	for _, group := range groups {
-		timestamp, err := send(s.attachmentTmpDir, s.signalCliConfig, number, message, []string{group}, base64Attachments, true, s.signalCliMode)
+		timestamp, err := s.send(number, message, []string{group}, base64Attachments, true)
 		if err != nil {
-			return timestamps, err
+			return nil, err
 		}
-		timestamps = append(timestamps, timestamp)
+		timestamps = append(timestamps, *timestamp)
 	}
 
 	if len(recipients) > 0 {
-		timestamp, err := send(s.attachmentTmpDir, s.signalCliConfig, number, message, recipients, base64Attachments, false, s.signalCliMode)
+		timestamp, err := s.send(number, message, recipients, base64Attachments, false)
 		if err != nil {
-			return timestamps, err
+			return nil, err
 		}
-		timestamps = append(timestamps, timestamp)
+		timestamps = append(timestamps, *timestamp)
 	}
 
-	return timestamps, nil
+	return &timestamps, nil
 }
 
 func (s *SignalClient) Receive(number string, timeout int64) (string, error) {

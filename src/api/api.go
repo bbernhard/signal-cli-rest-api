@@ -220,7 +220,7 @@ func (a *Api) Send(c *gin.Context) {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
-	c.JSON(201, SendMessageResponse{Timestamp: timestamp})
+	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt(timestamp.Timestamp, 10)})
 }
 
 // @Summary Send a signal message.
@@ -257,7 +257,7 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
-	c.JSON(201, SendMessageResponse{Timestamp: timestamps[0]})
+	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt((*timestamps)[0].Timestamp, 10)})
 }
 
 // @Summary Receive Signal Messages.
