@@ -30,6 +30,8 @@ const groupPrefix = "group."
 
 const signalCliV2GroupError = "Cannot create a V2 group as self does not have a versioned profile"
 
+const endpointNotSupportedInJsonRpcMode = "This endpoint is not supported in JSON-RCP mode."
+
 type GroupPermission int
 
 const (
@@ -447,6 +449,9 @@ func (s *SignalClient) About() About {
 }
 
 func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha string) error {
+	if s.signalCliMode == JsonRpc {
+		return errors.New(endpointNotSupportedInJsonRpcMode)
+	}
 	command := []string{"--config", s.signalCliConfig, "-u", number, "register"}
 
 	if useVoice {
@@ -462,6 +467,10 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 }
 
 func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin string) error {
+	if s.signalCliMode == JsonRpc {
+		return errors.New(endpointNotSupportedInJsonRpcMode)
+	}
+
 	cmd := []string{"--config", s.signalCliConfig, "-u", number, "verify", token}
 	if pin != "" {
 		cmd = append(cmd, "--pin")
@@ -533,26 +542,30 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 }
 
 func (s *SignalClient) Receive(number string, timeout int64) (string, error) {
-	command := []string{"--config", s.signalCliConfig, "--output", "json", "-u", number, "receive", "-t", strconv.FormatInt(timeout, 10)}
+	if s.signalCliMode == Native {
+		return "", errors.New(endpointNotSupportedInJsonRpcMode)
+	} else {
+		command := []string{"--config", s.signalCliConfig, "--output", "json", "-u", number, "receive", "-t", strconv.FormatInt(timeout, 10)}
 
-	out, err := runSignalCli(true, command, "", s.signalCliMode)
-	if err != nil {
-		return "", err
-	}
-
-	out = strings.Trim(out, "\n")
-	lines := strings.Split(out, "\n")
-
-	jsonStr := "["
-	for i, line := range lines {
-		jsonStr += line
-		if i != (len(lines) - 1) {
-			jsonStr += ","
+		out, err := runSignalCli(true, command, "", s.signalCliMode)
+		if err != nil {
+			return "", err
 		}
-	}
-	jsonStr += "]"
 
-	return jsonStr, nil
+		out = strings.Trim(out, "\n")
+		lines := strings.Split(out, "\n")
+
+		jsonStr := "["
+		for i, line := range lines {
+			jsonStr += line
+			if i != (len(lines) - 1) {
+				jsonStr += ","
+			}
+		}
+		jsonStr += "]"
+
+		return jsonStr, nil
+	}
 }
 
 func (s *SignalClient) CreateGroup(number string, name string, members []string, description string, editGroupPermission GroupPermission, addMembersPermission GroupPermission, groupLinkState GroupLinkState) (string, error) {
@@ -681,6 +694,9 @@ func (s *SignalClient) DeleteGroup(number string, groupId string) error {
 }
 
 func (s *SignalClient) GetQrCodeLink(deviceName string) ([]byte, error) {
+	if s.signalCliMode == JsonRpc {
+		return []byte{}, errors.New(endpointNotSupportedInJsonRpcMode)
+	}
 	command := []string{"--config", s.signalCliConfig, "link", "-n", deviceName}
 
 	tsdeviceLink, err := runSignalCli(false, command, "", s.signalCliMode)
@@ -890,7 +906,20 @@ func (s *SignalClient) TrustIdentity(number string, numberToTrust string, verifi
 }
 
 func (s *SignalClient) BlockGroup(number string, groupId string) error {
-	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "block", "-g", groupId}, "", s.signalCliMode)
+	var err error
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			GroupId string `json:"groupId"`
+		}
+		request := Request{GroupId: groupId}
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("updateGroup", request)
+	} else {
+		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "block", "-g", groupId}, "", s.signalCliMode)
+	}
 	return err
 }
 
