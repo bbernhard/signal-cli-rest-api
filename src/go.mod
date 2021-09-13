@@ -11,6 +11,7 @@ require (
 	github.com/go-openapi/spec v0.19.8 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/gofrs/uuid v3.3.0+incompatible
+	github.com/gorilla/websocket v1.4.2
 	github.com/h2non/filetype v1.1.0
 	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1

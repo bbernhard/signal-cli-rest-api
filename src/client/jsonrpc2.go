@@ -9,8 +9,27 @@ import (
 	"net"
 )
 
+type Error struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type JsonRpc2MessageResponse struct {
+	Id     string          `json:"id"`
+	Result json.RawMessage `json:"result"`
+	Err    Error           `json:"error"`
+}
+
+type JsonRpc2ReceivedMessage struct {
+	Method string          `json:"method"`
+	Params json.RawMessage `json:"params"`
+	Err    Error           `json:"error"`
+}
+
 type JsonRpc2Client struct {
-	conn net.Conn
+	conn                     net.Conn
+	receivedMessageResponses chan JsonRpc2MessageResponse
+	receivedMessages         chan JsonRpc2ReceivedMessage
 }
 
 func NewJsonRpc2Client() *JsonRpc2Client {
@@ -24,6 +43,9 @@ func (r *JsonRpc2Client) Dial(address string) error {
 		return err
 	}
 
+	r.receivedMessageResponses = make(chan JsonRpc2MessageResponse)
+	r.receivedMessages = make(chan JsonRpc2ReceivedMessage)
+
 	return nil
 }
 
@@ -33,17 +55,6 @@ func (r *JsonRpc2Client) getRaw(command string, args interface{}) (string, error
 		Method  string      `json:"method"`
 		Id      string      `json:"id"`
 		Params  interface{} `json:"params,omitempty"`
-	}
-
-	type Error struct {
-		Code    int    `json:"code"`
-		Message string `json:"message"`
-	}
-
-	type Response struct {
-		Id     string          `json:"id"`
-		Result json.RawMessage `json:"result"`
-		Err    Error           `json:"error"`
 	}
 
 	u, err := uuid.NewV4()
@@ -68,27 +79,56 @@ func (r *JsonRpc2Client) getRaw(command string, args interface{}) (string, error
 		return "", err
 	}
 
+	var resp JsonRpc2MessageResponse
+	for {
+		resp = <-r.receivedMessageResponses
+		if resp.Id == u.String() {
+			break
+		}
+	}
+
+	if resp.Err.Code != 0 {
+		return "", errors.New(resp.Err.Message)
+	}
+	return string(resp.Result), nil
+}
+
+func (r *JsonRpc2Client) ReceiveData() {
 	connbuf := bufio.NewReader(r.conn)
 	for {
 		str, err := connbuf.ReadString('\n')
 		if err != nil {
-			return "", err
+			log.Error("Couldn't read data: ", err.Error())
+			continue
+		}
+		//log.Info("Received data = ", str)
+
+		var resp1 JsonRpc2ReceivedMessage
+		json.Unmarshal([]byte(str), &resp1)
+		if resp1.Method == "receive" {
+			select {
+			case r.receivedMessages <- resp1:
+				log.Debug("Message sent to golang channel")
+			default:
+				log.Debug("Couldn't send message to golang channel, as there's no receiver")
+			}
+			continue
 		}
 
-		var resp Response
-		err = json.Unmarshal([]byte(str), &resp)
+		var resp2 JsonRpc2MessageResponse
+		err = json.Unmarshal([]byte(str), &resp2)
 		if err == nil {
-			if resp.Id == u.String() {
-				log.Info("Response1 = ", string(resp.Result))
-				if resp.Err.Code != 0 {
-					return "", errors.New(resp.Err.Message)
-				}
-				return string(resp.Result), nil
+			if resp2.Id != "" {
+				r.receivedMessageResponses <- resp2
 			}
 		} else {
-			log.Info("Response = ", str)
+			log.Error("Received unparsable message: ", str)
 		}
 	}
+}
 
-	return "", errors.New("no data")
+//blocks until message a message is received
+func (r *JsonRpc2Client) ReceiveMessage() JsonRpc2ReceivedMessage {
+	resp := <-r.receivedMessages
+	return resp
 }

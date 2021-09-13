@@ -9,6 +9,7 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
+	"github.com/gorilla/websocket"
 
 	"github.com/bbernhard/signal-cli-rest-api/client"
 	utils "github.com/bbernhard/signal-cli-rest-api/utils"
@@ -80,6 +81,12 @@ type TrustIdentityRequest struct {
 
 type SendMessageResponse struct {
 	Timestamp string `json:"timestamp"`
+}
+
+var connectionUpgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
 type Api struct {
@@ -273,20 +280,51 @@ func (a *Api) SendV2(c *gin.Context) {
 func (a *Api) Receive(c *gin.Context) {
 	number := c.Param("number")
 
-	timeout := c.DefaultQuery("timeout", "1")
-	timeoutInt, err := strconv.ParseInt(timeout, 10, 32)
-	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - timeout needs to be numeric!"})
-		return
-	}
+	if a.signalClient.GetSignalCliMode() == client.JsonRpc {
+		ws, err := connectionUpgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+		defer ws.Close()
+		for {
+			data, err := a.signalClient.Receive(number, 0)
+			if err == nil {
+				err = ws.WriteMessage(websocket.TextMessage, []byte(data))
+				if err != nil {
+					log.Error("Couldn't write message: " + err.Error())
+					return
+				}
+			} else {
+				errorMsg := Error{Msg: err.Error()}
+				errorMsgBytes, err := json.Marshal(errorMsg)
+				if err != nil {
+					log.Error("Couldn't serialize error message: " + err.Error())
+					return
+				}
+				err = ws.WriteMessage(websocket.TextMessage, errorMsgBytes)
+				if err != nil {
+					log.Error("Couldn't write message: " + err.Error())
+					return
+				}
+			}
+		}
+	} else {
+		timeout := c.DefaultQuery("timeout", "1")
+		timeoutInt, err := strconv.ParseInt(timeout, 10, 32)
+		if err != nil {
+			c.JSON(400, Error{Msg: "Couldn't process request - timeout needs to be numeric!"})
+			return
+		}
 
-	jsonStr, err := a.signalClient.Receive(number, timeoutInt)
-	if err != nil {
-		c.JSON(400, Error{Msg: err.Error()})
-		return
-	}
+		jsonStr, err := a.signalClient.Receive(number, timeoutInt)
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
 
-	c.String(200, jsonStr)
+		c.String(200, jsonStr)
+	}
 }
 
 // @Summary Create a new Signal Group.

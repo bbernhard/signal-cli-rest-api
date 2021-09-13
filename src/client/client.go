@@ -297,6 +297,10 @@ func NewSignalClient(signalCliConfig string, attachmentTmpDir string, avatarTmpD
 	}
 }
 
+func (s *SignalClient) GetSignalCliMode() SignalCliMode {
+	return s.signalCliMode
+}
+
 func (s *SignalClient) Init() error {
 	if s.signalCliMode == JsonRpc {
 		s.jsonRpc2ClientConfig = utils.NewJsonRpc2ClientConfig()
@@ -312,6 +316,8 @@ func (s *SignalClient) Init() error {
 			if err != nil {
 				return err
 			}
+
+			go s.jsonRpc2Clients[number].ReceiveData() //receive messages in goroutine
 		}
 	}
 	return nil
@@ -542,8 +548,16 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 }
 
 func (s *SignalClient) Receive(number string, timeout int64) (string, error) {
-	if s.signalCliMode == Native {
-		return "", errors.New(endpointNotSupportedInJsonRpcMode)
+	if s.signalCliMode == JsonRpc {
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return "", err
+		}
+		msg := jsonRpc2Client.ReceiveMessage()
+		if msg.Err.Code != 0 {
+			return "", errors.New(msg.Err.Message)
+		}
+		return string(msg.Params), nil
 	} else {
 		command := []string{"--config", s.signalCliConfig, "--output", "json", "-u", number, "receive", "-t", strconv.FormatInt(timeout, 10)}
 
