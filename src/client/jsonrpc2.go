@@ -72,7 +72,7 @@ func (r *JsonRpc2Client) getRaw(command string, args interface{}) (string, error
 		return "", err
 	}
 
-	log.Info("request = ", string(fullCommandBytes))
+	log.Debug("full command ", string(fullCommandBytes))
 
 	_, err = r.conn.Write([]byte(string(fullCommandBytes) + "\n"))
 	if err != nil {
