@@ -140,7 +140,7 @@ RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper
 
 
 # Start a fresh container for release container
-FROM adoptopenjdk:11-jre-hotspot-bionic
+FROM eclipse-temurin:11-jre-focal
 
 ENV GIN_MODE=release
 
@@ -149,7 +149,7 @@ ENV PORT=8080
 ARG SIGNAL_CLI_VERSION
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends setpriv supervisor netcat \
+	&& apt-get install -y --no-install-recommends util-linux supervisor netcat \
 	&& rm -rf /var/lib/apt/lists/* 
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
