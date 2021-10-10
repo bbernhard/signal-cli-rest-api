@@ -93,12 +93,12 @@ func (r *JsonRpc2Client) getRaw(command string, args interface{}) (string, error
 	return string(resp.Result), nil
 }
 
-func (r *JsonRpc2Client) ReceiveData() {
+func (r *JsonRpc2Client) ReceiveData(number string) {
 	connbuf := bufio.NewReader(r.conn)
 	for {
 		str, err := connbuf.ReadString('\n')
 		if err != nil {
-			log.Error("Couldn't read data: ", err.Error())
+			log.Error("Couldn't read data for number ", number, ": ", err.Error(), ". Is the number properly registered?")
 			continue
 		}
 		//log.Info("Received data = ", str)

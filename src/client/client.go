@@ -317,7 +317,7 @@ func (s *SignalClient) Init() error {
 				return err
 			}
 
-			go s.jsonRpc2Clients[number].ReceiveData() //receive messages in goroutine
+			go s.jsonRpc2Clients[number].ReceiveData(number) //receive messages in goroutine
 		}
 	}
 	return nil
