@@ -307,8 +307,7 @@ func (a *Api) handleSignalReceive(ws *websocket.Conn, number string) {
 
 func wsPong(ws *websocket.Conn) {
 	ws.SetReadLimit(512)
-	ws.SetReadDeadline(time.Now().Add(pongWait))
-	ws.SetPongHandler(func(string) error { ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	ws.SetPongHandler(func(string) error { log.Debug("Received pong"); return nil })
 	for {
 		_, _, err := ws.ReadMessage()
 		if err != nil {
@@ -322,7 +321,6 @@ func wsPing(ws *websocket.Conn) {
 	for {
 		select {
 		case <-pingTicker.C:
-			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 				return
 			}
