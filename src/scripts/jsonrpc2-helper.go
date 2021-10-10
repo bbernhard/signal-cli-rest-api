@@ -43,34 +43,41 @@ func main() {
 	err := filepath.Walk(*signalCliConfigDir, func(path string, info os.FileInfo, err error) error {
 		filename := filepath.Base(path)
 		if strings.HasPrefix(filename, "+") && info.Mode().IsRegular() {
-			fifoPathname := fifoBasePathName + strconv.FormatInt(ctr, 10)
-			tcpPort := tcpBasePort + ctr
-			jsonRpc2ClientConfig.AddEntry(filename, utils.ConfigEntry{TcpPort: tcpPort, FifoPathname: fifoPathname})
-			ctr += 1
-			_, err = exec.Command("mkfifo", fifoPathname).Output()
-			if err != nil {
-				log.Fatal("Couldn't create fifo with name ", fifoPathname, ": ", err.Error())
-			}
+			if utils.IsPhoneNumber(filename) {
+				number := filename
+				fifoPathname := fifoBasePathName + strconv.FormatInt(ctr, 10)
+				tcpPort := tcpBasePort + ctr
+				jsonRpc2ClientConfig.AddEntry(number, utils.ConfigEntry{TcpPort: tcpPort, FifoPathname: fifoPathname})
+				ctr += 1
+				_, err = exec.Command("mkfifo", fifoPathname).Output()
+				if err != nil {
+					log.Fatal("Couldn't create fifo with name ", fifoPathname, ": ", err.Error())
+				}
 
-			_, err = exec.Command("chown", "1000:1000", fifoPathname).Output()
-			if err != nil {
-				log.Fatal("Couldn't change permissions of fifo with name ", fifoPathname, ": ", err.Error())
-			}
+				_, err = exec.Command("chown", "1000:1000", fifoPathname).Output()
+				if err != nil {
+					log.Fatal("Couldn't change permissions of fifo with name ", fifoPathname, ": ", err.Error())
+				}
 
-			supervisorctlProgramName := "signal-cli-json-rpc-" + strconv.FormatInt(ctr, 10)
-			supervisorctlLogFolder := "/var/log/" + supervisorctlProgramName
-			_, err = exec.Command("mkdir", "-p", supervisorctlLogFolder).Output()
-			if err != nil {
-				log.Fatal("Couldn't create log folder ", supervisorctlLogFolder, ": ", err.Error())
-			}
+				supervisorctlProgramName := "signal-cli-json-rpc-" + strconv.FormatInt(ctr, 10)
+				supervisorctlLogFolder := "/var/log/" + supervisorctlProgramName
+				_, err = exec.Command("mkdir", "-p", supervisorctlLogFolder).Output()
+				if err != nil {
+					log.Fatal("Couldn't create log folder ", supervisorctlLogFolder, ": ", err.Error())
+				}
 
-			//write supervisorctl config
-			supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-" + strconv.FormatInt(ctr, 10) + ".conf"
-			supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
-				tcpPort, fifoPathname, filename, fifoPathname, supervisorctlProgramName, supervisorctlProgramName)
-			err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
-			if err != nil {
-				log.Fatal("Couldn't write ", supervisorctlConfigFilename, ": ", err.Error())
+				log.Info("Found number ", number, " and added it to jsonrpc2.yml")
+
+				//write supervisorctl config
+				supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-" + strconv.FormatInt(ctr, 10) + ".conf"
+				supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
+					tcpPort, fifoPathname, number, fifoPathname, supervisorctlProgramName, supervisorctlProgramName)
+				err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
+				if err != nil {
+					log.Fatal("Couldn't write ", supervisorctlConfigFilename, ": ", err.Error())
+				}
+			} else {
+				log.Error("Skipping ", filename, " as it is not a valid phone number!")
 			}
 		}
 		return nil
