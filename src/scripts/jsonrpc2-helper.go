@@ -49,6 +49,9 @@ func main() {
 				tcpPort := tcpBasePort + ctr
 				jsonRpc2ClientConfig.AddEntry(number, utils.ConfigEntry{TcpPort: tcpPort, FifoPathname: fifoPathname})
 				ctr += 1
+
+				os.Remove(fifoPathname) //remove any existing named pipe
+
 				_, err = exec.Command("mkfifo", fifoPathname).Output()
 				if err != nil {
 					log.Fatal("Couldn't create fifo with name ", fifoPathname, ": ", err.Error())
