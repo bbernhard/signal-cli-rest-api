@@ -26,16 +26,16 @@ The `signal-cli-rest-api` supports three different modes:
 
 | architecture | normal mode | native mode | json-rpc mode |
 |--------------|:-----------:|:-----------:|---------------|
-|    x86-64    |      ✅     |     ✅      |       ✅      |
-|    armv7     |      ✅     |     ❌ <sup>1</sup>     |       ✅      |
-|    arm64     |      ✅     |     ✅      |       ✅      |
+|    x86-64    |      :heavy_check_mark:     |     :heavy_check_mark:      |       :heavy_check_mark:      |
+|    armv7     |      :heavy_check_mark:     |     ❌ <sup>1</sup>     |       :heavy_check_mark:      |
+|    arm64     |      :heavy_check_mark:     |     :heavy_check_mark:      |       :heavy_check_mark:      |
 
 
 |     mode     | speed       |
 |-------------:|:------------|
-|    json-rpc  |    ✅ ✅ ✅ |
-|    native    |    ✅ ✅    |
-|    normal    |    ✅       |
+|    json-rpc  |    :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: |
+|    native    |    :heavy_check_mark: :heavy_check_mark:    |
+|    normal    |    :heavy_check_mark:       |
 
 
 Notes:
