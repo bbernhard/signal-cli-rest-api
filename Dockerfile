@@ -1,12 +1,12 @@
-ARG SIGNAL_CLI_VERSION=0.8.5
+ARG SIGNAL_CLI_VERSION=0.9.0
 ARG ZKGROUP_VERSION=0.7.0
-ARG LIBSIGNAL_CLIENT_VERSION=0.8.1
+ARG LIBSIGNAL_CLIENT_VERSION=0.9.0
 
 ARG SWAG_VERSION=1.6.7
 ARG GRAALVM_JAVA_VERSION=11
-ARG GRAALVM_VERSION=21.0.0
+ARG GRAALVM_VERSION=21.2.0
 
-FROM golang:1.14-buster AS buildcontainer
+FROM golang:1.17-bullseye AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
 ARG ZKGROUP_VERSION
@@ -125,16 +125,22 @@ RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/ \
 
 
 COPY src/api /tmp/signal-cli-rest-api-src/api
+COPY src/client /tmp/signal-cli-rest-api-src/client
 COPY src/utils /tmp/signal-cli-rest-api-src/utils
+COPY src/scripts /tmp/signal-cli-rest-api-src/scripts
 COPY src/main.go /tmp/signal-cli-rest-api-src/
 COPY src/go.mod /tmp/signal-cli-rest-api-src/
 COPY src/go.sum /tmp/signal-cli-rest-api-src/
 
+# build signal-cli-rest-api
 RUN cd /tmp/signal-cli-rest-api-src && swag init && go build
+
+# build supervisorctl_config_creator
+RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper 
 
 
 # Start a fresh container for release container
-FROM adoptopenjdk:11-jre-hotspot-bionic
+FROM eclipse-temurin:11-jre-focal
 
 ENV GIN_MODE=release
 
@@ -143,12 +149,13 @@ ENV PORT=8080
 ARG SIGNAL_CLI_VERSION
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends setpriv \
+	&& apt-get install -y --no-install-recommends util-linux supervisor netcat \
 	&& rm -rf /var/lib/apt/lists/* 
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
 COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar /tmp/signal-cli-${SIGNAL_CLI_VERSION}.tar
 COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image/signal-cli /tmp/signal-cli-native
+COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/scripts/jsonrpc2-helper /usr/bin/jsonrpc2-helper
 COPY entrypoint.sh /entrypoint.sh
 
 RUN tar xf /tmp/signal-cli-${SIGNAL_CLI_VERSION}.tar -C /opt

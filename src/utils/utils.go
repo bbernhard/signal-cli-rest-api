@@ -31,3 +31,18 @@ func StringInSlice(a string, list []string) bool {
     }
     return false
 }
+
+func IsPhoneNumber(s string) bool {
+	for index, c := range s {
+		if index == 0 {
+			if c != '+' {
+				return false
+			}
+		} else {
+			if c < '0' || c > '9' {
+				return false
+			}
+		}
+	}
+	return true
+}

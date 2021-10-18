@@ -39,10 +39,11 @@ body:
       required: true
     attributes:
       label: In which mode are you using the docker container?
-      description: If you have `USE_NATIVE=1` set in your `docker-compose.yml` file then you are using the native mode.
+      description: Please have a look at the `MODE` parameter in you `docker-compose.yml` file. If you do not have the `MODE` parameter explicitly set, then you are running in normal mode.
       options:
         - Normal Mode
         - Native Mode
+        - JSON-RPC Mode
   - type: dropdown
     validations:
       required: true

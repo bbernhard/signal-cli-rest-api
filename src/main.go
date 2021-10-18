@@ -3,13 +3,15 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"strings"
-	"strconv"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
-	"io/ioutil"
+	"strconv"
+	"strings"
+
 	"github.com/bbernhard/signal-cli-rest-api/api"
+	"github.com/bbernhard/signal-cli-rest-api/client"
 	_ "github.com/bbernhard/signal-cli-rest-api/docs"
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	"github.com/gin-gonic/gin"
@@ -71,7 +73,56 @@ func main() {
 		log.Fatal("Couldn't set env variable: ", err.Error())
 	}
 
-	api := api.NewApi(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir)
+	useNative := utils.GetEnv("USE_NATIVE", "")
+	if useNative != "" {
+		log.Warning("The env variable USE_NATIVE is deprecated. Please use the env variable MODE instead")
+	}
+
+	signalCliMode := client.Normal
+	mode := utils.GetEnv("MODE", "normal")
+	if mode == "normal" {
+		signalCliMode = client.Normal
+	} else if mode == "json-rpc" {
+		signalCliMode = client.JsonRpc
+	} else if mode == "native" {
+		signalCliMode = client.Native
+	}
+
+	if useNative != "" {
+		_, modeEnvVariableSet := os.LookupEnv("MODE")
+		if modeEnvVariableSet {
+			log.Fatal("You have both the USE_NATIVE and the MODE env variable set. Please remove the deprecated env variable USE_NATIVE!")
+		}
+	}
+
+	if useNative == "1" || signalCliMode == client.Native {
+		if supportsSignalCliNative == "0" {
+			log.Error("signal-cli-native is not support on this system...falling back to signal-cli")
+			signalCliMode = client.Normal
+		}
+	}
+
+	if signalCliMode == client.JsonRpc {
+		_, autoReceiveScheduleEnvVariableSet := os.LookupEnv("AUTO_RECEIVE_SCHEDULE")
+		if autoReceiveScheduleEnvVariableSet {
+			log.Fatal("Env variable AUTO_RECEIVE_SCHEDULE can't be used with mode json-rpc")
+		}
+
+		_, signalCliCommandTimeoutEnvVariableSet := os.LookupEnv("SIGNAL_CLI_CMD_TIMEOUT")
+		if signalCliCommandTimeoutEnvVariableSet {
+			log.Fatal("Env variable SIGNAL_CLI_CMD_TIMEOUT can't be used with mode json-rpc")
+		}
+	}
+
+
+	jsonRpc2ClientConfigPathPath := *signalCliConfig + "/jsonrpc2.yml"
+	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath)
+	err = signalClient.Init()
+	if err != nil {
+		log.Fatal("Couldn't init Signal Client: ", err.Error())
+	}
+
+	api := api.NewApi(signalClient)
 	v1 := router.Group("/v1")
 	{
 		about := v1.Group("/about")

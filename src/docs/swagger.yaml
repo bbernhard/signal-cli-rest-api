@@ -1,14 +1,5 @@
 basePath: /
 definitions:
-  api.About:
-    properties:
-      build:
-        type: integer
-      versions:
-        items:
-          type: string
-        type: array
-    type: object
   api.Configuration:
     properties:
       logging:
@@ -45,31 +36,6 @@ definitions:
       error:
         type: string
     type: object
-  api.GroupEntry:
-    properties:
-      blocked:
-        type: boolean
-      id:
-        type: string
-      internal_id:
-        type: string
-      invite_link:
-        type: string
-      members:
-        items:
-          type: string
-        type: array
-      name:
-        type: string
-      pending_invites:
-        items:
-          type: string
-        type: array
-      pending_requests:
-        items:
-          type: string
-        type: array
-    type: object
   api.GroupPermissions:
     properties:
       add_members:
@@ -81,19 +47,6 @@ definitions:
         enum:
         - only-admins
         - every-member
-        type: string
-    type: object
-  api.IdentityEntry:
-    properties:
-      added:
-        type: string
-      fingerprint:
-        type: string
-      number:
-        type: string
-      safety_number:
-        type: string
-      status:
         type: string
     type: object
   api.LoggingConfiguration:
@@ -160,6 +113,53 @@ definitions:
       pin:
         type: string
     type: object
+  client.About:
+    properties:
+      build:
+        type: integer
+      versions:
+        items:
+          type: string
+        type: array
+    type: object
+  client.GroupEntry:
+    properties:
+      blocked:
+        type: boolean
+      id:
+        type: string
+      internal_id:
+        type: string
+      invite_link:
+        type: string
+      members:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      pending_invites:
+        items:
+          type: string
+        type: array
+      pending_requests:
+        items:
+          type: string
+        type: array
+    type: object
+  client.IdentityEntry:
+    properties:
+      added:
+        type: string
+      fingerprint:
+        type: string
+      number:
+        type: string
+      safety_number:
+        type: string
+      status:
+        type: string
+    type: object
 host: 127.0.0.1:8080
 info:
   contact: {}
@@ -177,7 +177,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.About'
+            $ref: '#/definitions/client.About'
       summary: Lists general information about the API
       tags:
       - General
@@ -307,7 +307,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.GroupEntry'
+              $ref: '#/definitions/client.GroupEntry'
             type: array
         "400":
           description: Bad Request
@@ -397,7 +397,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.GroupEntry'
+            $ref: '#/definitions/client.GroupEntry'
         "400":
           description: Bad Request
           schema:
@@ -524,7 +524,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.IdentityEntry'
+              $ref: '#/definitions/client.IdentityEntry'
             type: array
       summary: List Identities
       tags:
@@ -615,7 +615,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Receives Signal Messages from the Signal Network.
+      description: Receives Signal Messages from the Signal Network. If you are running the docker container in normal/native mode, this is a GET endpoint. In json-rpc mode this is a websocket endpoint.
       parameters:
       - description: Registered Phone Number
         in: path
