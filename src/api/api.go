@@ -330,7 +330,7 @@ func wsPing(ws *websocket.Conn) {
 
 // @Summary Receive Signal Messages.
 // @Tags Messages
-// @Description Receives Signal Messages from the Signal Network.
+// @Description Receives Signal Messages from the Signal Network. If you are running the docker container in normal/native mode, this is a GET endpoint. In json-rpc mode this is a websocket endpoint.
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} []string

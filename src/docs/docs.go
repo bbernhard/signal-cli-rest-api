@@ -696,7 +696,7 @@ var doc = `{
         },
         "/v1/receive/{number}": {
             "get": {
-                "description": "Receives Signal Messages from the Signal Network.",
+                "description": "Receives Signal Messages from the Signal Network. If you are running the docker container in normal/native mode, this is a GET endpoint. In json-rpc mode this is a websocket endpoint.",
                 "consumes": [
                     "application/json"
                 ],
