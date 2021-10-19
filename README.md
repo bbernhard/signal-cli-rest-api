@@ -53,19 +53,18 @@ Notes:
 
 Sample `docker-compose.yml`file:
 
-```sh
+```yaml
 version: "3"
 services:
   signal-cli-rest-api:
     image: bbernhard/signal-cli-rest-api:latest
-	environment:
-	  - MODE=normal #supported modes: json-rpc, native, normal
+    environment:
+      - MODE=normal #supported modes: json-rpc, native, normal
       #- AUTO_RECEIVE_SCHEDULE=0 22 * * * #enable this parameter on demand (see description below)
-	ports:
+    ports:
       - "8080:8080" #map docker port 8080 to host port 8080.
     volumes:
       - "./signal-cli-config:/home/.local/share/signal-cli" #map "signal-cli-config" folder on host system into docker container. the folder contains the password and cryptographic keys when a new number is registered
-
 ```
 
 ## Documentation
