@@ -595,8 +595,7 @@ func (s *SignalClient) Receive(number string, timeout int64) (string, error) {
 }
 
 func (s *SignalClient) CreateGroup(number string, name string, members []string, description string, editGroupPermission GroupPermission, addMembersPermission GroupPermission, groupLinkState GroupLinkState) (string, error) {
-	var err error
-	var rawData string
+	var internalGroupId string
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			Name    string   `json:"name"`
@@ -608,10 +607,21 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 		if err != nil {
 			return "", err
 		}
-		rawData, err = jsonRpc2Client.getRaw("updateGroup", request)
+		rawData, err := jsonRpc2Client.getRaw("updateGroup", request)
 		if err != nil {
 			return "", err
 		}
+
+		type Response struct {
+			GroupId    string   `json:"groupId"`
+			Timestamp  int64    `json:"timestamp"`
+		}
+		var resp Response
+		json.Unmarshal([]byte(rawData), &resp)
+		if err != nil {
+			return "", err
+		}
+		internalGroupId = resp.GroupId
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-u", number, "updateGroup", "-n", name, "-m"}
 		cmd = append(cmd, members...)
@@ -632,15 +642,15 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 			cmd = append(cmd, []string{"--description", description}...)
 		}
 
-		rawData, err = runSignalCli(true, cmd, "", s.signalCliMode)
+		rawData, err := runSignalCli(true, cmd, "", s.signalCliMode)
 		if err != nil {
 			if strings.Contains(err.Error(), signalCliV2GroupError) {
 				return "", errors.New("Cannot create group - please first update your profile.")
 			}
 			return "", err
 		}
+		internalGroupId = getStringInBetween(rawData, `"`, `"`)
 	}
-	internalGroupId := getStringInBetween(rawData, `"`, `"`)
 	groupId := convertInternalGroupIdToGroupId(internalGroupId)
 
 	return groupId, nil
