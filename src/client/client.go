@@ -117,6 +117,7 @@ type SendResponse struct {
 type About struct {
 	SupportedApiVersions []string `json:"versions"`
 	BuildNr              int      `json:"build"`
+	Mode                 string   `json:"mode"`
 }
 
 func cleanupTmpFiles(paths []string) {
@@ -273,6 +274,17 @@ func ConvertGroupIdToInternalGroupId(id string) (string, error) {
 	}
 
 	return string(internalGroupId), err
+}
+
+func getSignalCliModeString(signalCliMode SignalCliMode) string {
+	if signalCliMode == Normal {
+		return "normal"
+	} else if signalCliMode == Native {
+		return "native"
+	} else if signalCliMode == JsonRpc {
+		return "json-rpc"
+	}
+	return "unknown"
 }
 
 type SignalClient struct {
@@ -450,7 +462,7 @@ func (s *SignalClient) send(number string, message string,
 }
 
 func (s *SignalClient) About() About {
-	about := About{SupportedApiVersions: []string{"v1", "v2"}, BuildNr: 2}
+	about := About{SupportedApiVersions: []string{"v1", "v2"}, BuildNr: 2, Mode: getSignalCliModeString(s.signalCliMode)}
 	return about
 }
 
