@@ -16,6 +16,8 @@ version: "3"
 services:
   signal-cli-rest-api:
     image: bbernhard/signal-cli-rest-api:latest
+    environment:
+      - MODE=json-rpc #supported modes: json-rpc, native, normal
     ports:
       - "8080:8080" # map docker port 8080 to host port 8080.
     volumes:
