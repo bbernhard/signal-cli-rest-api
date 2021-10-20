@@ -43,7 +43,7 @@ func main() {
 
 	items, err := ioutil.ReadDir(signalCliConfigDataDir)
 	if err != nil {
-		log.Fatal("Couldn't read contents of ", signalCliConfigDataDir)
+		log.Fatal("Couldn't read contents of ", signalCliConfigDataDir, ". Is your phone number properly registered? Please be aware that registering a phone number only works in normal/native mode and is currently not supported in json-rpc mode!")
 	}
 	for _, item := range items {
 		if item.IsDir() {
