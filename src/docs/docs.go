@@ -876,6 +876,98 @@ var doc = `{
                 }
             }
         },
+        "/v1/typing-indicator/{number}": {
+            "put": {
+                "description": "Show Typing Indicator.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Show Typing Indicator.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Type",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TypingIndicatorRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Hide Typing Indicator.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Hide Typing Indicator.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Type",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TypingIndicatorRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v2/send": {
             "post": {
                 "description": "Send a signal message",
@@ -1072,6 +1164,14 @@ var doc = `{
                 }
             }
         },
+        "api.TypingIndicatorRequest": {
+            "type": "object",
+            "properties": {
+                "recipient": {
+                    "type": "string"
+                }
+            }
+        },
         "api.UpdateProfileRequest": {
             "type": "object",
             "properties": {
@@ -1096,6 +1196,9 @@ var doc = `{
             "properties": {
                 "build": {
                     "type": "integer"
+                },
+                "mode": {
+                    "type": "string"
                 },
                 "versions": {
                     "type": "array",
