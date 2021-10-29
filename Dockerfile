@@ -86,8 +86,8 @@ RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "x86_64" ]; then \
     elif [ "$(uname -m)" = "armv7l" ]; then \
 		echo "GRAALVM doesn't support 32bit" \
 		&& echo "Creating temporary file, otherwise the below copy doesn't work for armv7" \
-		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image \
-		&& touch /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image/signal-cli; \ 
+		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native/nativeCompile \
+		&& touch /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native/nativeCompile/signal-cli; \
     else \
 		echo "Unknown architecture"; \
     fi;
