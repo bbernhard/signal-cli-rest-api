@@ -9,8 +9,8 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/bbernhard/signal-cli-rest-api/client"
 	utils "github.com/bbernhard/signal-cli-rest-api/utils"
@@ -29,23 +29,23 @@ const (
 
 type GroupPermissions struct {
 	AddMembers string `json:"add_members" enums:"only-admins,every-member"`
-	EditGroup string `json:"edit_group" enums:"only-admins,every-member"`
+	EditGroup  string `json:"edit_group" enums:"only-admins,every-member"`
 }
 
 type CreateGroupRequest struct {
-	Name    string   `json:"name"`
-	Members []string `json:"members"`
-	Description string `json:"description"`
-	Permissions GroupPermissions `json:"permissions"`
-	GroupLinkState string `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
+	Name           string           `json:"name"`
+	Members        []string         `json:"members"`
+	Description    string           `json:"description"`
+	Permissions    GroupPermissions `json:"permissions"`
+	GroupLinkState string           `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
 }
 
 type LoggingConfiguration struct {
-	Level            string   `json:"Level"`
+	Level string `json:"Level"`
 }
 
 type Configuration struct {
-	Logging            LoggingConfiguration   `json:"logging"`
+	Logging LoggingConfiguration `json:"logging"`
 }
 
 type RegisterNumberRequest struct {
@@ -76,7 +76,11 @@ type Error struct {
 	Msg string `json:"error"`
 }
 
-
+type UpdateContactRequest struct {
+	Name           string `json:"name"`
+	ExpirationTime int    `json:"expiration_time"`
+	Recipient      string `json:"recipient"`
+}
 
 type CreateGroupResponse struct {
 	Id string `json:"id"`
@@ -102,12 +106,12 @@ var connectionUpgrader = websocket.Upgrader{
 }
 
 type Api struct {
-	signalClient  *client.SignalClient
+	signalClient *client.SignalClient
 }
 
 func NewApi(signalClient *client.SignalClient) *Api {
 	return &Api{
-		signalClient:  signalClient,
+		signalClient: signalClient,
 	}
 }
 
@@ -279,7 +283,6 @@ func (a *Api) SendV2(c *gin.Context) {
 	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt((*timestamps)[0].Timestamp, 10)})
 }
 
-
 func (a *Api) handleSignalReceive(ws *websocket.Conn, number string) {
 	for {
 		data, err := a.signalClient.Receive(number, 0)
@@ -400,7 +403,7 @@ func (a *Api) CreateGroup(c *gin.Context) {
 	}
 
 	if req.GroupLinkState != "" && !utils.StringInSlice(req.GroupLinkState, []string{"enabled", "enabled-with-approval", "disabled"}) {
-		c.JSON(400, Error{Msg: "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!" })
+		c.JSON(400, Error{Msg: "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!"})
 		return
 	}
 
@@ -462,6 +465,52 @@ func (a *Api) GetGroup(c *gin.Context) {
 		c.JSON(200, groupEntry)
 	} else {
 		c.JSON(404, Error{Msg: "No group with that id found"})
+	}
+}
+
+// @Summary Update contact.
+// @Tags Contact
+// @Description Update message expiration time for a user.
+// @Accept  json
+// @Produce  json
+// @Success 201 {string} string "OK"
+// @Failure 400 {object} Error
+// @Param data body UpdateContactRequest true "Input Data"
+// @Router /v1/contact/{number} [post]
+func (a *Api) Contact(c *gin.Context) {
+	var req UpdateContactRequest
+	number := c.Param("number")
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	if len(number) == 0 {
+		c.JSON(400, gin.H{"error": "Couldn't process request - please provide the recipients number"})
+		return
+	}
+
+	if len(req.Name) == 0 {
+		c.JSON(400, gin.H{"error": "Couldn't process request - please provide the recipients name"})
+		return
+	}
+
+	if len(req.Recipient) == 0 {
+		c.JSON(400, gin.H{"error": "Couldn't process request - please provide the recipients number"})
+		return
+	}
+
+	if !(req.ExpirationTime >= 0) {
+		c.JSON(400, gin.H{"error": "Couldn't process request - please provide an expiry time in seconds"})
+		return
+	}
+
+	err = a.signalClient.UpdateContact(number, req.Recipient, req.Name, req.ExpirationTime)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
 	}
 }
 
@@ -553,18 +602,18 @@ func (a *Api) RemoveAttachment(c *gin.Context) {
 	err := a.signalClient.RemoveAttachment(attachment)
 	if err != nil {
 		switch err.(type) {
-			case *client.InvalidNameError:
-				c.JSON(400, Error{Msg: err.Error()})
-				return
-			case *client.NotFoundError:
-				c.JSON(404, Error{Msg: err.Error()})
-				return
-			case *client.InternalError:
-				c.JSON(500, Error{Msg: err.Error()})
-				return
-			default:
-				c.JSON(500, Error{Msg: err.Error()})
-				return
+		case *client.InvalidNameError:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		case *client.NotFoundError:
+			c.JSON(404, Error{Msg: err.Error()})
+			return
+		case *client.InternalError:
+			c.JSON(500, Error{Msg: err.Error()})
+			return
+		default:
+			c.JSON(500, Error{Msg: err.Error()})
+			return
 		}
 	}
 
@@ -585,18 +634,18 @@ func (a *Api) ServeAttachment(c *gin.Context) {
 	attachmentBytes, err := a.signalClient.GetAttachment(attachment)
 	if err != nil {
 		switch err.(type) {
-			case *client.InvalidNameError:
-				c.JSON(400, Error{Msg: err.Error()})
-				return
-			case *client.NotFoundError:
-				c.JSON(404, Error{Msg: err.Error()})
-				return
-			case *client.InternalError:
-				c.JSON(500, Error{Msg: err.Error()})
-				return
-			default:
-				c.JSON(500, Error{Msg: err.Error()})
-				return
+		case *client.InvalidNameError:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		case *client.NotFoundError:
+			c.JSON(404, Error{Msg: err.Error()})
+			return
+		case *client.InternalError:
+			c.JSON(500, Error{Msg: err.Error()})
+			return
+		default:
+			c.JSON(500, Error{Msg: err.Error()})
+			return
 		}
 	}
 

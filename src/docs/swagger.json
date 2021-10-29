@@ -902,6 +902,53 @@
             }
         }
     },
+    "/v1/contact/{number}": {
+        "post": {
+            "description": "Update Contact",
+            "consumes": [
+                "application/json"
+            ],
+            "produces": [
+                "application/json"
+            ],
+            "tags": [
+                "Update Contact"
+            ],
+            "summary": "Update contact expiration",
+            "parameters": [
+                {
+                    "type": "string",
+                    "description": "Registered Phone Number",
+                    "name": "number",
+                    "in": "path",
+                    "required": true
+                },                
+                {
+                    "description": "Input Data",
+                    "name": "data",
+                    "in": "body",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/api.UpdateContactRequest"
+                    }
+                }
+            ],
+            "responses": {
+                "201": {
+                    "description": "OK",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                "400": {
+                    "description": "Bad Request",
+                    "schema": {
+                        "$ref": "#/definitions/api.Error"
+                    }
+                }
+            }
+        }
+    },
     "definitions": {
         "api.Configuration": {
             "type": "object",

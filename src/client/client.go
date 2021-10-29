@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -14,9 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cyphar/filepath-securejoin"
+	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/h2non/filetype"
+
 	//"github.com/sourcegraph/jsonrpc2"//"net/rpc/jsonrpc"
 	log "github.com/sirupsen/logrus"
 
@@ -470,6 +472,7 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 	if s.signalCliMode == JsonRpc {
 		return errors.New(endpointNotSupportedInJsonRpcMode)
 	}
+
 	command := []string{"--config", s.signalCliConfig, "-u", number, "register"}
 
 	if useVoice {
@@ -613,8 +616,8 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 		}
 
 		type Response struct {
-			GroupId    string   `json:"groupId"`
-			Timestamp  int64    `json:"timestamp"`
+			GroupId   string `json:"groupId"`
+			Timestamp int64  `json:"timestamp"`
 		}
 		var resp Response
 		json.Unmarshal([]byte(rawData), &resp)
@@ -726,6 +729,11 @@ func (s *SignalClient) GetGroup(number string, groupId string) (*GroupEntry, err
 
 func (s *SignalClient) DeleteGroup(number string, groupId string) error {
 	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "quitGroup", "-g", string(groupId)}, "", s.signalCliMode)
+	return err
+}
+
+func (s *SignalClient) UpdateContact(number string, recipient string, name string, expiration_time int) error {
+	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "updateContact", recipient, "-n", name, "-e", fmt.Sprintf("%v", expiration_time)}, "", s.signalCliMode)
 	return err
 }
 
