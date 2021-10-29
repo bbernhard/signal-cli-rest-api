@@ -733,9 +733,6 @@ func (s *SignalClient) DeleteGroup(number string, groupId string) error {
 }
 
 func (s *SignalClient) UpdateContact(number string, recipient string, name string, expiration_time int) error {
-	println(name)
-	println(number)
-	println(expiration_time)
 	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "updateContact", recipient, "-n", name, "-e", fmt.Sprintf("%v", expiration_time)}, "", s.signalCliMode)
 	return err
 }
