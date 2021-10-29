@@ -1064,6 +1064,20 @@ var doc = `{
                 }
             }
         },
+        "api.UpdateContactRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "recipient": {
+                    "type": "string"
+                },                
+                "expiration_time": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.TrustIdentityRequest": {
             "type": "object",
             "properties": {

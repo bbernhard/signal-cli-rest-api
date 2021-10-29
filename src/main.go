@@ -114,7 +114,6 @@ func main() {
 		}
 	}
 
-
 	jsonRpc2ClientConfigPathPath := *signalCliConfig + "/jsonrpc2.yml"
 	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath)
 	err = signalClient.Init()
@@ -190,6 +189,10 @@ func main() {
 			identities.GET(":number", api.ListIdentities)
 			identities.PUT(":number/trust/:numbertotrust", api.TrustIdentity)
 		}
+		contacts := v1.Group("/contact")
+		{
+			contacts.POST(":number", api.Contact)
+		}
 	}
 
 	v2 := router.Group("/v2")
@@ -222,7 +225,7 @@ func main() {
 				filename := filepath.Base(path)
 				if strings.HasPrefix(filename, "+") && info.Mode().IsRegular() {
 					log.Debug("AUTO_RECEIVE_SCHEDULE: Calling receive for number ", filename)
-					resp, err := http.Get("http://127.0.0.1:" + port + "/v1/receive/"+filename)
+					resp, err := http.Get("http://127.0.0.1:" + port + "/v1/receive/" + filename)
 					if err != nil {
 						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", filename, ": ", err.Error())
 					}
@@ -235,7 +238,7 @@ func main() {
 						}
 
 						type ReceiveResponse struct {
-							Error  string  `json:"error"`
+							Error string `json:"error"`
 						}
 						var receiveResponse ReceiveResponse
 						err = json.Unmarshal(jsonResp, &receiveResponse)
@@ -258,8 +261,5 @@ func main() {
 		c.Start()
 	}
 
-
 	router.Run()
 }
-
-
