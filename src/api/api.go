@@ -72,6 +72,10 @@ type SendMessageV2 struct {
 	Base64Attachments []string `json:"base64_attachments"`
 }
 
+type TypingIndicatorRequest struct {
+	Recipient string `json:"recipient"`
+}
+
 type Error struct {
 	Msg string `json:"error"`
 }
@@ -879,6 +883,72 @@ func (a *Api) QuitGroup(c *gin.Context) {
 	}
 
 	err = a.signalClient.QuitGroup(number, internalGroupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Show Typing Indicator.
+// @Tags Messages
+// @Description Show Typing Indicator.
+// @Accept  json
+// @Produce  json
+// @Success 201 {string} OK
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param data body TypingIndicatorRequest true "Type"
+// @Router /v1/typing-indicator/{number} [put]
+func (a *Api) SendStartTyping(c *gin.Context) {
+	var req TypingIndicatorRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	err = a.signalClient.SendStartTyping(number, req.Recipient)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Hide Typing Indicator.
+// @Tags Messages
+// @Description Hide Typing Indicator.
+// @Accept  json
+// @Produce  json
+// @Success 201 {string} OK
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param data body TypingIndicatorRequest true "Type"
+// @Router /v1/typing-indicator/{number} [delete]
+func (a *Api) SendStopTyping(c *gin.Context) {
+	var req TypingIndicatorRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	err = a.signalClient.SendStopTyping(number, req.Recipient)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return

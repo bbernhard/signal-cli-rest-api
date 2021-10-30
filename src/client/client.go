@@ -994,3 +994,88 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	}
 	return err
 }
+
+func (s *SignalClient) SendStartTyping(number string, recipient string) error {
+	var err error
+	recp := recipient
+	isGroup := false
+	if strings.HasPrefix(recipient, groupPrefix) {
+		isGroup = true
+		recp, err = ConvertGroupIdToInternalGroupId(recipient)
+		if err != nil {
+			return errors.New("Invalid group id")
+		}
+	}
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Recipient string `json:"recipient,omitempty"`
+			GroupId string `json:"group-id,omitempty"`
+		}
+		request := Request{}
+		if !isGroup {
+			request.Recipient = recp
+		} else {
+			request.GroupId = recp
+		}
+
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("sendTyping", request)
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "sendTyping"}
+		if !isGroup {
+			cmd = append(cmd, recp)
+		} else {
+			cmd = append(cmd, []string{"-g", recp}...)
+		}
+		_, err = runSignalCli(true, cmd, "", s.signalCliMode)
+	}
+
+	return err
+}
+
+func (s *SignalClient) SendStopTyping(number string, recipient string) error {
+	var err error
+	recp := recipient
+	isGroup := false
+	if strings.HasPrefix(recipient, groupPrefix) {
+		isGroup = true
+		recp, err = ConvertGroupIdToInternalGroupId(recipient)
+		if err != nil {
+			return errors.New("Invalid group id")
+		}
+	}
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Recipient string `json:"recipient,omitempty"`
+			GroupId string `json:"group-id,omitempty"`
+			Stop bool `json:"stop"`
+		}
+		request := Request{Stop: true}
+		if !isGroup {
+			request.Recipient = recp
+		} else {
+			request.GroupId = recp
+		}
+
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("sendTyping", request)
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "sendTyping", "--stop"}
+		if !isGroup {
+			cmd = append(cmd, recp)
+		} else {
+			cmd = append(cmd, []string{"-g", recp}...)
+		}
+		_, err = runSignalCli(true, cmd, "", s.signalCliMode)
+	}
+
+	return err
+}

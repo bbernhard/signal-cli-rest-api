@@ -101,6 +101,11 @@ definitions:
       verified_safety_number:
         type: string
     type: object
+  api.TypingIndicatorRequest:
+    properties:
+      recipient:
+        type: string
+    type: object
   api.UpdateProfileRequest:
     properties:
       base64_avatar:
@@ -117,6 +122,8 @@ definitions:
     properties:
       build:
         type: integer
+      mode:
+        type: string
       versions:
         items:
           type: string
@@ -729,6 +736,67 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: Send a signal message.
+      tags:
+      - Messages
+  /v1/typing-indicator/{number}:
+    delete:
+      consumes:
+      - application/json
+      description: Hide Typing Indicator.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Type
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.TypingIndicatorRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Hide Typing Indicator.
+      tags:
+      - Messages
+    put:
+      consumes:
+      - application/json
+      description: Show Typing Indicator.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Type
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.TypingIndicatorRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Show Typing Indicator.
       tags:
       - Messages
   /v2/send:

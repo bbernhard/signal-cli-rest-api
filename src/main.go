@@ -190,6 +190,12 @@ func main() {
 			identities.GET(":number", api.ListIdentities)
 			identities.PUT(":number/trust/:numbertotrust", api.TrustIdentity)
 		}
+
+		typingIndicator := v1.Group("typing-indicator")
+		{
+			typingIndicator.PUT(":number", api.SendStartTyping)
+			typingIndicator.DELETE(":number", api.SendStopTyping)
+		}
 	}
 
 	v2 := router.Group("/v2")
