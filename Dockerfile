@@ -1,10 +1,10 @@
-ARG SIGNAL_CLI_VERSION=0.9.0
-ARG ZKGROUP_VERSION=0.7.0
-ARG LIBSIGNAL_CLIENT_VERSION=0.9.0
+ARG SIGNAL_CLI_VERSION=0.9.2
+ARG ZKGROUP_VERSION=0.8.2
+ARG LIBSIGNAL_CLIENT_VERSION=0.9.7
 
 ARG SWAG_VERSION=1.6.7
 ARG GRAALVM_JAVA_VERSION=11
-ARG GRAALVM_VERSION=21.2.0
+ARG GRAALVM_VERSION=21.3.0
 
 FROM golang:1.17-bullseye AS buildcontainer
 
@@ -78,15 +78,16 @@ RUN arch="$(uname -m)"; \
 RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "x86_64" ]; then \
 		cd /tmp && tar xvf gvm.tar.gz \
 		&& export GRAALVM_HOME=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION} \
+		&& export PATH=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin:$PATH \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
 		&& chmod +x /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu \ 
 		&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
-		&& ./gradlew assembleNativeImage; \
+		&& ./gradlew nativeCompile; \
     elif [ "$(uname -m)" = "armv7l" ]; then \
 		echo "GRAALVM doesn't support 32bit" \
 		&& echo "Creating temporary file, otherwise the below copy doesn't work for armv7" \
-		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image \
-		&& touch /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image/signal-cli; \ 
+		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native/nativeCompile \
+		&& touch /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native/nativeCompile/signal-cli; \
     else \
 		echo "Unknown architecture"; \
     fi;
@@ -154,7 +155,7 @@ RUN apt-get update \
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
 COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar /tmp/signal-cli-${SIGNAL_CLI_VERSION}.tar
-COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native-image/signal-cli /tmp/signal-cli-native
+COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/native/nativeCompile/signal-cli /tmp/signal-cli-native
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/scripts/jsonrpc2-helper /usr/bin/jsonrpc2-helper
 COPY entrypoint.sh /entrypoint.sh
 
