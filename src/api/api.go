@@ -9,8 +9,8 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/bbernhard/signal-cli-rest-api/client"
 	utils "github.com/bbernhard/signal-cli-rest-api/utils"
@@ -29,23 +29,23 @@ const (
 
 type GroupPermissions struct {
 	AddMembers string `json:"add_members" enums:"only-admins,every-member"`
-	EditGroup string `json:"edit_group" enums:"only-admins,every-member"`
+	EditGroup  string `json:"edit_group" enums:"only-admins,every-member"`
 }
 
 type CreateGroupRequest struct {
-	Name    string   `json:"name"`
-	Members []string `json:"members"`
-	Description string `json:"description"`
-	Permissions GroupPermissions `json:"permissions"`
-	GroupLinkState string `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
+	Name           string           `json:"name"`
+	Members        []string         `json:"members"`
+	Description    string           `json:"description"`
+	Permissions    GroupPermissions `json:"permissions"`
+	GroupLinkState string           `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
 }
 
 type LoggingConfiguration struct {
-	Level            string   `json:"Level"`
+	Level string `json:"Level"`
 }
 
 type Configuration struct {
-	Logging            LoggingConfiguration   `json:"logging"`
+	Logging LoggingConfiguration `json:"logging"`
 }
 
 type RegisterNumberRequest struct {
@@ -55,6 +55,13 @@ type RegisterNumberRequest struct {
 
 type VerifyNumberSettings struct {
 	Pin string `json:"pin"`
+}
+
+type Reaction struct {
+	Number    string `json:"number"`
+	Timestamp int64  `json:"timestamp"`
+	Recipient string `json:"recipient"`
+	Reaction  string `json:"reaction"`
 }
 
 type SendMessageV1 struct {
@@ -80,8 +87,6 @@ type Error struct {
 	Msg string `json:"error"`
 }
 
-
-
 type CreateGroupResponse struct {
 	Id string `json:"id"`
 }
@@ -106,12 +111,12 @@ var connectionUpgrader = websocket.Upgrader{
 }
 
 type Api struct {
-	signalClient  *client.SignalClient
+	signalClient *client.SignalClient
 }
 
 func NewApi(signalClient *client.SignalClient) *Api {
 	return &Api{
-		signalClient:  signalClient,
+		signalClient: signalClient,
 	}
 }
 
@@ -283,7 +288,6 @@ func (a *Api) SendV2(c *gin.Context) {
 	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt((*timestamps)[0].Timestamp, 10)})
 }
 
-
 func (a *Api) handleSignalReceive(ws *websocket.Conn, number string) {
 	for {
 		data, err := a.signalClient.Receive(number, 0)
@@ -404,7 +408,7 @@ func (a *Api) CreateGroup(c *gin.Context) {
 	}
 
 	if req.GroupLinkState != "" && !utils.StringInSlice(req.GroupLinkState, []string{"enabled", "enabled-with-approval", "disabled"}) {
-		c.JSON(400, Error{Msg: "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!" })
+		c.JSON(400, Error{Msg: "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!"})
 		return
 	}
 
@@ -557,18 +561,18 @@ func (a *Api) RemoveAttachment(c *gin.Context) {
 	err := a.signalClient.RemoveAttachment(attachment)
 	if err != nil {
 		switch err.(type) {
-			case *client.InvalidNameError:
-				c.JSON(400, Error{Msg: err.Error()})
-				return
-			case *client.NotFoundError:
-				c.JSON(404, Error{Msg: err.Error()})
-				return
-			case *client.InternalError:
-				c.JSON(500, Error{Msg: err.Error()})
-				return
-			default:
-				c.JSON(500, Error{Msg: err.Error()})
-				return
+		case *client.InvalidNameError:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		case *client.NotFoundError:
+			c.JSON(404, Error{Msg: err.Error()})
+			return
+		case *client.InternalError:
+			c.JSON(500, Error{Msg: err.Error()})
+			return
+		default:
+			c.JSON(500, Error{Msg: err.Error()})
+			return
 		}
 	}
 
@@ -589,18 +593,18 @@ func (a *Api) ServeAttachment(c *gin.Context) {
 	attachmentBytes, err := a.signalClient.GetAttachment(attachment)
 	if err != nil {
 		switch err.(type) {
-			case *client.InvalidNameError:
-				c.JSON(400, Error{Msg: err.Error()})
-				return
-			case *client.NotFoundError:
-				c.JSON(404, Error{Msg: err.Error()})
-				return
-			case *client.InternalError:
-				c.JSON(500, Error{Msg: err.Error()})
-				return
-			default:
-				c.JSON(500, Error{Msg: err.Error()})
-				return
+		case *client.InvalidNameError:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		case *client.NotFoundError:
+			c.JSON(404, Error{Msg: err.Error()})
+			return
+		case *client.InternalError:
+			c.JSON(500, Error{Msg: err.Error()})
+			return
+		default:
+			c.JSON(500, Error{Msg: err.Error()})
+			return
 		}
 	}
 
@@ -883,6 +887,52 @@ func (a *Api) QuitGroup(c *gin.Context) {
 	}
 
 	err = a.signalClient.QuitGroup(number, internalGroupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Send a reaction.
+// @Tags Reactions
+// @Description React to a message.
+// @Accept  json
+// @Produce  json
+// @Success 201 {string} OK
+// @Failure 400 {object} Error
+// @Param data body Reaction true "Reaction"
+// @Router /v1/react/{number} [post]
+func (a *Api) SendReaction(c *gin.Context) {
+	var req Reaction
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	if req.Recipient == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
+		return
+	}
+
+	if req.Timestamp == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - timestamp missing"})
+		return
+	}
+
+	if req.Reaction == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - reaction missing"})
+		return
+	}
+
+	if req.Number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	err = a.signalClient.SendReaction(req.Number, req.Recipient, req.Timestamp, req.Reaction)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return

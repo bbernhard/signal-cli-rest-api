@@ -14,9 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cyphar/filepath-securejoin"
+	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/h2non/filetype"
+
 	//"github.com/sourcegraph/jsonrpc2"//"net/rpc/jsonrpc"
 	log "github.com/sirupsen/logrus"
 
@@ -613,8 +614,8 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 		}
 
 		type Response struct {
-			GroupId    string   `json:"groupId"`
-			Timestamp  int64    `json:"timestamp"`
+			GroupId   string `json:"groupId"`
+			Timestamp int64  `json:"timestamp"`
 		}
 		var resp Response
 		json.Unmarshal([]byte(rawData), &resp)
@@ -995,6 +996,56 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	return err
 }
 
+func (s *SignalClient) SendReaction(number string, recipient string, timestamp int64, reaction string) error {
+	var err error
+	recp := recipient
+	isGroup := false
+	if strings.HasPrefix(recipient, groupPrefix) {
+		isGroup = true
+		recp, err = ConvertGroupIdToInternalGroupId(recipient)
+		if err != nil {
+			return errors.New("Invalid group id")
+		}
+	}
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Recipient string `json:"recipient,omitempty"`
+			GroupId   string `json:"group-id,omitempty"`
+			// TODO other fields
+		}
+		request := Request{}
+		if !isGroup {
+			request.Recipient = recp
+		} else {
+			request.GroupId = recp
+		}
+
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("sendReaction", request)
+	} else {
+		// TODO: check CLI command again
+		cmd := []string{
+			"--config", s.signalCliConfig,
+			"-u", number,
+			"sendTyping",
+			"-e", reaction,
+			"-t", strconv.FormatInt(timestamp, 10),
+		}
+		if !isGroup {
+			cmd = append(cmd, recp)
+		} else {
+			cmd = append(cmd, []string{"-g", recp}...)
+		}
+		_, err = runSignalCli(true, cmd, "", s.signalCliMode)
+	}
+
+	return err
+}
+
 func (s *SignalClient) SendStartTyping(number string, recipient string) error {
 	var err error
 	recp := recipient
@@ -1010,7 +1061,7 @@ func (s *SignalClient) SendStartTyping(number string, recipient string) error {
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			Recipient string `json:"recipient,omitempty"`
-			GroupId string `json:"group-id,omitempty"`
+			GroupId   string `json:"group-id,omitempty"`
 		}
 		request := Request{}
 		if !isGroup {
@@ -1052,8 +1103,8 @@ func (s *SignalClient) SendStopTyping(number string, recipient string) error {
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			Recipient string `json:"recipient,omitempty"`
-			GroupId string `json:"group-id,omitempty"`
-			Stop bool `json:"stop"`
+			GroupId   string `json:"group-id,omitempty"`
+			Stop      bool   `json:"stop"`
 		}
 		request := Request{Stop: true}
 		if !isGroup {
