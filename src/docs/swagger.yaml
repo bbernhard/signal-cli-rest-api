@@ -285,7 +285,7 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
+        "204":
           description: OK
           schema:
             type: string
@@ -431,8 +431,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "204":
+          description: No Content
           schema:
             type: string
         "400":
@@ -461,8 +461,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "204":
+          description: No Content
           schema:
             type: string
         "400":
@@ -491,8 +491,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "204":
+          description: No Content
           schema:
             type: string
         "400":
@@ -758,8 +758,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "204":
+          description: No Content
           schema:
             type: string
         "400":
@@ -788,8 +788,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "204":
+          description: No Content
           schema:
             type: string
         "400":

@@ -742,7 +742,7 @@ func (a *Api) TrustIdentity(c *gin.Context) {
 // @Description Set the REST API configuration.
 // @Accept  json
 // @Produce  json
-// @Success 201 {string} string "OK"
+// @Success 204 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param data body Configuration true "Configuration"
 // @Router /v1/configuration [post]
@@ -797,7 +797,7 @@ func (a *Api) GetConfiguration(c *gin.Context) {
 // @Description Block the specified Signal Group.
 // @Accept  json
 // @Produce  json
-// @Success 200 {string} OK
+// @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param groupid path string true "Group ID"
@@ -830,7 +830,7 @@ func (a *Api) BlockGroup(c *gin.Context) {
 // @Description Join the specified Signal Group.
 // @Accept  json
 // @Produce  json
-// @Success 200 {string} OK
+// @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param groupid path string true "Group ID"
@@ -863,7 +863,7 @@ func (a *Api) JoinGroup(c *gin.Context) {
 // @Description Quit the specified Signal Group.
 // @Accept  json
 // @Produce  json
-// @Success 200 {string} OK
+// @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param groupid path string true "Group ID"
@@ -895,7 +895,7 @@ func (a *Api) QuitGroup(c *gin.Context) {
 // @Description Show Typing Indicator.
 // @Accept  json
 // @Produce  json
-// @Success 201 {string} OK
+// @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param data body TypingIndicatorRequest true "Type"
@@ -928,7 +928,7 @@ func (a *Api) SendStartTyping(c *gin.Context) {
 // @Description Hide Typing Indicator.
 // @Accept  json
 // @Produce  json
-// @Success 201 {string} OK
+// @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param data body TypingIndicatorRequest true "Type"
