@@ -996,7 +996,8 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	return err
 }
 
-func (s *SignalClient) SendReaction(number string, recipient string, timestamp int64, reaction string) error {
+func (s *SignalClient) SendReaction(number string, recipient string, emoji string, target_author string, timestamp int64, remove bool) error {
+	// see https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc#sendreaction
 	var err error
 	recp := recipient
 	isGroup := false
@@ -1010,9 +1011,12 @@ func (s *SignalClient) SendReaction(number string, recipient string, timestamp i
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Recipient string `json:"recipient,omitempty"`
-			GroupId   string `json:"group-id,omitempty"`
-			// TODO other fields
+			Recipient    string `json:"recipient,omitempty"`
+			GroupId      string `json:"group-id,omitempty"`
+			Emoji        string `json:"emoji"`
+			TargetAuthor string `json:"target-author"`
+			Timestamp    int64  `json:"target-timestamp"`
+			Remove       bool   `json:"remove,omitempty"`
 		}
 		request := Request{}
 		if !isGroup {
@@ -1020,29 +1024,35 @@ func (s *SignalClient) SendReaction(number string, recipient string, timestamp i
 		} else {
 			request.GroupId = recp
 		}
-
+		request.Emoji = emoji
+		request.TargetAuthor = target_author
+		request.Timestamp = timestamp
+		if remove == true {
+			request.Remove = remove
+		}
 		jsonRpc2Client, err := s.getJsonRpc2Client(number)
 		if err != nil {
 			return err
 		}
 		_, err = jsonRpc2Client.getRaw("sendReaction", request)
-	} else {
-		// TODO: check CLI command again
-		cmd := []string{
-			"--config", s.signalCliConfig,
-			"-u", number,
-			"sendTyping",
-			"-e", reaction,
-			"-t", strconv.FormatInt(timestamp, 10),
-		}
-		if !isGroup {
-			cmd = append(cmd, recp)
-		} else {
-			cmd = append(cmd, []string{"-g", recp}...)
-		}
-		_, err = runSignalCli(true, cmd, "", s.signalCliMode)
+		return err
 	}
 
+	cmd := []string{
+		"--config", s.signalCliConfig,
+		"-u", number,
+		"sendReaction",
+	}
+	if !isGroup {
+		cmd = append(cmd, recp)
+	} else {
+		cmd = append(cmd, []string{"-g", recp}...)
+	}
+	cmd = append(cmd, []string{"-e", emoji, "-a", target_author, "-t", strconv.FormatInt(timestamp, 10)}...)
+	if remove {
+		cmd = append(cmd, "-r")
+	}
+	_, err = runSignalCli(true, cmd, "", s.signalCliMode)
 	return err
 }
 
