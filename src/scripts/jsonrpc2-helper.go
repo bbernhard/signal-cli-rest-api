@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	log "github.com/sirupsen/logrus"
@@ -31,9 +30,18 @@ stdout_logfile_backups=10
 numprocs=1
 `
 
+
 func main() {
-	signalCliConfigDir := flag.String("signal-cli-config-dir", "/home/.local/share/signal-cli/", "Path to signal-cli config directory")
-	signalCliConfigDataDir := *signalCliConfigDir + "data"
+	signalCliConfigDir := "/home/.local/share/signal-cli/"
+	signalCliConfigDirEnv := utils.GetEnv("SIGNAL_CLI_CONFIG_DIR", "")
+	if signalCliConfigDirEnv != "" {
+		signalCliConfigDir = signalCliConfigDirEnv
+		if !strings.HasSuffix(signalCliConfigDirEnv, "/") {
+			signalCliConfigDir += "/"
+		}
+	}
+
+	signalCliConfigDataDir := signalCliConfigDir + "data"
 
 	jsonRpc2ClientConfig := utils.NewJsonRpc2ClientConfig()
 
@@ -94,7 +102,7 @@ func main() {
 	}
 
 	// write jsonrpc.yml config file
-	err = jsonRpc2ClientConfig.Persist(*signalCliConfigDir + "jsonrpc2.yml")
+	err = jsonRpc2ClientConfig.Persist(signalCliConfigDir + "jsonrpc2.yml")
 	if err != nil {
 		log.Fatal("Couldn't persist jsonrpc2.yaml: ", err.Error())
 	}
