@@ -62,7 +62,6 @@ type Reaction struct {
 	Reaction     string `json:"reaction"`
 	TargetAuthor string `json:"target_author"`
 	Timestamp    int64  `json:"timestamp"`
-	Remove       bool   `json:"remove,omitempty"`
 }
 
 type SendMessageV1 struct {
@@ -895,9 +894,9 @@ func (a *Api) QuitGroup(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// @Summary Send or remove a reaction.
+// @Summary Send a reaction.
 // @Tags Reactions
-// @Description React to a message or remove it.
+// @Description React to a message
 // @Accept  json
 // @Produce  json
 // @Success 204 {string} OK
@@ -905,7 +904,7 @@ func (a *Api) QuitGroup(c *gin.Context) {
 // @Param data body Reaction true "Reaction"
 // @Router /v1/react/{number} [post]
 func (a *Api) SendReaction(c *gin.Context) {
-	req := Reaction{Remove: false}
+	var req Reaction
 	err := c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
@@ -935,7 +934,55 @@ func (a *Api) SendReaction(c *gin.Context) {
 		return
 	}
 
-	err = a.signalClient.SendReaction(number, req.Recipient, req.Reaction, req.TargetAuthor, req.Timestamp, req.Remove)
+	err = a.signalClient.SendReaction(number, req.Recipient, req.Reaction, req.TargetAuthor, req.Timestamp, false)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Remove a reaction.
+// @Tags Reactions
+// @Description Remove a reaction
+// @Accept  json
+// @Produce  json
+// @Success 204 {string} OK
+// @Failure 400 {object} Error
+// @Param data body Reaction true "Reaction"
+// @Router /v1/react/{number} [delete]
+func (a *Api) RemoveReaction(c *gin.Context) {
+	var req Reaction
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	number := c.Param("number")
+
+	if req.Recipient == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
+		return
+	}
+
+	if req.Reaction == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - reaction missing"})
+		return
+	}
+
+	if req.TargetAuthor == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - target_author missing"})
+		return
+	}
+
+	if req.Timestamp == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - timestamp missing"})
+		return
+	}
+
+	err = a.signalClient.SendReaction(number, req.Recipient, req.Reaction, req.TargetAuthor, req.Timestamp, true)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
