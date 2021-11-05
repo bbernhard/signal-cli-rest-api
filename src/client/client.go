@@ -1008,6 +1008,9 @@ func (s *SignalClient) SendReaction(number string, recipient string, emoji strin
 			return errors.New("Invalid group id")
 		}
 	}
+	if remove && emoji == "" {
+		emoji = "👍" // emoji must not be empty to remove a reaction
+	}
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
@@ -1027,7 +1030,7 @@ func (s *SignalClient) SendReaction(number string, recipient string, emoji strin
 		request.Emoji = emoji
 		request.TargetAuthor = target_author
 		request.Timestamp = timestamp
-		if remove == true {
+		if remove {
 			request.Remove = remove
 		}
 		jsonRpc2Client, err := s.getJsonRpc2Client(number)

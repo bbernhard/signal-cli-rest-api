@@ -902,7 +902,7 @@ func (a *Api) QuitGroup(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body Reaction true "Reaction"
-// @Router /v1/reaction/{number} [post]
+// @Router /v1/reactions/{number} [post]
 func (a *Api) SendReaction(c *gin.Context) {
 	var req Reaction
 	err := c.BindJSON(&req)
@@ -950,7 +950,7 @@ func (a *Api) SendReaction(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body Reaction true "Reaction"
-// @Router /v1/reaction/{number} [delete]
+// @Router /v1/reactions/{number} [delete]
 func (a *Api) RemoveReaction(c *gin.Context) {
 	var req Reaction
 	err := c.BindJSON(&req)
@@ -964,11 +964,6 @@ func (a *Api) RemoveReaction(c *gin.Context) {
 
 	if req.Recipient == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
-		return
-	}
-
-	if req.Reaction == "" {
-		c.JSON(400, Error{Msg: "Couldn't process request - reaction missing"})
 		return
 	}
 

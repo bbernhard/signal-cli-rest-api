@@ -1,9 +1,11 @@
 version: "3"
 services:
   signal-cli-rest-api:
-    image: bbernhard/signal-cli-rest-api:latest
+    #image: bbernhard/signal-cli-rest-api:latest
+    build: .
     environment:
-      - MODE=normal #supported modes: json-rpc, native, normal
+      # - MODE=normal #supported modes: json-rpc, native, normal
+      - MODE=json-rpc #supported modes: json-rpc, native, normal
       #- AUTO_RECEIVE_SCHEDULE=0 22 * * * #enable this parameter on demand (see description below)
     ports:
       - "8080:8080" #map docker port 8080 to host port 8080.
