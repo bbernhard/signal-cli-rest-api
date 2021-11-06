@@ -16,7 +16,7 @@ const supervisorctlConfigTemplate = `
 [program:%s]
 environment=JAVA_HOME=/opt/java/openjdk
 process_name=%s
-command=bash -c "nc -l -p %d <%s | signal-cli --output=json -u %s --config /home/.local/share/signal-cli/ jsonRpc >%s"
+command=bash -c "nc -l -p %d <%s | signal-cli --output=json -u %s --config %s jsonRpc >%s"
 autostart=true
 autorestart=true
 startretries=10
@@ -90,7 +90,7 @@ func main() {
 				//write supervisorctl config
 				supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-" + strconv.FormatInt(ctr, 10) + ".conf"
 				supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
-					tcpPort, fifoPathname, number, fifoPathname, supervisorctlProgramName, supervisorctlProgramName)
+					tcpPort, fifoPathname, number, signalCliConfigDir, fifoPathname, supervisorctlProgramName, supervisorctlProgramName)
 				err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
 				if err != nil {
 					log.Fatal("Couldn't write ", supervisorctlConfigFilename, ": ", err.Error())
