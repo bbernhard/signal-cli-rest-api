@@ -952,7 +952,7 @@ func (s *SignalClient) BlockGroup(number string, groupId string) error {
 		if err != nil {
 			return err
 		}
-		_, err = jsonRpc2Client.getRaw("updateGroup", request)
+		_, err = jsonRpc2Client.getRaw("block", request)
 	} else {
 		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "block", "-g", groupId}, "", s.signalCliMode)
 	}
