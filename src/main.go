@@ -46,6 +46,9 @@ import (
 // @tag.name Identities
 // @tag.description List and Trust Identities.
 
+// @tag.name Reactions
+// @tag.description React to messages.
+
 // @host 127.0.0.1:8080
 // @BasePath /
 func main() {
@@ -113,7 +116,6 @@ func main() {
 			log.Fatal("Env variable SIGNAL_CLI_CMD_TIMEOUT can't be used with mode json-rpc")
 		}
 	}
-
 
 	jsonRpc2ClientConfigPathPath := *signalCliConfig + "/jsonrpc2.yml"
 	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath)
@@ -196,6 +198,12 @@ func main() {
 			typingIndicator.PUT(":number", api.SendStartTyping)
 			typingIndicator.DELETE(":number", api.SendStopTyping)
 		}
+
+		reactions := v1.Group("/reactions")
+		{
+			reactions.POST(":number", api.SendReaction)
+			reactions.DELETE(":number", api.RemoveReaction)
+		}
 	}
 
 	v2 := router.Group("/v2")
@@ -228,7 +236,7 @@ func main() {
 				filename := filepath.Base(path)
 				if strings.HasPrefix(filename, "+") && info.Mode().IsRegular() {
 					log.Debug("AUTO_RECEIVE_SCHEDULE: Calling receive for number ", filename)
-					resp, err := http.Get("http://127.0.0.1:" + port + "/v1/receive/"+filename)
+					resp, err := http.Get("http://127.0.0.1:" + port + "/v1/receive/" + filename)
 					if err != nil {
 						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", filename, ": ", err.Error())
 					}
@@ -241,7 +249,7 @@ func main() {
 						}
 
 						type ReceiveResponse struct {
-							Error  string  `json:"error"`
+							Error string `json:"error"`
 						}
 						var receiveResponse ReceiveResponse
 						err = json.Unmarshal(jsonResp, &receiveResponse)
@@ -264,8 +272,5 @@ func main() {
 		c.Start()
 	}
 
-
 	router.Run()
 }
-
-

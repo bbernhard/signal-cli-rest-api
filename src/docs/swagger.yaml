@@ -1,9 +1,9 @@
-basePath: /
+"basePath: /
 definitions:
   api.Configuration:
     properties:
       logging:
-        $ref: '#/definitions/api.LoggingConfiguration'
+        $ref: "#/definitions/api.LoggingConfiguration"
         type: object
     type: object
   api.CreateGroupRequest:
@@ -12,9 +12,9 @@ definitions:
         type: string
       group_link:
         enum:
-        - disabled
-        - enabled
-        - enabled-with-approval
+          - disabled
+          - enabled
+          - enabled-with-approval
         type: string
       members:
         items:
@@ -23,7 +23,7 @@ definitions:
       name:
         type: string
       permissions:
-        $ref: '#/definitions/api.GroupPermissions'
+        $ref: "#/definitions/api.GroupPermissions"
         type: object
     type: object
   api.CreateGroupResponse:
@@ -40,19 +40,30 @@ definitions:
     properties:
       add_members:
         enum:
-        - only-admins
-        - every-member
+          - only-admins
+          - every-member
         type: string
       edit_group:
         enum:
-        - only-admins
-        - every-member
+          - only-admins
+          - every-member
         type: string
     type: object
   api.LoggingConfiguration:
     properties:
       Level:
         type: string
+    type: object
+  api.Reaction:
+    properties:
+      recipient:
+        type: string
+      reaction:
+        type: string
+      target_author:
+        type: string
+      timestamp:
+        type: integer
     type: object
   api.RegisterNumberRequest:
     properties:
@@ -179,20 +190,20 @@ paths:
     get:
       description: Returns the supported API versions and the internal build nr
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/client.About'
+            $ref: "#/definitions/client.About"
       summary: Lists general information about the API
       tags:
-      - General
+        - General
   /v1/attachments:
     get:
       description: List all downloaded attachments
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -203,21 +214,21 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: List all attachments.
       tags:
-      - Attachments
+        - Attachments
   /v1/attachments/{attachment}:
     delete:
       description: Remove the attachment with the given id from filesystem.
       parameters:
-      - description: Attachment ID
-        in: path
-        name: attachment
-        required: true
-        type: string
+        - description: Attachment ID
+          in: path
+          name: attachment
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: No Content
@@ -226,20 +237,20 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Remove attachment.
       tags:
-      - Attachments
+        - Attachments
     get:
       description: Serve the attachment with the given id
       parameters:
-      - description: Attachment ID
-        in: path
-        name: attachment
-        required: true
-        type: string
+        - description: Attachment ID
+          in: path
+          name: attachment
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -248,42 +259,42 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Serve Attachment.
       tags:
-      - Attachments
+        - Attachments
   /v1/configuration:
     get:
       consumes:
-      - application/json
+        - application/json
       description: List the REST API configuration.
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.Configuration'
+            $ref: "#/definitions/api.Configuration"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: List the REST API configuration.
       tags:
-      - General
+        - General
     post:
       consumes:
-      - application/json
+        - application/json
       description: Set the REST API configuration.
       parameters:
-      - description: Configuration
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/api.Configuration'
+        - description: Configuration
+          in: body
+          name: data
+          required: true
+          schema:
+            $ref: "#/definitions/api.Configuration"
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: OK
@@ -292,85 +303,85 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Set the REST API configuration.
       tags:
-      - General
+        - General
   /v1/groups/{number}:
     get:
       consumes:
-      - application/json
+        - application/json
       description: List all Signal Groups.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/client.GroupEntry'
+              $ref: "#/definitions/client.GroupEntry"
             type: array
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: List all Signal Groups.
       tags:
-      - Groups
+        - Groups
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create a new Signal Group with the specified members.
       parameters:
-      - description: Input Data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/api.CreateGroupRequest'
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
+        - description: Input Data
+          in: body
+          name: data
+          required: true
+          schema:
+            $ref: "#/definitions/api.CreateGroupRequest"
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.CreateGroupResponse'
+            $ref: "#/definitions/api.CreateGroupResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Create a new Signal Group.
       tags:
-      - Groups
+        - Groups
   /v1/groups/{number}/{groupid}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Delete the specified Signal Group.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
-      - description: Group Id
-        in: path
-        name: groupid
-        required: true
-        type: string
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
+        - description: Group Id
+          in: path
+          name: groupid
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -379,57 +390,57 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Delete a Signal Group.
       tags:
-      - Groups
+        - Groups
     get:
       consumes:
-      - application/json
+        - application/json
       description: List a specific Signal Group.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
-      - description: Group ID
-        in: path
-        name: groupid
-        required: true
-        type: string
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
+        - description: Group ID
+          in: path
+          name: groupid
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/client.GroupEntry'
+            $ref: "#/definitions/client.GroupEntry"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: List a Signal Group.
       tags:
-      - Groups
+        - Groups
   /v1/groups/{number}/{groupid}/block:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Block the specified Signal Group.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
-      - description: Group ID
-        in: path
-        name: groupid
-        required: true
-        type: string
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
+        - description: Group ID
+          in: path
+          name: groupid
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: No Content
@@ -438,28 +449,28 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Block a Signal Group.
       tags:
-      - Groups
+        - Groups
   /v1/groups/{number}/{groupid}/join:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Join the specified Signal Group.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
-      - description: Group ID
-        in: path
-        name: groupid
-        required: true
-        type: string
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
+        - description: Group ID
+          in: path
+          name: groupid
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: No Content
@@ -468,28 +479,28 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Join a Signal Group.
       tags:
-      - Groups
+        - Groups
   /v1/groups/{number}/{groupid}/quit:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Quit the specified Signal Group.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
-      - description: Group ID
-        in: path
-        name: groupid
-        required: true
-        type: string
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
+        - description: Group ID
+          in: path
+          name: groupid
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: No Content
@@ -498,15 +509,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Quit a Signal Group.
       tags:
-      - Groups
+        - Groups
   /v1/health:
     get:
       description: Internally used by the docker container to perform the health check.
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: No Content
@@ -514,50 +525,50 @@ paths:
             type: string
       summary: API Health Check
       tags:
-      - General
+        - General
   /v1/identities/{number}:
     get:
       description: List all identities for the given number.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/client.IdentityEntry'
+              $ref: "#/definitions/client.IdentityEntry"
             type: array
       summary: List Identities
       tags:
-      - Identities
+        - Identities
   /v1/identities/{number}/trust/{numberToTrust}:
     put:
       description: Trust an identity.
       parameters:
-      - description: Input Data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/api.TrustIdentityRequest'
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
-      - description: Number To Trust
-        in: path
-        name: numberToTrust
-        required: true
-        type: string
+        - description: Input Data
+          in: body
+          name: data
+          required: true
+          schema:
+            $ref: "#/definitions/api.TrustIdentityRequest"
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
+        - description: Number To Trust
+          in: path
+          name: numberToTrust
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: No Content
@@ -565,24 +576,24 @@ paths:
             type: string
       summary: Trust Identity
       tags:
-      - Identities
+        - Identities
   /v1/profiles/{number}:
     put:
       description: Set your name and optional an avatar.
       parameters:
-      - description: Profile Data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/api.UpdateProfileRequest'
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
+        - description: Profile Data
+          in: body
+          name: data
+          required: true
+          schema:
+            $ref: "#/definitions/api.UpdateProfileRequest"
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: No Content
@@ -591,21 +602,21 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Update Profile.
       tags:
-      - Profiles
+        - Profiles
   /v1/qrcodelink:
     get:
       description: Link device and generate QR code
       parameters:
-      - description: Device Name
-        in: query
-        name: device_name
-        required: true
-        type: string
+        - description: Device Name
+          in: query
+          name: device_name
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Image
@@ -614,27 +625,78 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Link device and generate QR code.
       tags:
-      - Devices
+        - Devices
+  /v1/reactions/{number}:
+    post:
+      consumes:
+      - application/json
+      description: React to a message.
+      parameters:
+      - description: Reactions
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.Reaction'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Send a reaction.
+      tags:
+      - Reactions
+    delete:
+      consumes:
+      - application/json
+      description: Delete a reaction.
+      parameters:
+      - description: Reactions
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.Reaction'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Delete a reaction.
+      tags:
+      - Reactions
   /v1/receive/{number}:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Receives Signal Messages from the Signal Network. If you are running the docker container in normal/native mode, this is a GET endpoint. In json-rpc mode this is a websocket endpoint.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
-      - description: 'Receive timeout in seconds (default: 1)'
-        in: query
-        name: timeout
-        type: string
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
+        - description: "Receive timeout in seconds (default: 1)"
+          in: query
+          name: timeout
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -645,60 +707,60 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Receive Signal Messages.
       tags:
-      - Messages
+        - Messages
   /v1/register/{number}:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Register a phone number with the signal network.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
-      - description: Additional Settings
-        in: body
-        name: data
-        schema:
-          $ref: '#/definitions/api.RegisterNumberRequest'
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
+        - description: Additional Settings
+          in: body
+          name: data
+          schema:
+            $ref: "#/definitions/api.RegisterNumberRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201": {}
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Register a phone number.
       tags:
-      - Devices
+        - Devices
   /v1/register/{number}/verify/{token}:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Verify a registered phone number with the signal network.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
-      - description: Additional Settings
-        in: body
-        name: data
-        schema:
-          $ref: '#/definitions/api.VerifyNumberSettings'
-      - description: Verification Code
-        in: path
-        name: token
-        required: true
-        type: string
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
+        - description: Additional Settings
+          in: body
+          name: data
+          schema:
+            $ref: "#/definitions/api.VerifyNumberSettings"
+        - description: Verification Code
+          in: path
+          name: token
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: OK
@@ -707,25 +769,25 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Verify a registered phone number.
       tags:
-      - Devices
+        - Devices
   /v1/send:
     post:
       consumes:
-      - application/json
+        - application/json
       deprecated: true
       description: Send a signal message
       parameters:
-      - description: Input Data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/api.SendMessageV1'
+        - description: Input Data
+          in: body
+          name: data
+          required: true
+          schema:
+            $ref: "#/definitions/api.SendMessageV1"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: OK
@@ -734,29 +796,29 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Send a signal message.
       tags:
-      - Messages
+        - Messages
   /v1/typing-indicator/{number}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Hide Typing Indicator.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
-      - description: Type
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/api.TypingIndicatorRequest'
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
+        - description: Type
+          in: body
+          name: data
+          required: true
+          schema:
+            $ref: "#/definitions/api.TypingIndicatorRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: No Content
@@ -765,28 +827,28 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Hide Typing Indicator.
       tags:
-      - Messages
+        - Messages
     put:
       consumes:
-      - application/json
+        - application/json
       description: Show Typing Indicator.
       parameters:
-      - description: Registered Phone Number
-        in: path
-        name: number
-        required: true
-        type: string
-      - description: Type
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/api.TypingIndicatorRequest'
+        - description: Registered Phone Number
+          in: path
+          name: number
+          required: true
+          type: string
+        - description: Type
+          in: body
+          name: data
+          required: true
+          schema:
+            $ref: "#/definitions/api.TypingIndicatorRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: No Content
@@ -795,49 +857,52 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Show Typing Indicator.
       tags:
-      - Messages
+        - Messages
   /v2/send:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Send a signal message
       parameters:
-      - description: Input Data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/api.SendMessageV2'
+        - description: Input Data
+          in: body
+          name: data
+          required: true
+          schema:
+            $ref: "#/definitions/api.SendMessageV2"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/api.SendMessageResponse'
+            $ref: "#/definitions/api.SendMessageResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: "#/definitions/api.Error"
       summary: Send a signal message.
       tags:
-      - Messages
+        - Messages
 swagger: "2.0"
 tags:
-- description: Some general endpoints.
-  name: General
-- description: Register and link Devices.
-  name: Devices
-- description: Create, List and Delete Signal Groups.
-  name: Groups
-- description: Send and Receive Signal Messages.
-  name: Messages
-- description: List and Delete Attachments.
-  name: Attachments
-- description: Update Profile.
-  name: Profiles
-- description: List and Trust Identities.
-  name: Identities
+  - description: Some general endpoints.
+    name: General
+  - description: Register and link Devices.
+    name: Devices
+  - description: Create, List and Delete Signal Groups.
+    name: Groups
+  - description: Send and Receive Signal Messages.
+    name: Messages
+  - description: List and Delete Attachments.
+    name: Attachments
+  - description: Update Profile.
+    name: Profiles
+  - description: List and Trust Identities.
+    name: Identities
+  - description: React to messages.
+    name: Reactions
+"
