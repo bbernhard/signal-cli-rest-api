@@ -681,7 +681,7 @@
         },
         "/v1/reactions/{number}": {
             "post": {
-                "description": "React to a message.",
+                "description": "React to a message",
                 "consumes": [
                     "application/json"
                 ],
@@ -694,7 +694,7 @@
                 "summary": "Send a reaction.",
                 "parameters": [
                     {
-                        "description": "Reactions",
+                        "description": "Reaction",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -719,7 +719,7 @@
                 }
             },
             "delete": {
-                "description": "Delete a reaction.",
+                "description": "Remove a reaction",
                 "consumes": [
                     "application/json"
                 ],
@@ -729,10 +729,10 @@
                 "tags": [
                     "Reactions"
                 ],
-                "summary": "Delete a reaction.",
+                "summary": "Remove a reaction.",
                 "parameters": [
                     {
-                        "description": "Reactions",
+                        "description": "Reaction",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -754,23 +754,6 @@
                             "$ref": "#/definitions/api.Error"
                         }
                     }
-                }
-            }
-        },
-        "api.Reaction": {
-            "type": "object",
-            "properties": {
-                "recipient": {
-                    "type": "string"
-                },
-                "reaction": {
-                    "type": "string"
-                },
-                "target_author": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "integer"
                 }
             }
         },
@@ -1168,6 +1151,23 @@
             "properties": {
                 "Level": {
                     "type": "string"
+                }
+            }
+        },
+        "api.Reaction": {
+            "type": "object",
+            "properties": {
+                "reaction": {
+                    "type": "string"
+                },
+                "recipient": {
+                    "type": "string"
+                },
+                "target_author": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
                 }
             }
         },

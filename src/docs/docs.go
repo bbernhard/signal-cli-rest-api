@@ -694,6 +694,84 @@ var doc = `{
                 }
             }
         },
+        "/v1/reactions/{number}": {
+            "post": {
+                "description": "React to a message",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reactions"
+                ],
+                "summary": "Send a reaction.",
+                "parameters": [
+                    {
+                        "description": "Reaction",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Reaction"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove a reaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reactions"
+                ],
+                "summary": "Remove a reaction.",
+                "parameters": [
+                    {
+                        "description": "Reaction",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Reaction"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/receive/{number}": {
             "get": {
                 "description": "Receives Signal Messages from the Signal Network. If you are running the docker container in normal/native mode, this is a GET endpoint. In json-rpc mode this is a websocket endpoint.",
@@ -1091,6 +1169,23 @@ var doc = `{
                 }
             }
         },
+        "api.Reaction": {
+            "type": "object",
+            "properties": {
+                "reaction": {
+                    "type": "string"
+                },
+                "recipient": {
+                    "type": "string"
+                },
+                "target_author": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.RegisterNumberRequest": {
             "type": "object",
             "properties": {
@@ -1295,6 +1390,10 @@ var doc = `{
         {
             "description": "List and Trust Identities.",
             "name": "Identities"
+        },
+        {
+            "description": "React to messages.",
+            "name": "Reactions"
         }
     ]
 }`
