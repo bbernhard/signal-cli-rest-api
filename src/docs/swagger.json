@@ -679,7 +679,7 @@
                 }
             }
         },
-        "/v1/reaction/{number}": {
+        "/v1/reactions/{number}": {
             "post": {
                 "description": "React to a message.",
                 "consumes": [
@@ -689,12 +689,12 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Reaction"
+                    "Reactions"
                 ],
                 "summary": "Send a reaction.",
                 "parameters": [
                     {
-                        "description": "Reaction",
+                        "description": "Reactions",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -727,12 +727,12 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Reaction"
+                    "Reactions"
                 ],
                 "summary": "Delete a reaction.",
                 "parameters": [
                     {
-                        "description": "Reaction",
+                        "description": "Reactions",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -1378,7 +1378,7 @@
         },
         {
             "description": "React to messages.",
-            "name": "Reaction"
+            "name": "Reactions"
         }
     ]
 }

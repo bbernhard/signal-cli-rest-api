@@ -46,7 +46,7 @@ import (
 // @tag.name Identities
 // @tag.description List and Trust Identities.
 
-// @tag.name Reaction
+// @tag.name Reactions
 // @tag.description React to messages.
 
 // @host 127.0.0.1:8080
@@ -199,10 +199,10 @@ func main() {
 			typingIndicator.DELETE(":number", api.SendStopTyping)
 		}
 
-		reaction := v1.Group("/reaction")
+		reactions := v1.Group("/reactions")
 		{
-			reaction.POST(":number", api.SendReaction)
-			reaction.DELETE(":number", api.RemoveReaction)
+			reactions.POST(":number", api.SendReaction)
+			reactions.DELETE(":number", api.RemoveReaction)
 		}
 	}
 
