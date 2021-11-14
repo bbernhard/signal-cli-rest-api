@@ -84,5 +84,6 @@ The Swagger API documentation can be found [here](https://bbernhard.github.io/si
 | ------------- |:-------------:| :-----:|:-----:|:-----:|
 | [Shell Client](https://github.com/florian-h05/shell-script_collection/blob/main/signal-cli-rest-api_client.bash)      | X | | Shell | [@florian-h05](https://github.com/florian-h05)
 | [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/)      | | X | Python | [@bbernhard](https://github.com/bbernhard)
+| [signalbot](https://pypi.org/project/signalbot/) | | X | Python | [@filipre](https://github.com/filipre)
 
 In case you need more functionality, please **file a ticket** or **create a PR**.
