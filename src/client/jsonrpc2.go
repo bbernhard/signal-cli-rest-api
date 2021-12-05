@@ -7,6 +7,7 @@ import (
 	uuid "github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
 	"net"
+	"time"
 )
 
 type Error struct {
@@ -30,6 +31,7 @@ type JsonRpc2Client struct {
 	conn                     net.Conn
 	receivedMessageResponses chan JsonRpc2MessageResponse
 	receivedMessages         chan JsonRpc2ReceivedMessage
+	lastTimeErrorMessageSent time.Time
 }
 
 func NewJsonRpc2Client() *JsonRpc2Client {
@@ -98,7 +100,11 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 	for {
 		str, err := connbuf.ReadString('\n')
 		if err != nil {
-			log.Error("Couldn't read data for number ", number, ": ", err.Error(), ". Is the number properly registered?")
+			elapsed := time.Since(r.lastTimeErrorMessageSent)
+			if(elapsed) > time.Duration(5*time.Minute) { //avoid spamming the log file and only log the message at max every 5 minutes
+				log.Error("Couldn't read data for number ", number, ": ", err.Error(), ". Is the number properly registered?")
+				r.lastTimeErrorMessageSent = time.Now()
+			}
 			continue
 		}
 		//log.Info("Received data = ", str)
