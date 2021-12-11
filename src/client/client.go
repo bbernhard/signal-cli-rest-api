@@ -96,8 +96,8 @@ type SignalCliGroupEntry struct {
 	IsMember          bool                   `json:"isMember"`
 	IsBlocked         bool                   `json:"isBlocked"`
 	Members           []SignalCliGroupMember `json:"members"`
-	PendingMembers    []string               `json:"pendingMembers"`
-	RequestingMembers []string               `json:"requestingMembers"`
+	PendingMembers    []SignalCliGroupMember `json:"pendingMembers"`
+	RequestingMembers []SignalCliGroupMember `json:"requestingMembers"`
 	GroupInviteLink   string                 `json:"groupInviteLink"`
 }
 
@@ -698,8 +698,18 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 		}
 		groupEntry.Members = members
 
-		groupEntry.PendingRequests = signalCliGroupEntry.PendingMembers
-		groupEntry.PendingInvites = signalCliGroupEntry.RequestingMembers
+		pendingMembers := []string{}
+		for _, val := range signalCliGroupEntry.PendingMembers {
+			pendingMembers = append(pendingMembers, val.Number)
+		}
+		groupEntry.PendingRequests = pendingMembers
+
+		requestingMembers := []string{}
+		for _, val := range signalCliGroupEntry.RequestingMembers {
+			requestingMembers = append(requestingMembers, val.Number)
+		}
+		groupEntry.PendingInvites = requestingMembers
+
 		groupEntry.InviteLink = signalCliGroupEntry.GroupInviteLink
 
 		groupEntries = append(groupEntries, groupEntry)
