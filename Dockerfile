@@ -34,6 +34,8 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
 
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+ENV JAVA_OPTS="jdk.lang.Process.launchMechanism=vfork"
+
 ENV LANG en_US.UTF-8
 
 RUN cd /tmp/ \
