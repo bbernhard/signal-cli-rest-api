@@ -49,7 +49,7 @@ RUN cd /tmp/ \
 	&& cd signal-cli-${SIGNAL_CLI_VERSION} \
 	&& git checkout v${SIGNAL_CLI_VERSION} \
 	&& cp /tmp/libsignal_jni.so ./lib/src/main/resources/libsignal_jni.so \
-	&& ./gradlew build \
+	&& ./gradlew build --stacktrace \
 	&& ./gradlew installDist \
 	&& ./gradlew distTar
 
