@@ -430,7 +430,7 @@ func (s *SignalClient) send(number string, message string,
 			return nil, err
 		}
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "send"}
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "send"}
 		if !isGroup {
 			cmd = append(cmd, recipients...)
 		} else {
@@ -471,7 +471,7 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 	if s.signalCliMode == JsonRpc {
 		return errors.New(endpointNotSupportedInJsonRpcMode)
 	}
-	command := []string{"--config", s.signalCliConfig, "-a", number, "register"}
+	command := []string{"--config", s.signalCliConfig, "-u", number, "register"}
 
 	if useVoice {
 		command = append(command, "--voice")
@@ -490,7 +490,7 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 		return errors.New(endpointNotSupportedInJsonRpcMode)
 	}
 
-	cmd := []string{"--config", s.signalCliConfig, "-a", number, "verify", token}
+	cmd := []string{"--config", s.signalCliConfig, "-u", number, "verify", token}
 	if pin != "" {
 		cmd = append(cmd, "--pin")
 		cmd = append(cmd, pin)
@@ -572,7 +572,7 @@ func (s *SignalClient) Receive(number string, timeout int64) (string, error) {
 		}
 		return string(msg.Params), nil
 	} else {
-		command := []string{"--config", s.signalCliConfig, "--output", "json", "-a", number, "receive", "-t", strconv.FormatInt(timeout, 10)}
+		command := []string{"--config", s.signalCliConfig, "--output", "json", "-u", number, "receive", "-t", strconv.FormatInt(timeout, 10)}
 
 		out, err := runSignalCli(true, command, "", s.signalCliMode)
 		if err != nil {
@@ -624,7 +624,7 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 		}
 		internalGroupId = resp.GroupId
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-n", name, "-m"}
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "updateGroup", "-n", name, "-m"}
 		cmd = append(cmd, members...)
 
 		if addMembersPermission != DefaultGroupPermission {
@@ -674,7 +674,7 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 			return groupEntries, err
 		}
 	} else {
-		rawData, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "--output", "json", "-a", number, "listGroups", "-d"}, "", s.signalCliMode)
+		rawData, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "--output", "json", "-u", number, "listGroups", "-d"}, "", s.signalCliMode)
 		if err != nil {
 			return groupEntries, err
 		}
@@ -736,7 +736,7 @@ func (s *SignalClient) GetGroup(number string, groupId string) (*GroupEntry, err
 }
 
 func (s *SignalClient) DeleteGroup(number string, groupId string) error {
-	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-a", number, "quitGroup", "-g", string(groupId)}, "", s.signalCliMode)
+	_, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "quitGroup", "-g", string(groupId)}, "", s.signalCliMode)
 	return err
 }
 
@@ -871,7 +871,7 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 		}
 		_, err = jsonRpc2Client.getRaw("updateProfile", request)
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateProfile", "--name", profileName}
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "updateProfile", "--name", profileName}
 		if base64Avatar == "" {
 			cmd = append(cmd, "--remove-avatar")
 		} else {
@@ -909,7 +909,7 @@ func (s *SignalClient) ListIdentities(number string) (*[]IdentityEntry, error) {
 			identityEntries = append(identityEntries, identityEntry)
 		}
 	} else {
-		rawData, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-a", number, "listIdentities"}, "", s.signalCliMode)
+		rawData, err := runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "listIdentities"}, "", s.signalCliMode)
 		if err != nil {
 			return nil, err
 		}
@@ -946,7 +946,7 @@ func (s *SignalClient) TrustIdentity(number string, numberToTrust string, verifi
 		}
 		_, err = jsonRpc2Client.getRaw("trust", request)
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "trust", numberToTrust, "--verified-safety-number", verifiedSafetyNumber}
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "trust", numberToTrust, "--verified-safety-number", verifiedSafetyNumber}
 		_, err = runSignalCli(true, cmd, "", s.signalCliMode)
 	}
 	return err
@@ -965,7 +965,7 @@ func (s *SignalClient) BlockGroup(number string, groupId string) error {
 		}
 		_, err = jsonRpc2Client.getRaw("block", request)
 	} else {
-		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-a", number, "block", "-g", groupId}, "", s.signalCliMode)
+		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "block", "-g", groupId}, "", s.signalCliMode)
 	}
 	return err
 }
@@ -983,7 +983,7 @@ func (s *SignalClient) JoinGroup(number string, groupId string) error {
 		}
 		_, err = jsonRpc2Client.getRaw("updateGroup", request)
 	} else {
-		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-g", groupId}, "", s.signalCliMode)
+		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "updateGroup", "-g", groupId}, "", s.signalCliMode)
 	}
 	return err
 }
@@ -1001,7 +1001,7 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 		}
 		_, err = jsonRpc2Client.getRaw("quitGroup", request)
 	} else {
-		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-a", number, "quitGroup", "-g", groupId}, "", s.signalCliMode)
+		_, err = runSignalCli(true, []string{"--config", s.signalCliConfig, "-u", number, "quitGroup", "-g", groupId}, "", s.signalCliMode)
 	}
 	return err
 }
@@ -1053,7 +1053,7 @@ func (s *SignalClient) SendReaction(number string, recipient string, emoji strin
 
 	cmd := []string{
 		"--config", s.signalCliConfig,
-		"-a", number,
+		"-u", number,
 		"sendReaction",
 	}
 	if !isGroup {
@@ -1099,7 +1099,7 @@ func (s *SignalClient) SendStartTyping(number string, recipient string) error {
 		}
 		_, err = jsonRpc2Client.getRaw("sendTyping", request)
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "sendTyping"}
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "sendTyping"}
 		if !isGroup {
 			cmd = append(cmd, recp)
 		} else {
@@ -1142,7 +1142,7 @@ func (s *SignalClient) SendStopTyping(number string, recipient string) error {
 		}
 		_, err = jsonRpc2Client.getRaw("sendTyping", request)
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "sendTyping", "--stop"}
+		cmd := []string{"--config", s.signalCliConfig, "-u", number, "sendTyping", "--stop"}
 		if !isGroup {
 			cmd = append(cmd, recp)
 		} else {

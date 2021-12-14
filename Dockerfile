@@ -1,19 +1,31 @@
-ARG SIGNAL_CLI_VERSION=0.10.0
-ARG LIBSIGNAL_CLIENT_VERSION=0.11.0
+ARG SIGNAL_CLI_VERSION=0.9.2
+ARG ZKGROUP_VERSION=0.8.2
+ARG LIBSIGNAL_CLIENT_VERSION=0.9.7
 
 ARG SWAG_VERSION=1.6.7
-ARG GRAALVM_JAVA_VERSION=17
+ARG GRAALVM_JAVA_VERSION=11
 ARG GRAALVM_VERSION=21.3.0
 
 FROM golang:1.17-bullseye AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
+ARG ZKGROUP_VERSION
 ARG LIBSIGNAL_CLIENT_VERSION
 ARG SWAG_VERSION
 ARG GRAALVM_JAVA_VERSION
 ARG GRAALVM_VERSION
 
+COPY ext/libraries/zkgroup/v${ZKGROUP_VERSION} /tmp/zkgroup-libraries
 COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
+
+# use architecture specific libzkgroup.so
+RUN arch="$(uname -m)"; \
+        case "$arch" in \
+            aarch64) echo "[DEBUG] Using arm64 zkgroup" && cp /tmp/zkgroup-libraries/arm64/libzkgroup.so /tmp/libzkgroup.so ;; \
+			armv7l) echo "[DEBUG] Using armv7 zkgroup" && cp /tmp/zkgroup-libraries/armv7/libzkgroup.so /tmp/libzkgroup.so ;; \
+            x86_64) echo "[DEBUG] Using x86-64 zkgroup" && cp /tmp/zkgroup-libraries/x86-64/libzkgroup.so /tmp/libzkgroup.so ;; \ 
+			*) echo "Unknown architecture" && exit 1 ;; \
+        esac;
 
 # use architecture specific libsignal_jni.so
 RUN arch="$(uname -m)"; \
@@ -25,7 +37,7 @@ RUN arch="$(uname -m)"; \
         esac;
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends wget openjdk-17-jre software-properties-common git locales zip file build-essential libz-dev zlib1g-dev \
+	&& apt-get install -y --no-install-recommends wget default-jre software-properties-common git locales zip file build-essential libz-dev zlib1g-dev \
 	&& rm -rf /var/lib/apt/lists/* 
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
@@ -33,10 +45,6 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     update-locale LANG=en_US.UTF-8
 
 ENV PATH="/root/.cargo/bin:${PATH}"
-
-ENV JAVA_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
-
-RUN bash -c '([[ ! -d $JAVA_SECURITY_DIR ]] && ln -s $JAVA_HOME/lib $JAVA_HOME/conf) || (echo "Found java conf dir, package has been fixed, remove this hack"; exit -1)'
 
 ENV LANG en_US.UTF-8
 
@@ -52,8 +60,9 @@ RUN cd /tmp/ \
 	&& git clone https://github.com/AsamK/signal-cli.git signal-cli-${SIGNAL_CLI_VERSION} \
 	&& cd signal-cli-${SIGNAL_CLI_VERSION} \
 	&& git checkout v${SIGNAL_CLI_VERSION} \
+	&& cp /tmp/libzkgroup.so ./lib/src/main/resources/libzkgroup.so \
 	&& cp /tmp/libsignal_jni.so ./lib/src/main/resources/libsignal_jni.so \
-	&& ./gradlew build --stacktrace \
+	&& ./gradlew build \
 	&& ./gradlew installDist \
 	&& ./gradlew distTar
 
@@ -82,6 +91,22 @@ RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "x86_64" ]; then \
     else \
 		echo "Unknown architecture"; \
     fi;
+
+# replace zkgroup
+
+RUN ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/zkgroup-java-${ZKGROUP_VERSION}.jar || (echo "\n\nzkgroup jar file with version ${ZKGROUP_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/zkgroup-java-* && echo "\n\n" && exit 1)
+
+RUN cd /tmp/ \
+	&& zip -u /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/zkgroup-java-${ZKGROUP_VERSION}.jar libzkgroup.so 
+
+RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/ \
+	&& mkdir -p signal-cli-${SIGNAL_CLI_VERSION}/lib/ \
+	&& cp /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/install/signal-cli/lib/zkgroup-java-${ZKGROUP_VERSION}.jar signal-cli-${SIGNAL_CLI_VERSION}/lib/ \
+	# update zip
+	&& zip -u /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.zip signal-cli-${SIGNAL_CLI_VERSION}/lib/zkgroup-java-${ZKGROUP_VERSION}.jar \	
+	# update tar
+	&& tar --delete -vPf /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar signal-cli-${SIGNAL_CLI_VERSION}/lib/zkgroup-java-${ZKGROUP_VERSION}.jar \
+	&& tar --owner='' --group='' -rvPf /tmp/signal-cli-${SIGNAL_CLI_VERSION}/build/distributions/signal-cli-${SIGNAL_CLI_VERSION}.tar signal-cli-${SIGNAL_CLI_VERSION}/lib/zkgroup-java-${ZKGROUP_VERSION}.jar
 
 # replace libsignal-client
 
@@ -116,7 +141,7 @@ RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper
 
 
 # Start a fresh container for release container
-FROM eclipse-temurin:17-focal
+FROM eclipse-temurin:11-jre-focal
 
 ENV GIN_MODE=release
 
