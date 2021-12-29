@@ -58,7 +58,7 @@ RUN arch="$(uname -m)"; \
 			*) echo "Invalid architecture" ;; \
         esac;
 
-RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "x86_64" ]; then \
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		cd /tmp \
 		&& git clone https://github.com/AsamK/signal-cli.git signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& cd signal-cli-${SIGNAL_CLI_VERSION}-source \
@@ -70,7 +70,12 @@ RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "x86_64" ]; then \
 		&& chmod +x /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu \ 
 		&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
 		&& ./gradlew nativeCompile; \
-    elif [ "$(uname -m)" = "armv7l" ]; then \
+	elif [ "$(uname -m)" = "aarch64" ] ; then \
+		echo "GRAALVM for aarch64 temporarily disabled" \
+		&& echo "Creating temporary file, otherwise the below copy doesn't work for aarch64" \
+		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
+		&& touch /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile/signal-cli; \
+    elif [ "$(uname -m)" = "armv7l" ] ; then \
 		echo "GRAALVM doesn't support 32bit" \
 		&& echo "Creating temporary file, otherwise the below copy doesn't work for armv7" \
 		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
@@ -139,6 +144,7 @@ RUN groupadd -g 1000 signal-api \
 RUN arch="$(uname -m)"; \
         case "$arch" in \
             armv7l) echo "GRAALVM doesn't support 32bit" && rm /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native  ;; \
+			aarch64) echo "GRAALVM temporarily disabled for aarch64" && rm /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native  ;; \
         esac;
 
 EXPOSE ${PORT}
