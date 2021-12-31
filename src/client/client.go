@@ -751,7 +751,7 @@ func (s *SignalClient) GetQrCodeLink(deviceName string) ([]byte, error) {
 		return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
 	}
 
-	q, err := qrcode.New(string(tsdeviceLink), qrcode.Medium)
+	q, err := qrcode.NewWithForcedVersion(string(tsdeviceLink), 10, qrcode.Highest)
 	if err != nil {
 		return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
 	}
