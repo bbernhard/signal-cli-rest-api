@@ -5,6 +5,8 @@ ARG SWAG_VERSION=1.6.7
 ARG GRAALVM_JAVA_VERSION=17
 ARG GRAALVM_VERSION=21.3.0
 
+ARG BUILD_VERSION_ARG=unset
+
 FROM golang:1.17-bullseye AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
@@ -12,6 +14,7 @@ ARG LIBSIGNAL_CLIENT_VERSION
 ARG SWAG_VERSION
 ARG GRAALVM_JAVA_VERSION
 ARG GRAALVM_VERSION
+ARG BUILD_VERSION_ARG
 
 COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
 
@@ -117,6 +120,9 @@ ENV GIN_MODE=release
 ENV PORT=8080
 
 ARG SIGNAL_CLI_VERSION
+ARG BUILD_VERSION_ARG
+
+ENV BUILD_VERSION=$BUILD_VERSION_ARG
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends util-linux supervisor netcat unzip \

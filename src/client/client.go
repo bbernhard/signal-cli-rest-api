@@ -119,6 +119,7 @@ type About struct {
 	SupportedApiVersions []string `json:"versions"`
 	BuildNr              int      `json:"build"`
 	Mode                 string   `json:"mode"`
+	Version              string   `json:"version"`
 }
 
 func cleanupTmpFiles(paths []string) {
@@ -463,7 +464,8 @@ func (s *SignalClient) send(number string, message string,
 }
 
 func (s *SignalClient) About() About {
-	about := About{SupportedApiVersions: []string{"v1", "v2"}, BuildNr: 2, Mode: getSignalCliModeString(s.signalCliMode)}
+	about := About{SupportedApiVersions: []string{"v1", "v2"}, BuildNr: 2, Mode: getSignalCliModeString(s.signalCliMode),
+					Version: utils.GetEnv("BUILD_VERSION", "unset")}
 	return about
 }
 
