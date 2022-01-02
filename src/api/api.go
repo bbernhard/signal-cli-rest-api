@@ -110,6 +110,11 @@ var connectionUpgrader = websocket.Upgrader{
 	},
 }
 
+type SearchResponse struct {
+	Number     string `json:"number"`
+	Registered bool   `json:"registered"`
+}
+
 type Api struct {
 	signalClient *client.SignalClient
 }
@@ -1049,4 +1054,35 @@ func (a *Api) SendStopTyping(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// @Summary Check if one or more phone numbers are registered with the Signal Service.
+// @Tags Search
+// @Description Check if one or more phone numbers are registered with the Signal Service.
+// @Accept  json
+// @Produce  json
+// @Param numbers query []string true "Numbers to check" collectionFormat(multi)
+// @Success 204 {object} SearchResponse
+// @Failure 400 {object} Error
+// @Router /v1/search [get]
+func (a *Api) SearchForNumbers(c *gin.Context) {
+	query := c.Request.URL.Query()
+	if _, ok := query["numbers"]; !ok {
+		c.JSON(400, Error{Msg: "Please provide numbers to query for"})
+		return
+	}
+
+	searchResults, err := a.signalClient.SearchForNumbers(query["numbers"])
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	searchResponse := []SearchResponse{}
+	for _, val := range searchResults {
+		entry := SearchResponse{Number: val.Number, Registered: val.Registered}
+		searchResponse = append(searchResponse, entry)
+	}
+
+	c.JSON(200, searchResponse)
 }

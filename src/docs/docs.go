@@ -913,6 +913,48 @@ var doc = `{
                 }
             }
         },
+        "/v1/search": {
+            "get": {
+                "description": "Check if one or more phone numbers are registered with the Signal Service.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "Check if one or more phone numbers are registered with the Signal Service.",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "Numbers to check",
+                        "name": "numbers",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/api.SearchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/send": {
             "post": {
                 "description": "Send a signal message",
@@ -1197,6 +1239,17 @@ var doc = `{
                 }
             }
         },
+        "api.SearchResponse": {
+            "type": "object",
+            "properties": {
+                "number": {
+                    "type": "string"
+                },
+                "registered": {
+                    "type": "boolean"
+                }
+            }
+        },
         "api.SendMessageResponse": {
             "type": "object",
             "properties": {
@@ -1293,6 +1346,9 @@ var doc = `{
                     "type": "integer"
                 },
                 "mode": {
+                    "type": "string"
+                },
+                "version": {
                     "type": "string"
                 },
                 "versions": {
@@ -1394,6 +1450,10 @@ var doc = `{
         {
             "description": "React to messages.",
             "name": "Reactions"
+        },
+        {
+            "description": "Search the Signal Service.",
+            "name": "Search"
         }
     ]
 }`

@@ -72,6 +72,13 @@ definitions:
       use_voice:
         type: boolean
     type: object
+  api.SearchResponse:
+    properties:
+      number:
+        type: string
+      registered:
+        type: boolean
+    type: object
   api.SendMessageResponse:
     properties:
       timestamp:
@@ -134,6 +141,8 @@ definitions:
       build:
         type: integer
       mode:
+        type: string
+      version:
         type: string
       versions:
         items:
@@ -773,6 +782,34 @@ paths:
       summary: Verify a registered phone number.
       tags:
       - Devices
+  /v1/search:
+    get:
+      consumes:
+      - application/json
+      description: Check if one or more phone numbers are registered with the Signal Service.
+      parameters:
+      - collectionFormat: multi
+        description: Numbers to check
+        in: query
+        items:
+          type: string
+        name: numbers
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/api.SearchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Check if one or more phone numbers are registered with the Signal Service.
+      tags:
+      - Search
   /v1/send:
     post:
       consumes:
@@ -905,3 +942,5 @@ tags:
   name: Identities
 - description: React to messages.
   name: Reactions
+- description: Search the Signal Service.
+  name: Search

@@ -49,6 +49,9 @@ import (
 // @tag.name Reactions
 // @tag.description React to messages.
 
+// @tag.name Search
+// @tag.description Search the Signal Service.
+
 // @host 127.0.0.1:8080
 // @BasePath /
 func main() {
@@ -203,6 +206,11 @@ func main() {
 		{
 			reactions.POST(":number", api.SendReaction)
 			reactions.DELETE(":number", api.RemoveReaction)
+		}
+
+		search := v1.Group("/search")
+		{
+			search.GET("", api.SearchForNumbers)
 		}
 	}
 

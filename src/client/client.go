@@ -122,6 +122,11 @@ type About struct {
 	Version              string   `json:"version"`
 }
 
+type SearchResultEntry struct {
+	Number      string         `json:"number"`
+	Registered  bool           `json:"registered"`
+}
+
 func cleanupTmpFiles(paths []string) {
 	for _, path := range paths {
 		os.Remove(path)
@@ -512,6 +517,14 @@ func (s *SignalClient) getJsonRpc2Client(number string) (*JsonRpc2Client, error)
 		return val, nil
 	}
 	return nil, errors.New("Number not registered with JSON-RPC")
+}
+
+func (s *SignalClient) getJsonRpc2Clients() ([]*JsonRpc2Client) {
+	jsonRpc2Clients := []*JsonRpc2Client{}
+	for _, client := range s.jsonRpc2Clients {
+		jsonRpc2Clients = append(jsonRpc2Clients, client)
+	}
+	return jsonRpc2Clients
 }
 
 func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string) (*[]SendResponse, error) {
@@ -1154,4 +1167,58 @@ func (s *SignalClient) SendStopTyping(number string, recipient string) error {
 	}
 
 	return err
+}
+
+func (s *SignalClient) SearchForNumbers(numbers []string) ([]SearchResultEntry, error) {
+	searchResultEntries := []SearchResultEntry{}
+
+	var err error
+	var rawData string
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Numbers []string `json:"recipient"`
+		}
+		request := Request{Numbers: numbers}
+
+		jsonRpc2Clients := s.getJsonRpc2Clients()
+		if len(jsonRpc2Clients) == 0 {
+			return searchResultEntries, errors.New("No JsonRpc2Client registered!")
+		}
+		for _, jsonRpc2Client := range jsonRpc2Clients {
+			rawData, err = jsonRpc2Client.getRaw("getUserStatus", request)
+			if err == nil { //getUserStatus doesn't need an account to work, so try all the registered acounts and stop until we succeed
+				break
+			}
+		}
+
+		if err != nil {
+			return searchResultEntries, err
+		}
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "--output", "json", "getUserStatus"}
+		cmd = append(cmd, numbers...)
+		rawData, err = runSignalCli(true, cmd, "", s.signalCliMode)
+	}
+
+	if err != nil {
+		return searchResultEntries, err
+	}
+
+	type SignalCliResponse struct {
+		Number       string `json:"number"`
+		IsRegistered bool   `json:"isRegistered"`
+	}
+
+	var resp []SignalCliResponse
+	err = json.Unmarshal([]byte(rawData), &resp)
+	if err != nil {
+		return searchResultEntries, err
+	}
+
+	for _, val := range resp {
+		searchResultEntry := SearchResultEntry{Number: val.Number, Registered: val.IsRegistered}
+		searchResultEntries = append(searchResultEntries, searchResultEntry)
+	}
+
+	return searchResultEntries, err
 }
