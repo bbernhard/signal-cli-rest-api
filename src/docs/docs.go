@@ -940,10 +940,13 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content",
+                    "200": {
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.SearchResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.SearchResponse"
+                            }
                         }
                     },
                     "400": {

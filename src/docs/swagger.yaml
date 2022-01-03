@@ -799,10 +799,12 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/api.SearchResponse'
+            items:
+              $ref: '#/definitions/api.SearchResponse'
+            type: array
         "400":
           description: Bad Request
           schema:

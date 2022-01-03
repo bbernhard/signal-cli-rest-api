@@ -1062,7 +1062,7 @@ func (a *Api) SendStopTyping(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param numbers query []string true "Numbers to check" collectionFormat(multi)
-// @Success 204 {object} SearchResponse
+// @Success 200 {object} []SearchResponse
 // @Failure 400 {object} Error
 // @Router /v1/search [get]
 func (a *Api) SearchForNumbers(c *gin.Context) {
