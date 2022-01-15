@@ -1091,6 +1091,47 @@ var doc = `{
                 }
             }
         },
+        "/v1/unregister/{number}": {
+            "post": {
+                "description": "Disables push support for this device. **WARNING:** If *delete_account* is set to *true*, the account will be deleted from the Signal Server. This cannot be undone without loss.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Unregister a phone number.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Additional Settings",
+                        "name": "data",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/api.UnregisterNumberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v2/send": {
             "post": {
                 "description": "Send a signal message",
@@ -1320,6 +1361,15 @@ var doc = `{
             "properties": {
                 "recipient": {
                     "type": "string"
+                }
+            }
+        },
+        "api.UnregisterNumberRequest": {
+            "type": "object",
+            "properties": {
+                "delete_account": {
+                    "type": "boolean",
+                    "example": false
                 }
             }
         },

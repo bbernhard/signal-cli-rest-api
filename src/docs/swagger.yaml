@@ -124,6 +124,12 @@ definitions:
       recipient:
         type: string
     type: object
+  api.UnregisterNumberRequest:
+    properties:
+      delete_account:
+        example: false
+        type: boolean
+    type: object
   api.UpdateProfileRequest:
     properties:
       base64_avatar:
@@ -900,6 +906,33 @@ paths:
       summary: Show Typing Indicator.
       tags:
       - Messages
+  /v1/unregister/{number}:
+    post:
+      consumes:
+      - application/json
+      description: Disables push support for this device. **WARNING:** If *delete_account* is set to *true*, the account will be deleted from the Signal Server. This cannot be undone without loss.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Additional Settings
+        in: body
+        name: data
+        schema:
+          $ref: '#/definitions/api.UnregisterNumberRequest'
+      produces:
+      - application/json
+      responses:
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Unregister a phone number.
+      tags:
+      - Devices
   /v2/send:
     post:
       consumes:
