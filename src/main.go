@@ -152,6 +152,11 @@ func main() {
 			register.POST(":number/verify/:token", api.VerifyRegisteredNumber)
 		}
 
+		unregister := v1.Group("unregister")
+		{
+			unregister.POST(":number", api.UnregisterNumber)
+		}
+
 		sendV1 := v1.Group("/send")
 		{
 			sendV1.POST("", api.Send)

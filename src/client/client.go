@@ -492,6 +492,20 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 	return err
 }
 
+func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool) error {
+	if s.signalCliMode == JsonRpc {
+		return errors.New("This functionality is only available in normal/native mode!")
+	}
+
+	command := []string{"--config", s.signalCliConfig, "-a", number, "unregister"}
+	if deleteAccount {
+		command = append(command, "--delete-account")
+	}
+
+	_, err := runSignalCli(true, command, "", s.signalCliMode)
+	return err
+}
+
 func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin string) error {
 	if s.signalCliMode == JsonRpc {
 		return errors.New(endpointNotSupportedInJsonRpcMode)

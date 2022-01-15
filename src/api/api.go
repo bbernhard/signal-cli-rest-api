@@ -53,6 +53,10 @@ type RegisterNumberRequest struct {
 	Captcha  string `json:"captcha"`
 }
 
+type UnregisterNumberRequest struct {
+	DeleteAccount bool `json:"delete_account" example:"false"`
+}
+
 type VerifyNumberSettings struct {
 	Pin string `json:"pin"`
 }
@@ -175,6 +179,41 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 		return
 	}
 	c.Writer.WriteHeader(201)
+}
+
+// @Summary Unregister a phone number.
+// @Tags Devices
+// @Description Disables push support for this device. **WARNING:** If *delete_account* is set to *true*, the account will be deleted from the Signal Server. This cannot be undone without loss.
+// @Accept  json
+// @Produce  json
+// @Success 204
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param data body UnregisterNumberRequest false "Additional Settings"
+// @Router /v1/unregister/{number} [post]
+func (a *Api) UnregisterNumber(c *gin.Context) {
+	number := c.Param("number")
+
+	deleteAccount := false
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(c.Request.Body)
+	if buf.String() != "" {
+		var req UnregisterNumberRequest
+		err := json.Unmarshal(buf.Bytes(), &req)
+		if err != nil {
+			log.Error("Couldn't unregister number: ", err.Error())
+			c.JSON(400, Error{Msg: "Couldn't process request - invalid request."})
+			return
+		}
+		deleteAccount = req.DeleteAccount
+	}
+
+	err := a.signalClient.UnregisterNumber(number, deleteAccount)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	c.Writer.WriteHeader(204)
 }
 
 // @Summary Verify a registered phone number.
