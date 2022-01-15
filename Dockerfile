@@ -74,10 +74,17 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
 		&& ./gradlew nativeCompile; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
-		echo "GRAALVM for aarch64 temporarily disabled" \
-		&& echo "Creating temporary file, otherwise the below copy doesn't work for aarch64" \
+		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64" \
+		&& curl -fsSL https://packaging.gitlab.io/signal-cli/gpg.key | apt-key add - \
+		&& echo "deb https://packaging.gitlab.io/signal-cli focal main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
+		&& mkdir -p /tmp/signal-cli-native \
+		&& cd /tmp/signal-cli-native \
+		&& apt-get update \
+		&& apt-get download signal-cli-native \
+		&& ar x *.deb \
+		&& tar xvf data.tar.gz \
 		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
-		&& touch /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile/signal-cli; \
+		&& cp /tmp/signal-cli-native/usr/bin/signal-cli-native  /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile/signal-cli; \
     elif [ "$(uname -m)" = "armv7l" ] ; then \
 		echo "GRAALVM doesn't support 32bit" \
 		&& echo "Creating temporary file, otherwise the below copy doesn't work for armv7" \
