@@ -1,5 +1,6 @@
 ARG SIGNAL_CLI_VERSION=0.10.0
 ARG LIBSIGNAL_CLIENT_VERSION=0.11.0
+ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.10.0-11
 
 ARG SWAG_VERSION=1.6.7
 ARG GRAALVM_JAVA_VERSION=17
@@ -15,6 +16,7 @@ ARG SWAG_VERSION
 ARG GRAALVM_JAVA_VERSION
 ARG GRAALVM_VERSION
 ARG BUILD_VERSION_ARG
+ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION
 
 COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
 
@@ -74,13 +76,13 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
 		&& ./gradlew nativeCompile; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
-		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64" \
+		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64 - many thanks to @morph027" \
 		&& curl -fsSL https://packaging.gitlab.io/signal-cli/gpg.key | apt-key add - \
 		&& echo "deb https://packaging.gitlab.io/signal-cli focal main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
 		&& mkdir -p /tmp/signal-cli-native \
 		&& cd /tmp/signal-cli-native \
 		&& apt-get update \
-		&& apt-get download signal-cli-native \
+		&& apt-get download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} \
 		&& ar x *.deb \
 		&& tar xvf data.tar.gz \
 		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
