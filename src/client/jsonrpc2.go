@@ -133,8 +133,6 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 	}
 }
 
-//blocks until message a message is received
-func (r *JsonRpc2Client) ReceiveMessage() JsonRpc2ReceivedMessage {
-	resp := <-r.receivedMessages
-	return resp
+func (r *JsonRpc2Client) GetReceiveChannel() chan JsonRpc2ReceivedMessage {
+	return r.receivedMessages
 }

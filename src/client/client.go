@@ -591,15 +591,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 
 func (s *SignalClient) Receive(number string, timeout int64) (string, error) {
 	if s.signalCliMode == JsonRpc {
-		jsonRpc2Client, err := s.getJsonRpc2Client(number)
-		if err != nil {
-			return "", err
-		}
-		msg := jsonRpc2Client.ReceiveMessage()
-		if msg.Err.Code != 0 {
-			return "", errors.New(msg.Err.Message)
-		}
-		return string(msg.Params), nil
+		return "", errors.New("Not implemented")
 	} else {
 		command := []string{"--config", s.signalCliConfig, "--output", "json", "-a", number, "receive", "-t", strconv.FormatInt(timeout, 10)}
 
@@ -622,6 +614,14 @@ func (s *SignalClient) Receive(number string, timeout int64) (string, error) {
 
 		return jsonStr, nil
 	}
+}
+
+func (s *SignalClient) GetReceiveChannel(number string) (chan JsonRpc2ReceivedMessage, error) {
+	jsonRpc2Client, err := s.getJsonRpc2Client(number)
+	if err != nil {
+		return nil, err
+	}
+	return jsonRpc2Client.GetReceiveChannel(), nil
 }
 
 func (s *SignalClient) CreateGroup(number string, name string, members []string, description string, editGroupPermission GroupPermission, addMembersPermission GroupPermission, groupLinkState GroupLinkState) (string, error) {

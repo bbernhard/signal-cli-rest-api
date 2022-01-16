@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"errors"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
@@ -332,32 +333,58 @@ func (a *Api) SendV2(c *gin.Context) {
 	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt((*timestamps)[0].Timestamp, 10)})
 }
 
-func (a *Api) handleSignalReceive(ws *websocket.Conn, number string) {
+func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan struct{}) {
+	receiveChannel, err := a.signalClient.GetReceiveChannel(number)
+	if err != nil {
+		log.Error("Couldn't get receive channel: ", err.Error())
+		return
+	}
+
 	for {
-		data, err := a.signalClient.Receive(number, 0)
-		if err == nil {
-			err = ws.WriteMessage(websocket.TextMessage, []byte(data))
-			if err != nil {
-				log.Error("Couldn't write message: " + err.Error())
-				return
+		select {
+        case <-stop:
+			ws.Close()
+			return
+		case msg := <-receiveChannel:
+			var data string = string(msg.Params)
+			var err error = nil
+			if msg.Err.Code != 0 {
+				err = errors.New(msg.Err.Message)
 			}
-		} else {
-			errorMsg := Error{Msg: err.Error()}
-			errorMsgBytes, err := json.Marshal(errorMsg)
-			if err != nil {
-				log.Error("Couldn't serialize error message: " + err.Error())
-				return
-			}
-			err = ws.WriteMessage(websocket.TextMessage, errorMsgBytes)
-			if err != nil {
-				log.Error("Couldn't write message: " + err.Error())
-				return
+
+			if err == nil {
+				if data != "" {
+					err = ws.WriteMessage(websocket.TextMessage, []byte(data))
+					if err != nil {
+						if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+							log.Error("Couldn't write message: " + err.Error())
+						}
+						return
+					}
+				}
+			} else {
+				errorMsg := Error{Msg: err.Error()}
+				errorMsgBytes, err := json.Marshal(errorMsg)
+				if err != nil {
+					log.Error("Couldn't serialize error message: " + err.Error())
+					return
+				}
+				err = ws.WriteMessage(websocket.TextMessage, errorMsgBytes)
+				if err != nil {
+					log.Error("Couldn't write message: " + err.Error())
+					return
+				}
 			}
 		}
 	}
 }
 
-func wsPong(ws *websocket.Conn) {
+func wsPong(ws *websocket.Conn, stop chan struct{}) {
+	defer func() {
+		close(stop)
+		ws.Close()
+	}()
+
 	ws.SetReadLimit(512)
 	ws.SetPongHandler(func(string) error { log.Debug("Received pong"); return nil })
 	for {
@@ -368,10 +395,13 @@ func wsPong(ws *websocket.Conn) {
 	}
 }
 
-func wsPing(ws *websocket.Conn) {
+func wsPing(ws *websocket.Conn, stop chan struct{}) {
 	pingTicker := time.NewTicker(pingPeriod)
 	for {
 		select {
+		case <-stop:
+			ws.Close()
+			return
 		case <-pingTicker.C:
 			if err := ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 				return
@@ -400,9 +430,10 @@ func (a *Api) Receive(c *gin.Context) {
 			return
 		}
 		defer ws.Close()
-		go a.handleSignalReceive(ws, number)
-		go wsPing(ws)
-		wsPong(ws)
+		var stop = make(chan struct{})
+		go a.handleSignalReceive(ws, number, stop)
+		go wsPing(ws, stop)
+		wsPong(ws, stop)
 	} else {
 		timeout := c.DefaultQuery("timeout", "1")
 		timeoutInt, err := strconv.ParseInt(timeout, 10, 32)
