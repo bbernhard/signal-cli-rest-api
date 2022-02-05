@@ -15,31 +15,32 @@ At the moment, the following functionality is exposed via REST:
 
 and [many more](https://bbernhard.github.io/signal-cli-rest-api/)
 
-## Modes
+## Execution Modes 
 
-The `signal-cli-rest-api` supports three different modes:
+The `signal-cli-rest-api` supports three different modes of execution, which can be controlled by setting the `MODE` environment variable.
 
-* Normal Mode: In normal mode, the `signal-cli` executable is invoked for every REST API request. As `signal-cli` is a Java application, a significant amount of time is spent in the JVM (Java Virtual Machine) startup - which makes this mode pretty slow.
-* Native Mode: Instead of calling a Java executable for every REST API request, a native image (compiled with GraalVM) is called. This mode therefore usually performs better than the normal mode. 
-* JSON-RPC Mode: In JSON-RPC mode, a single `signal-cli` instance is spawned in daemon mode. The communication happens via JSON-RPC. This mode is usually the fastest.
-
-
-| architecture | normal mode | native mode | json-rpc mode |
-|--------------|:-----------:|:-----------:|---------------|
-|    x86-64    |      :heavy_check_mark:     |     :heavy_check_mark:      |       :heavy_check_mark:      |
-|    armv7     |      :heavy_check_mark:     |     ❌ <sup>1</sup>     |       :heavy_check_mark:      |
-|    arm64     |      :heavy_check_mark:     |     :heavy_check_mark:      |       :heavy_check_mark:      |
+* **`normal` Mode: (Default)** The `signal-cli` executable is invoked for every REST API request. Being a Java application, each REST call requires a new startup of the JVM (Java Virtual Machine), increasing the latency and hence leading to the slowest mode of operation. 
+* **`native` Mode:** A precompiled binary `signal-cli-native` (using GraalVM) is used for every REST API request. This results in a much lower latency & memory usage on each call. On the `armv7` platform this mode is not available and falls back to `normal`. The native mode may also be less stable, due to the experimental state of GraalVM compiler. 
+* `json-rpc` Mode: A single, JVM-based `signal-cli` instance is spawned as daemon process. This mode is usually the fastest, but requires more memory as the JVM keeps running. 
 
 
-|     mode     | speed       |
-|-------------:|:------------|
-|    json-rpc  |    :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: |
-|    native    |    :heavy_check_mark: :heavy_check_mark:    |
-|    normal    |    :heavy_check_mark:       |
+|     mode     |    speed    |    resident memory usage |
+|-------------:|:------------|:------------|
+|   `normal`    |    :heavy_check_mark:       | normal
+|   `native`    |    :heavy_check_mark: :heavy_check_mark:    | normal
+|   `json-rpc`  |    :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: | increased
 
 
-Notes:
-1. If the signal-cli-rest-api docker container is started on an armv7 system in native mode, it automatically falls back to the normal mode.
+**Example of running `signal-cli-rest` in `native` mode**
+
+```bash
+$ sudo docker run -d --name signal-api --restart=always -p 9922:8080 \
+              -v /home/user/signal-api:/home/.local/share/signal-cli \
+              -e 'MODE=native' bbernhard/signal-cli-rest-api
+```
+
+This launches a instance of the REST service accessible under http://localhost:9922/v2/send. To preserve the Signal number registration, i.e. for updates, the storage location for the `signal-cli` configuration is mapped as Docker Volume into a local `/home/user/signal-api` directory.
+
 
 ## Auto Receive Schedule
 
@@ -75,7 +76,7 @@ The Swagger API documentation can be found [here](https://bbernhard.github.io/si
 
 ### Blog Posts
 
-[Running Signal Messenger REST API in Azure Web App for Containers](https://stefanstranger.github.io/2021/06/01/RunningSignalRESTAPIinAppService/) - written by [@stefanstranger](https://github.com/stefanstranger)
+[Running Signal Messenger REST API in Azure Web App for Containers](https://stefanstranger.github.io/2021/06/01/RunningSignalRESTAPIinAppService/) by [@stefanstranger](https://github.com/stefanstranger)
 
 
 ## Clients & Libraries
