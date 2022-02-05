@@ -25,14 +25,15 @@ RUN arch="$(uname -m)"; \
         case "$arch" in \
             aarch64) cp /tmp/libsignal-client-libraries/arm64/libsignal_jni.so /tmp/libsignal_jni.so ;; \
 			armv7l) cp /tmp/libsignal-client-libraries/armv7/libsignal_jni.so /tmp/libsignal_jni.so ;; \
-            x86_64) cp /tmp/libsignal-client-libraries/x86-64/libsignal_jni.so /tmp/libsignal_jni.so ;; \ 
+            x86_64) cp /tmp/libsignal-client-libraries/x86-64/libsignal_jni.so /tmp/libsignal_jni.so ;; \
 			*) echo "Unknown architecture" && exit 1 ;; \
         esac;
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -qq update \
-	&& apt-get -qq install -y --no-install-recommends \
+RUN dpkg-reconfigure debconf --frontend=noninteractive \
+	&& apt-get -qq update \
+	&& apt-get -qqy install --no-install-recommends \
 		wget openjdk-17-jre software-properties-common git locales zip unzip \
-		file build-essential libz-dev zlib1g-dev \
+		file build-essential libz-dev zlib1g-dev < /dev/null > /dev/null \
 	&& rm -rf /var/lib/apt/lists/* 
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
@@ -46,22 +47,22 @@ ENV LANG en_US.UTF-8
 RUN cd /tmp/ \
 	&& git clone https://github.com/swaggo/swag.git swag-${SWAG_VERSION} \	
 	&& cd swag-${SWAG_VERSION} \
-	&& git checkout v${SWAG_VERSION} \
-	&& make \
+	&& git checkout -q v${SWAG_VERSION} \
+	&& make -s < /dev/null > /dev/null \
 	&& cp /tmp/swag-${SWAG_VERSION}/swag /usr/bin/swag \
 	&& rm -r /tmp/swag-${SWAG_VERSION}
 
 RUN cd /tmp/ \
-	&& wget https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}.tar.gz -O /tmp/signal-cli.tar.gz \
-	&& tar xvf signal-cli.tar.gz
+	&& wget -nv https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}.tar.gz -O /tmp/signal-cli.tar.gz \
+	&& tar xf signal-cli.tar.gz
 
 # build native image with graalvm
 
 RUN arch="$(uname -m)"; \
         case "$arch" in \
-            aarch64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-aarch64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \
+            aarch64) wget -nv https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-aarch64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \
             armv7l) echo "GRAALVM doesn't support 32bit" ;; \
-            x86_64) wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-amd64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \ 
+            x86_64) wget -nv https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-amd64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \ 
 			*) echo "Invalid architecture" ;; \
         esac;
 
@@ -69,24 +70,24 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		cd /tmp \
 		&& git clone https://github.com/AsamK/signal-cli.git signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& cd signal-cli-${SIGNAL_CLI_VERSION}-source \
-		&& git checkout v${SIGNAL_CLI_VERSION} \
-		&& cd /tmp && tar xvf gvm.tar.gz \
+		&& git checkout -q v${SIGNAL_CLI_VERSION} \
+		&& cd /tmp && tar xf gvm.tar.gz \
 		&& export GRAALVM_HOME=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION} \
 		&& export PATH=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin:$PATH \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& chmod +x /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu \ 
 		&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
-		&& ./gradlew nativeCompile; \
+		&& ./gradlew -q nativeCompile; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
 		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64 - many thanks to @morph027" \
 		&& curl -fsSL https://packaging.gitlab.io/signal-cli/gpg.key | apt-key add - \
 		&& echo "deb https://packaging.gitlab.io/signal-cli focal main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
 		&& mkdir -p /tmp/signal-cli-native \
 		&& cd /tmp/signal-cli-native \
-		&& apt-get update \
-		&& apt-get download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} \
+		&& apt-get -qq update \
+		&& apt-get -qq download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} < /dev/null > /dev/null \
 		&& ar x *.deb \
-		&& tar xvf data.tar.gz \
+		&& tar xf data.tar.gz \
 		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
 		&& cp /tmp/signal-cli-native/usr/bin/signal-cli-native  /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile/signal-cli; \
     elif [ "$(uname -m)" = "armv7l" ] ; then \
@@ -103,9 +104,9 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 RUN ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar || (echo "\n\nsignal-client jar file with version ${LIBSIGNAL_CLIENT_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-* && echo "\n\n" && exit 1)
 
 RUN cd /tmp/ \
-	&& zip -u /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal_jni.so \
-	&& zip -r signal-cli-${SIGNAL_CLI_VERSION}.zip signal-cli-${SIGNAL_CLI_VERSION}/* \
-    && unzip /tmp/signal-cli-${SIGNAL_CLI_VERSION}.zip -d /opt \
+	&& zip -qu /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal_jni.so \
+	&& zip -qr signal-cli-${SIGNAL_CLI_VERSION}.zip signal-cli-${SIGNAL_CLI_VERSION}/* \
+    && unzip -q /tmp/signal-cli-${SIGNAL_CLI_VERSION}.zip -d /opt \
 	&& rm -f /tmp/signal-cli-${SIGNAL_CLI_VERSION}.zip
 
 COPY src/api /tmp/signal-cli-rest-api-src/api
@@ -134,8 +135,9 @@ ARG BUILD_VERSION_ARG
 
 ENV BUILD_VERSION=$BUILD_VERSION_ARG
 
-RUN apt-get update \
-	&& apt-get install -y --no-install-recommends util-linux supervisor netcat unzip \
+RUN dpkg-reconfigure debconf --frontend=noninteractive \
+	&& apt-get -qq update \
+	&& apt-get -qq install -y --no-install-recommends util-linux supervisor netcat < /dev/null > /dev/null \
 	&& rm -rf /var/lib/apt/lists/* 
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
