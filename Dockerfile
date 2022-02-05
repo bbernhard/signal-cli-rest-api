@@ -29,8 +29,10 @@ RUN arch="$(uname -m)"; \
 			*) echo "Unknown architecture" && exit 1 ;; \
         esac;
 
-RUN apt-get update \
-	&& apt-get install -y --no-install-recommends wget openjdk-17-jre software-properties-common git locales zip file build-essential libz-dev zlib1g-dev \
+RUN DEBIAN_FRONTEND=noninteractive apt-get -qq update \
+	&& apt-get -qq install -y --no-install-recommends \
+		wget openjdk-17-jre software-properties-common git locales zip unzip \
+		file build-essential libz-dev zlib1g-dev \
 	&& rm -rf /var/lib/apt/lists/* 
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
@@ -101,10 +103,10 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 RUN ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar || (echo "\n\nsignal-client jar file with version ${LIBSIGNAL_CLIENT_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-* && echo "\n\n" && exit 1)
 
 RUN cd /tmp/ \
-	&& zip -u /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal_jni.so
-
-RUN cd /tmp \
-	&& zip -r signal-cli-${SIGNAL_CLI_VERSION}.zip signal-cli-${SIGNAL_CLI_VERSION}/*
+	&& zip -u /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/signal-client-java-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal_jni.so \
+	&& zip -r signal-cli-${SIGNAL_CLI_VERSION}.zip signal-cli-${SIGNAL_CLI_VERSION}/* \
+    && unzip /tmp/signal-cli-${SIGNAL_CLI_VERSION}.zip -d /opt \
+	&& rm -f /tmp/signal-cli-${SIGNAL_CLI_VERSION}.zip
 
 COPY src/api /tmp/signal-cli-rest-api-src/api
 COPY src/client /tmp/signal-cli-rest-api-src/client
@@ -119,7 +121,6 @@ RUN cd /tmp/signal-cli-rest-api-src && swag init && go build
 
 # build supervisorctl_config_creator
 RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper 
-
 
 # Start a fresh container for release container
 FROM eclipse-temurin:17-focal
@@ -138,20 +139,16 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/* 
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
-COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}.zip /tmp/signal-cli-${SIGNAL_CLI_VERSION}.zip
-COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile/signal-cli /tmp/signal-cli-native
+COPY --from=buildcontainer /opt/signal-cli-${SIGNAL_CLI_VERSION} /opt/signal-cli-${SIGNAL_CLI_VERSION}
+COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile/signal-cli /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/scripts/jsonrpc2-helper /usr/bin/jsonrpc2-helper
 COPY entrypoint.sh /entrypoint.sh
 
-RUN unzip /tmp/signal-cli-${SIGNAL_CLI_VERSION}.zip -d /opt
-RUN rm -rf /tmp/signal-cli-${SIGNAL_CLI_VERSION}.zip
 
 RUN groupadd -g 1000 signal-api \
 	&& useradd --no-log-init -M -d /home -s /bin/bash -u 1000 -g 1000 signal-api \
 	&& ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli /usr/bin/signal-cli \
-	&& cp /tmp/signal-cli-native /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native \
 	&& ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native \
-	&& rm /tmp/signal-cli-native \
 	&& mkdir -p /signal-cli-config/ \
 	&& mkdir -p /home/.local/share/signal-cli
 
