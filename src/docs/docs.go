@@ -19,7 +19,10 @@ var doc = `{
         "description": "{{.Description}}",
         "title": "{{.Title}}",
         "contact": {},
-        "license": {},
+        "license": {
+	   "name": "MIT License",
+	   "url": "https://github.com/bbernhard/signal-cli-rest-api/blob/master/LICENSE"   	
+	},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -709,6 +712,13 @@ var doc = `{
                 "summary": "Send a reaction.",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },		
+                    {
                         "description": "Reaction",
                         "name": "data",
                         "in": "body",
@@ -746,6 +756,13 @@ var doc = `{
                 ],
                 "summary": "Remove a reaction.",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },		
                     {
                         "description": "Reaction",
                         "name": "data",
