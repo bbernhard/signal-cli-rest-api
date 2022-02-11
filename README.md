@@ -15,31 +15,68 @@ At the moment, the following functionality is exposed via REST:
 
 and [many more](https://bbernhard.github.io/signal-cli-rest-api/)
 
-## Modes
 
-The `signal-cli-rest-api` supports three different modes:
+## Getting started
 
-* Normal Mode: In normal mode, the `signal-cli` executable is invoked for every REST API request. As `signal-cli` is a Java application, a significant amount of time is spent in the JVM (Java Virtual Machine) startup - which makes this mode pretty slow.
-* Native Mode: Instead of calling a Java executable for every REST API request, a native image (compiled with GraalVM) is called. This mode therefore usually performs better than the normal mode. 
-* JSON-RPC Mode: In JSON-RPC mode, a single `signal-cli` instance is spawned in daemon mode. The communication happens via JSON-RPC. This mode is usually the fastest.
+1. Create a directory for the configuration
+This allows you to update `signal-cli-rest-api` by just deleting and recreating the container without the need to re-register your signal number
 
-
-| architecture | normal mode | native mode | json-rpc mode |
-|--------------|:-----------:|:-----------:|---------------|
-|    x86-64    |      :heavy_check_mark:     |     :heavy_check_mark:      |       :heavy_check_mark:      |
-|    armv7     |      :heavy_check_mark:     |     ❌ <sup>1</sup>     |       :heavy_check_mark:      |
-|    arm64     |      :heavy_check_mark:     |     :heavy_check_mark:      |       :heavy_check_mark:      |
+```bash
+$ mkdir $HOME/.local/share/signal-cli
+```
 
 
-|     mode     | speed       |
-|-------------:|:------------|
-|    json-rpc  |    :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: |
-|    native    |    :heavy_check_mark: :heavy_check_mark:    |
-|    normal    |    :heavy_check_mark:       |
+2. Start a container
+
+```bash
+$ sudo docker run -d --name signal-api --restart=always -p 8080:8080 \
+      -v $HOME/.local/share/signal-cli:/home/.local/share/signal-cli \
+      -e 'MODE=native' bbernhard/signal-cli-rest-api
+```
+
+3. Register or Link you Signal Number
+
+In this case we'll register our container as secondary device, assuming that you already have your primary number running / assigned to your mobile. 
+
+Therefore open http://localhost:8080/v1/qrcodelink?device_name=signal-api in your browser, open Signal on your mobile phone, Go to _Settings > Linked devices_ and scan the QR code using the _+_ button.
+
+4. Test your new REST API
+
+Call the REST api endpoint and send a test message: Replace `+4412345` with your signal number in international number format, and `+44987654` with the recipients number
+
+```bash
+$ curl -X POST -H "Content-Type: application/json" 'http://localhost:8080/v2/send' \
+     -d '{"message": "Test via Signal API!", "number": "+4412345", "recipients": [ "+44987654" ]}' 
+```
+
+You should now have send a message to `+44987654`.
+
+## Execution Modes 
+
+The `signal-cli-rest-api` supports three different modes of execution, which can be controlled by setting the `MODE` environment variable.
+
+* **`normal` Mode: (Default)** The `signal-cli` executable is invoked for every REST API request. Being a Java application, each REST call requires a new startup of the JVM (Java Virtual Machine), increasing the latency and hence leading to the slowest mode of operation. 
+* **`native` Mode:** A precompiled binary `signal-cli-native` (using GraalVM) is used for every REST API request. This results in a much lower latency & memory usage on each call. On the `armv7` platform this mode is not available and falls back to `normal`. The native mode may also be less stable, due to the experimental state of GraalVM compiler. 
+* `json-rpc` Mode: A single, JVM-based `signal-cli` instance is spawned as daemon process. This mode is usually the fastest, but requires more memory as the JVM keeps running. 
 
 
-Notes:
-1. If the signal-cli-rest-api docker container is started on an armv7 system in native mode, it automatically falls back to the normal mode.
+|     mode     |    speed    |    resident memory usage |
+|-------------:|:------------|:------------|
+|   `normal`    |    :heavy_check_mark:       | normal
+|   `native`    |    :heavy_check_mark: :heavy_check_mark:    | normal
+|   `json-rpc`  |    :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: | increased
+
+
+**Example of running `signal-cli-rest` in `native` mode**
+
+```bash
+$ sudo docker run -d --name signal-api --restart=always -p 9922:8080 \
+              -v /home/user/signal-api:/home/.local/share/signal-cli \
+              -e 'MODE=native' bbernhard/signal-cli-rest-api
+```
+
+This launches a instance of the REST service accessible under http://localhost:9922/v2/send. To preserve the Signal number registration, i.e. for updates, the storage location for the `signal-cli` configuration is mapped as Docker Volume into a local `/home/user/signal-api` directory.
+
 
 ## Auto Receive Schedule
 
@@ -75,7 +112,7 @@ The Swagger API documentation can be found [here](https://bbernhard.github.io/si
 
 ### Blog Posts
 
-[Running Signal Messenger REST API in Azure Web App for Containers](https://stefanstranger.github.io/2021/06/01/RunningSignalRESTAPIinAppService/) - written by [@stefanstranger](https://github.com/stefanstranger)
+[Running Signal Messenger REST API in Azure Web App for Containers](https://stefanstranger.github.io/2021/06/01/RunningSignalRESTAPIinAppService/) by [@stefanstranger](https://github.com/stefanstranger)
 
 
 ## Clients & Libraries
