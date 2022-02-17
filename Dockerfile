@@ -1,6 +1,6 @@
-ARG SIGNAL_CLI_VERSION=0.10.2
+ARG SIGNAL_CLI_VERSION=0.10.3
 ARG LIBSIGNAL_CLIENT_VERSION=0.11.0
-ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.10.2-5
+ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.10.3-1
 
 ARG SWAG_VERSION=1.6.7
 ARG GRAALVM_JAVA_VERSION=17
@@ -53,7 +53,7 @@ RUN cd /tmp/ \
 	&& rm -r /tmp/swag-${SWAG_VERSION}
 
 RUN cd /tmp/ \
-	&& wget -nv https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}.tar.gz -O /tmp/signal-cli.tar.gz \
+	&& wget -nv https://github.com/AsamK/signal-cli/archive/refs/tags/v${SIGNAL_CLI_VERSION}.tar.gz -O /tmp/signal-cli.tar.gz \
 	&& tar xf signal-cli.tar.gz
 
 # build native image with graalvm
