@@ -862,7 +862,7 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 			return err
 		}
 
-		avatarTmpPath := s.avatarTmpDir + u.String() + "." + fType.Extension
+		avatarTmpPath = s.avatarTmpDir + u.String() + "." + fType.Extension
 
 		f, err := os.Create(avatarTmpPath)
 		if err != nil {
