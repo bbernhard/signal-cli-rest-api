@@ -164,6 +164,8 @@ RUN arch="$(uname -m)"; \
 EXPOSE ${PORT}
 
 ENV SIGNAL_CLI_CONFIG_DIR=/home/.local/share/signal-cli
+ENV SIGNAL_CLI_UID=1000
+ENV SIGNAL_CLI_GID=1000
 
 ENTRYPOINT ["/entrypoint.sh"]
 
