@@ -12,7 +12,7 @@ import (
 
 	"github.com/bbernhard/signal-cli-rest-api/api"
 	"github.com/bbernhard/signal-cli-rest-api/client"
-	_ "github.com/bbernhard/signal-cli-rest-api/docs"
+	docs "github.com/bbernhard/signal-cli-rest-api/docs"
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
@@ -59,6 +59,8 @@ func main() {
 	attachmentTmpDir := flag.String("attachment-tmp-dir", "/tmp/", "Attachment tmp directory")
 	avatarTmpDir := flag.String("avatar-tmp-dir", "/tmp/", "Avatar tmp directory")
 	flag.Parse()
+
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
 	router := gin.New()
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
