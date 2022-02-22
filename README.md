@@ -34,15 +34,15 @@ $ sudo docker run -d --name signal-api --restart=always -p 8080:8080 \
       -e 'MODE=native' bbernhard/signal-cli-rest-api
 ```
 
-3. Register or Link you Signal Number
+3. Register or Link your Signal Number
 
 In this case we'll register our container as secondary device, assuming that you already have your primary number running / assigned to your mobile. 
 
-Therefore open http://localhost:8080/v1/qrcodelink?device_name=signal-api in your browser, open Signal on your mobile phone, Go to _Settings > Linked devices_ and scan the QR code using the _+_ button.
+Therefore open http://localhost:8080/v1/qrcodelink?device_name=signal-api in your browser, open Signal on your mobile phone, go to _Settings > Linked devices_ and scan the QR code using the _+_ button.
 
 4. Test your new REST API
 
-Call the REST api endpoint and send a test message: Replace `+4412345` with your signal number in international number format, and `+44987654` with the recipients number
+Call the REST API endpoint and send a test message: Replace `+4412345` with your signal number in international number format, and `+44987654` with the recipients number.
 
 ```bash
 $ curl -X POST -H "Content-Type: application/json" 'http://localhost:8080/v2/send' \
