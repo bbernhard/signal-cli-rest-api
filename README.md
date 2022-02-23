@@ -114,6 +114,15 @@ The Swagger API documentation can be found [here](https://bbernhard.github.io/si
 
 [Running Signal Messenger REST API in Azure Web App for Containers](https://stefanstranger.github.io/2021/06/01/RunningSignalRESTAPIinAppService/) by [@stefanstranger](https://github.com/stefanstranger)
 
+## Advanced Settings
+There are a bunch of environmental variables that can be set inside the docker container in order to change some technical details. This settings are meant for developers and advanced users. Usually you do *not* need to change anything here - the default values are perfectly fine!
+
+* `SIGNAL_CLI_CONFIG_DIR`: Specifies the path to the `signal-cli` config directory inside the docker container. Defaults to `/home/.local/share/signal-cli/`
+
+* `SIGNAL_CLI_UID`: Specifies the uid of the `signal-api` user inside the docker container. Defaults to `1000`
+
+* `SIGNAL_CLI_GID`: Specifies the gid of the `signal-api` group inside the docker container. Defaults to `1000`
+
 
 ## Clients & Libraries
 
