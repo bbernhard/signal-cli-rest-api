@@ -5,8 +5,11 @@ set -e
 
 [ -z "${SIGNAL_CLI_CONFIG_DIR}" ] && echo "SIGNAL_CLI_CONFIG_DIR environmental variable needs to be set! Aborting!" && exit 1;
 
+usermod -u ${SIGNAL_CLI_UID} signal-api
+groupmod -g ${SIGNAL_CLI_GID} signal-api
+
 # Fix permissions to ensure backward compatibility
-chown 1000:1000 -R ${SIGNAL_CLI_CONFIG_DIR} 
+chown ${SIGNAL_CLI_UID}:${SIGNAL_CLI_GID} -R ${SIGNAL_CLI_CONFIG_DIR}
 
 # Show warning on docker exec
 cat <<EOF >> /root/.bashrc
@@ -27,4 +30,4 @@ supervisorctl start all
 fi
 
 # Start API as signal-api user
-exec setpriv --reuid=1000 --regid=1000 --init-groups --inh-caps=$caps signal-cli-rest-api -signal-cli-config=${SIGNAL_CLI_CONFIG_DIR}
+exec setpriv --reuid=${SIGNAL_CLI_UID} --regid=${SIGNAL_CLI_GID} --init-groups --inh-caps=$caps signal-cli-rest-api -signal-cli-config=${SIGNAL_CLI_CONFIG_DIR}
