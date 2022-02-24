@@ -25,7 +25,7 @@ e.g:
   3. Find the line that looks like this: `Prevented navigation to “signalcaptcha://{captcha value}” due to an unknown protocol.` Copy the captcha value
   4. Use it to make the registration call like this:
 
-  `curl -X POST -H "Content-Type: application/json" -d '{"captcha":"captcha value"}' 'http://127.0.0.1:8080/v1/register/<number>`
+  `curl -X POST -H "Content-Type: application/json" -d '{"captcha":"captcha value"}' 'http://127.0.0.1:8080/v1/register/<number>'`
 
 - Verify the number using the code received via SMS/voice
 
