@@ -73,7 +73,9 @@ func main() {
 					log.Fatal("Couldn't create fifo with name ", fifoPathname, ": ", err.Error())
 				}
 
-				_, err = exec.Command("chown", "${SIGNAL_CLI_UID}:${SIGNAL_CLI_GID}", fifoPathname).Output()
+				uid := utils.GetEnv("SIGNAL_CLI_UID", "1000")
+				gid := utils.GetEnv("SIGNAL_CLI_GID", "1000")
+				_, err = exec.Command("chown", uid + ":" + gid, fifoPathname).Output()
 				if err != nil {
 					log.Fatal("Couldn't change permissions of fifo with name ", fifoPathname, ": ", err.Error())
 				}
