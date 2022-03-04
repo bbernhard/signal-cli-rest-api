@@ -69,6 +69,15 @@ func main() {
 
 	router.Use(gin.Recovery())
 
+	port := utils.GetEnv("PORT", "8080")
+	if _, err := strconv.Atoi(port); err != nil {
+		log.Fatal("Invalid PORT ", port, " set. PORT needs to be a number")
+	}
+
+	defaultSwaggerIp := utils.GetEnv("HOST_IP", "127.0.0.1")
+	swaggerIp := utils.GetEnv("SWAGGER_IP", defaultSwaggerIp)
+	docs.SwaggerInfo.Host = swaggerIp + ":" + port
+
 	log.Info("Started Signal Messenger REST API")
 
 	supportsSignalCliNative := "0"
@@ -227,11 +236,6 @@ func main() {
 		{
 			sendV2.POST("", api.SendV2)
 		}
-	}
-
-	port := utils.GetEnv("PORT", "8080")
-	if _, err := strconv.Atoi(port); err != nil {
-		log.Fatal("Invalid PORT ", port, " set. PORT needs to be a number")
 	}
 
 	swaggerUrl := ginSwagger.URL("http://127.0.0.1:" + string(port) + "/swagger/doc.json")
