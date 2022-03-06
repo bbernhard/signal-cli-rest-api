@@ -49,6 +49,17 @@ e.g:
 
   `curl -X POST -H "Content-Type: application/json" -d '{"message": "<message>", "base64_attachments": ["<base64 encoded attachment>"], "number": "<number>", "recipients": ["<recipient1>", "<recipient2>"]}' 'http://127.0.0.1:8080/v2/send'`
 
+- Send a message with a base64 encoded attachment
+
+  e.g:
+  `TMPFILE="$(base64 image_9.jpg)"`
+  `curl -X POST -H "Content-Type: application/json" -d '{"message": "Test image", "base64_attachments": ["'"${TMPFILE}"'"], "number": "+431212131491291", "recipients": ["+4354546464654"]}' 'http://127.0.0.1:8080/v2/send'`
+
+  For sending larger files such as a 4MB mp4 video file:
+
+  `TMPFILE="$(base64 video.mp4)"`
+  `echo '{"message": "Test video", "base64_attachments": ["'"$TMPFILE"'"], "number": "+431212131491291", "recipients": ["+4354546464654"]}' | curl -X POST -H "Content-Type: application/json" -d @- 'http://127.0.0.1:8080/v2/send'`
+
 - Send a message to a group
 
   The group id can be obtained via the "List groups" REST call.
