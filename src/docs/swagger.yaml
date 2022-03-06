@@ -193,7 +193,6 @@ definitions:
       status:
         type: string
     type: object
-host: 127.0.0.1:8080
 info:
   contact: {}
   description: This is the Signal Cli REST API documentation.

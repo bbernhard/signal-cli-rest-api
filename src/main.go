@@ -52,7 +52,6 @@ import (
 // @tag.name Search
 // @tag.description Search the Signal Service.
 
-// @host 127.0.0.1:8080
 // @BasePath /
 func main() {
 	signalCliConfig := flag.String("signal-cli-config", "/home/.local/share/signal-cli/", "Config directory where signal-cli config is stored")
@@ -238,7 +237,7 @@ func main() {
 		}
 	}
 
-	swaggerUrl := ginSwagger.URL("http://127.0.0.1:" + string(port) + "/swagger/doc.json")
+	swaggerUrl := ginSwagger.URL("http://" + swaggerIp + ":" + string(port) + "/swagger/doc.json")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
 
 	autoReceiveSchedule := utils.GetEnv("AUTO_RECEIVE_SCHEDULE", "")
