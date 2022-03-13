@@ -28,6 +28,12 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 )
 
+type UpdateContactRequest struct {
+	Recipient string `json:"recipient"`
+	Name  *string `json:"name"`
+	ExpirationInSeconds *int `json:"expiration_in_seconds"`
+}
+
 type GroupPermissions struct {
 	AddMembers string `json:"add_members" enums:"only-admins,every-member"`
 	EditGroup  string `json:"edit_group" enums:"only-admins,every-member"`
@@ -1155,4 +1161,42 @@ func (a *Api) SearchForNumbers(c *gin.Context) {
 	}
 
 	c.JSON(200, searchResponse)
+}
+
+
+// @Summary Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.
+// @Tags Contacts
+// @Description Updates the info associated to a number on the contact list.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Param data body UpdateContactRequest true "Contact"
+// @Failure 400 {object} Error
+// @Router /v1/contacts [put]
+func (a *Api) UpdateContact(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req UpdateContactRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	if req.Recipient == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
+		return
+	}
+
+	err = a.signalClient.UpdateContact(number, req.Recipient, req.Name, req.ExpirationInSeconds)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }

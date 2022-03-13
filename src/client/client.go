@@ -1236,3 +1236,36 @@ func (s *SignalClient) SearchForNumbers(numbers []string) ([]SearchResultEntry, 
 
 	return searchResultEntries, err
 }
+
+func (s *SignalClient) UpdateContact(number string, recipient string, name *string, expirationInSeconds *int) error {
+	var err error
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Recipient string `json:"recipient"`
+			Name	  string `json:"name,omitempty"`
+			Expiration int   `json:"expiration,omitempty"`
+		}
+		request := Request{Recipient: recipient}
+		if name != nil {
+			request.Name = *name
+		}
+		if expirationInSeconds != nil {
+			request.Expiration = *expirationInSeconds
+		}
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("updateContact", request)
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateContact", recipient}
+		if name != nil {
+			cmd = append(cmd, []string{"-n", *name}...)
+		}
+		if expirationInSeconds != nil {
+			cmd = append(cmd, []string{"-e", strconv.Itoa(*expirationInSeconds)}...)
+		}
+		_, err = runSignalCli(true, cmd, "", s.signalCliMode)
+	}
+	return err
+}

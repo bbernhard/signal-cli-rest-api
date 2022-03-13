@@ -227,6 +227,11 @@ func main() {
 		{
 			search.GET("", api.SearchForNumbers)
 		}
+
+		contacts := v1.Group("/contacts")
+		{
+			contacts.PUT(":number", api.UpdateContact)
+		}
 	}
 
 	v2 := router.Group("/v2")
