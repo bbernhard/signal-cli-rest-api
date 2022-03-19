@@ -193,6 +193,11 @@ func main() {
 			link.GET("", api.GetQrCodeLink)
 		}
 
+		devices := v1.Group("devices")
+		{
+			devices.POST(":number", api.AddDevice)
+		}
+
 		attachments := v1.Group("attachments")
 		{
 			attachments.GET("", api.GetAttachments)

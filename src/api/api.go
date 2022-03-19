@@ -126,6 +126,10 @@ type SearchResponse struct {
 	Registered bool   `json:"registered"`
 }
 
+type AddDeviceRequest struct {
+	Uri string `json:uri"`
+}
+
 type Api struct {
 	signalClient *client.SignalClient
 }
@@ -1194,6 +1198,38 @@ func (a *Api) UpdateContact(c *gin.Context) {
 	}
 
 	err = a.signalClient.UpdateContact(number, req.Recipient, req.Name, req.ExpirationInSeconds)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Links another device to this device.
+// @Tags Devices
+// @Description Links another device to this device. Only works, if this is the master device.
+// @Accept json
+// @Produce json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Param data body AddDeviceRequest true "Request"
+// @Failure 400 {object} Error
+// @Router /v1/devices/{number} [post]
+func (a *Api) AddDevice(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req AddDeviceRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	err = a.signalClient.AddDevice(number, req.Uri)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return

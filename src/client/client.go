@@ -1269,3 +1269,22 @@ func (s *SignalClient) UpdateContact(number string, recipient string, name *stri
 	}
 	return err
 }
+
+func (s *SignalClient) AddDevice(number string, uri string) error {
+	var err error
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Uri string `json:"uri"`
+		}
+		request := Request{Uri: uri}
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("addDevice", request)
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "addDevice", "--uri", uri}
+		_, err = runSignalCli(true, cmd, "", s.signalCliMode)
+	}
+	return err
+}
