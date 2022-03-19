@@ -193,6 +193,90 @@
                 }
             }
         },
+        "/v1/contacts{number}": {
+            "put": {
+                "description": "Updates the info associated to a number on the contact list.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Contact",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateContactRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/devices/{number}": {
+            "post": {
+                "description": "Links another device to this device. Only works, if this is the master device.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Links another device to this device.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.AddDeviceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/groups/{number}": {
             "get": {
                 "description": "List all Signal Groups.",
@@ -1158,6 +1242,14 @@
         }
     },
     "definitions": {
+        "api.AddDeviceRequest": {
+            "type": "object",
+            "properties": {
+                "uri": {
+                    "type": "string"
+                }
+            }
+        },
         "api.Configuration": {
             "type": "object",
             "properties": {
@@ -1354,6 +1446,20 @@
                 "delete_account": {
                     "type": "boolean",
                     "example": false
+                }
+            }
+        },
+        "api.UpdateContactRequest": {
+            "type": "object",
+            "properties": {
+                "expiration_in_seconds": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "recipient": {
+                    "type": "string"
                 }
             }
         },

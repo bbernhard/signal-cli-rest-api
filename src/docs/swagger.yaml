@@ -1,5 +1,10 @@
 basePath: /
 definitions:
+  api.AddDeviceRequest:
+    properties:
+      uri:
+        type: string
+    type: object
   api.Configuration:
     properties:
       logging:
@@ -129,6 +134,15 @@ definitions:
       delete_account:
         example: false
         type: boolean
+    type: object
+  api.UpdateContactRequest:
+    properties:
+      expiration_in_seconds:
+        type: integer
+      name:
+        type: string
+      recipient:
+        type: string
     type: object
   api.UpdateProfileRequest:
     properties:
@@ -321,6 +335,62 @@ paths:
       summary: Set the REST API configuration.
       tags:
       - General
+  /v1/contacts{number}:
+    put:
+      consumes:
+      - application/json
+      description: Updates the info associated to a number on the contact list.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Contact
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateContactRequest'
+      produces:
+      - application/json
+      responses:
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.
+      tags:
+      - Contacts
+  /v1/devices/{number}:
+    post:
+      consumes:
+      - application/json
+      description: Links another device to this device. Only works, if this is the master device.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.AddDeviceRequest'
+      produces:
+      - application/json
+      responses:
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Links another device to this device.
+      tags:
+      - Devices
   /v1/groups/{number}:
     get:
       consumes:
