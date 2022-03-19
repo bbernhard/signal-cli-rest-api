@@ -1177,7 +1177,7 @@ func (a *Api) SearchForNumbers(c *gin.Context) {
 // @Success 204
 // @Param data body UpdateContactRequest true "Contact"
 // @Failure 400 {object} Error
-// @Router /v1/contacts [put]
+// @Router /v1/contacts{number} [put]
 func (a *Api) UpdateContact(c *gin.Context) {
 	number := c.Param("number")
 	if number == "" {
