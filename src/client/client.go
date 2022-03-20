@@ -686,6 +686,64 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 	return groupId, nil
 }
 
+func (s *SignalClient) updateGroupMembers(number string, groupId string, members []string, add bool) error {
+	var err error
+
+	if len(members) == 0 {
+		return nil
+	}
+
+	group, err := s.GetGroup(number, groupId)
+	if err != nil {
+		return err
+	}
+
+	if group == nil {
+		return &NotFoundError{Description: "No group with that group id found"}
+	}
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Name    string   `json:"name,omitempty"`
+			Members  []string   `json:"member,omitempty"`
+			RemoveMembers []string `json:"remove-member,omitempty"`
+			GroupId string   `json:"groupId"`
+		}
+		request := Request{GroupId: groupId}
+		if add {
+			request.Members = append(request.Members, members...)
+		} else {
+			request.RemoveMembers = append(request.RemoveMembers, members...)
+		}
+
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("updateGroup", request)
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup"}
+
+		if add {
+			cmd = append(cmd, "-m")
+		} else {
+			cmd = append(cmd, "-r")
+		}
+		cmd = append(cmd, members...)
+
+		_, err = runSignalCli(true, cmd, "", s.signalCliMode)
+	}
+	return err
+}
+
+func (s *SignalClient) AddMembersToGroup(number string, groupId string, members []string) error {
+	return s.updateGroupMembers(number, groupId, members, true)
+}
+
+func (s *SignalClient) RemoveMembersFromGroup(number string, groupId string, members []string) error {
+	return s.updateGroupMembers(number, groupId, members, false)
+}
+
 func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 	groupEntries := []GroupEntry{}
 

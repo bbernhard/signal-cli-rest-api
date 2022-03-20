@@ -47,6 +47,10 @@ type CreateGroupRequest struct {
 	GroupLinkState string           `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
 }
 
+type ChangeGroupMembersRequest struct {
+	Members        []string         `json:"members"`
+}
+
 type LoggingConfiguration struct {
 	Level string `json:"Level"`
 }
@@ -508,6 +512,94 @@ func (a *Api) CreateGroup(c *gin.Context) {
 	}
 
 	c.JSON(201, CreateGroupResponse{Id: groupId})
+}
+
+// @Summary Add one or more members to an existing Signal Group.
+// @Tags Groups
+// @Description Add one or more members to an existing Signal Group.
+// @Accept json
+// @Produce json
+// @Success 204 {string} OK
+// @Failure 400 {object} Error
+// @Param data body ChangeGroupMembersRequest true "Members"
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/groups/{number}/{groupid}/members [post]
+func (a *Api) AddMembersToGroup(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	groupId := c.Param("groupid")
+	if groupId == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - group id missing"})
+		return
+	}
+
+	var req ChangeGroupMembersRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	err = a.signalClient.AddMembersToGroup(number, groupId, req.Members)
+	if err != nil {
+		switch err.(type) {
+		case *client.NotFoundError:
+			c.JSON(404, Error{Msg: err.Error()})
+			return
+		default:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Remove one or more members from an existing Signal Group.
+// @Tags Groups
+// @Description Remove one or more members from an existing Signal Group.
+// @Accept json
+// @Produce json
+// @Success 204 {string} OK
+// @Failure 400 {object} Error
+// @Param data body ChangeGroupMembersRequest true "Members"
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/groups/{number}/{groupid}/members [delete]
+func (a *Api) RemoveMembersFromGroup(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	groupId := c.Param("groupid")
+	if groupId == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - group id missing"})
+		return
+	}
+
+	var req ChangeGroupMembersRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	err = a.signalClient.RemoveMembersFromGroup(number, groupId, req.Members)
+	if err != nil {
+		switch err.(type) {
+		case *client.NotFoundError:
+			c.JSON(404, Error{Msg: err.Error()})
+			return
+		default:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+	}
+	c.Status(http.StatusNoContent)
 }
 
 // @Summary List all Signal Groups.
