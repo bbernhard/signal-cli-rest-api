@@ -699,7 +699,12 @@ func (s *SignalClient) updateGroupMembers(number string, groupId string, members
 	}
 
 	if group == nil {
-		return &NotFoundError{Description: "No group with that group id found"}
+		return &NotFoundError{Description: "No group with that group id (" + groupId + ") found"}
+	}
+
+	internalGroupId, err := ConvertGroupIdToInternalGroupId(groupId)
+	if err != nil {
+		return errors.New("Invalid group id")
 	}
 
 	if s.signalCliMode == JsonRpc {
@@ -709,7 +714,7 @@ func (s *SignalClient) updateGroupMembers(number string, groupId string, members
 			RemoveMembers []string `json:"remove-member,omitempty"`
 			GroupId string   `json:"groupId"`
 		}
-		request := Request{GroupId: groupId}
+		request := Request{GroupId: internalGroupId}
 		if add {
 			request.Members = append(request.Members, members...)
 		} else {
@@ -722,7 +727,7 @@ func (s *SignalClient) updateGroupMembers(number string, groupId string, members
 		}
 		_, err = jsonRpc2Client.getRaw("updateGroup", request)
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup"}
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-g", internalGroupId}
 
 		if add {
 			cmd = append(cmd, "-m")
