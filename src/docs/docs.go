@@ -467,6 +467,98 @@ var doc = `{
                 }
             }
         },
+        "/v1/groups/{number}/{groupid}/admins": {
+            "post": {
+                "description": "Add one or more admins to an existing Signal Group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Add one or more admins to an existing Signal Group.",
+                "parameters": [
+                    {
+                        "description": "Admins",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ChangeGroupAdminsRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove one or more admins from an existing Signal Group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Remove one or more admins from an existing Signal Group.",
+                "parameters": [
+                    {
+                        "description": "Admins",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ChangeGroupAdminsRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/groups/{number}/{groupid}/block": {
             "post": {
                 "description": "Block the specified Signal Group.",
@@ -1355,6 +1447,17 @@ var doc = `{
             "properties": {
                 "uri": {
                     "type": "string"
+                }
+            }
+        },
+        "api.ChangeGroupAdminsRequest": {
+            "type": "object",
+            "properties": {
+                "admins": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

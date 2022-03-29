@@ -5,6 +5,13 @@ definitions:
       uri:
         type: string
     type: object
+  api.ChangeGroupAdminsRequest:
+    properties:
+      admins:
+        items:
+          type: string
+        type: array
+    type: object
   api.ChangeGroupMembersRequest:
     properties:
       members:
@@ -512,6 +519,67 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: List a Signal Group.
+      tags:
+      - Groups
+  /v1/groups/{number}/{groupid}/admins:
+    delete:
+      consumes:
+      - application/json
+      description: Remove one or more admins from an existing Signal Group.
+      parameters:
+      - description: Admins
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.ChangeGroupAdminsRequest'
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Remove one or more admins from an existing Signal Group.
+      tags:
+      - Groups
+    post:
+      consumes:
+      - application/json
+      description: Add one or more admins to an existing Signal Group.
+      parameters:
+      - description: Admins
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.ChangeGroupAdminsRequest'
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Add one or more admins to an existing Signal Group.
       tags:
       - Groups
   /v1/groups/{number}/{groupid}/block:
