@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bbernhard/signal-cli-rest-api/utils"
+	"github.com/gabriel-vasile/mimetype"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
@@ -10,8 +12,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"github.com/gabriel-vasile/mimetype"
-	"encoding/json"
 )
 
 const supervisorctlConfigTemplate = `
@@ -47,7 +47,6 @@ func isSignalCliLinkedNumberConfigFile(filename string) (bool, error) {
 	}
 	return false, nil
 }
-
 
 func getUsernameFromLinkedNumberConfigFile(filename string) (string, error) {
 	type LinkedNumberConfigFile struct {
@@ -126,7 +125,7 @@ func main() {
 
 			uid := utils.GetEnv("SIGNAL_CLI_UID", "1000")
 			gid := utils.GetEnv("SIGNAL_CLI_GID", "1000")
-			_, err = exec.Command("chown", uid + ":" + gid, fifoPathname).Output()
+			_, err = exec.Command("chown", uid+":"+gid, fifoPathname).Output()
 			if err != nil {
 				log.Fatal("Couldn't change permissions of fifo with name ", fifoPathname, ": ", err.Error())
 			}

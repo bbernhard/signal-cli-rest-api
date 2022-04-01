@@ -101,7 +101,7 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 		str, err := connbuf.ReadString('\n')
 		if err != nil {
 			elapsed := time.Since(r.lastTimeErrorMessageSent)
-			if(elapsed) > time.Duration(5*time.Minute) { //avoid spamming the log file and only log the message at max every 5 minutes
+			if (elapsed) > time.Duration(5*time.Minute) { //avoid spamming the log file and only log the message at max every 5 minutes
 				log.Error("Couldn't read data for number ", number, ": ", err.Error(), ". Is the number properly registered?")
 				r.lastTimeErrorMessageSent = time.Now()
 			}

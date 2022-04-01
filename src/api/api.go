@@ -3,10 +3,10 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
-	"errors"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
@@ -29,9 +29,9 @@ const (
 )
 
 type UpdateContactRequest struct {
-	Recipient string `json:"recipient"`
-	Name  *string `json:"name"`
-	ExpirationInSeconds *int `json:"expiration_in_seconds"`
+	Recipient           string  `json:"recipient"`
+	Name                *string `json:"name"`
+	ExpirationInSeconds *int    `json:"expiration_in_seconds"`
 }
 
 type GroupPermissions struct {
@@ -48,11 +48,11 @@ type CreateGroupRequest struct {
 }
 
 type ChangeGroupMembersRequest struct {
-	Members        []string         `json:"members"`
+	Members []string `json:"members"`
 }
 
 type ChangeGroupAdminsRequest struct {
-	Admins        []string         `json:"admins"`
+	Admins []string `json:"admins"`
 }
 
 type LoggingConfiguration struct {
@@ -360,7 +360,7 @@ func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan s
 
 	for {
 		select {
-        case <-stop:
+		case <-stop:
 			ws.Close()
 			return
 		case msg := <-receiveChannel:
@@ -1350,7 +1350,6 @@ func (a *Api) SearchForNumbers(c *gin.Context) {
 
 	c.JSON(200, searchResponse)
 }
-
 
 // @Summary Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.
 // @Tags Contacts

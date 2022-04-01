@@ -123,8 +123,8 @@ type About struct {
 }
 
 type SearchResultEntry struct {
-	Number      string         `json:"number"`
-	Registered  bool           `json:"registered"`
+	Number     string `json:"number"`
+	Registered bool   `json:"registered"`
 }
 
 func cleanupTmpFiles(paths []string) {
@@ -470,7 +470,7 @@ func (s *SignalClient) send(number string, message string,
 
 func (s *SignalClient) About() About {
 	about := About{SupportedApiVersions: []string{"v1", "v2"}, BuildNr: 2, Mode: getSignalCliModeString(s.signalCliMode),
-					Version: utils.GetEnv("BUILD_VERSION", "unset")}
+		Version: utils.GetEnv("BUILD_VERSION", "unset")}
 	return about
 }
 
@@ -533,7 +533,7 @@ func (s *SignalClient) getJsonRpc2Client(number string) (*JsonRpc2Client, error)
 	return nil, errors.New("Number not registered with JSON-RPC")
 }
 
-func (s *SignalClient) getJsonRpc2Clients() ([]*JsonRpc2Client) {
+func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 	jsonRpc2Clients := []*JsonRpc2Client{}
 	for _, client := range s.jsonRpc2Clients {
 		jsonRpc2Clients = append(jsonRpc2Clients, client)
@@ -709,10 +709,10 @@ func (s *SignalClient) updateGroupMembers(number string, groupId string, members
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Name    string   `json:"name,omitempty"`
-			Members  []string   `json:"member,omitempty"`
+			Name          string   `json:"name,omitempty"`
+			Members       []string `json:"member,omitempty"`
 			RemoveMembers []string `json:"remove-member,omitempty"`
-			GroupId string   `json:"groupId"`
+			GroupId       string   `json:"groupId"`
 		}
 		request := Request{GroupId: internalGroupId}
 		if add {
@@ -772,10 +772,10 @@ func (s *SignalClient) updateGroupAdmins(number string, groupId string, admins [
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Name    string   `json:"name,omitempty"`
-			Admins  []string   `json:"admin,omitempty"`
+			Name         string   `json:"name,omitempty"`
+			Admins       []string `json:"admin,omitempty"`
 			RemoveAdmins []string `json:"remove-admin,omitempty"`
-			GroupId string   `json:"groupId"`
+			GroupId      string   `json:"groupId"`
 		}
 		request := Request{GroupId: internalGroupId}
 		if add {
@@ -1367,9 +1367,9 @@ func (s *SignalClient) UpdateContact(number string, recipient string, name *stri
 	var err error
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Recipient string `json:"recipient"`
-			Name	  string `json:"name,omitempty"`
-			Expiration int   `json:"expiration,omitempty"`
+			Recipient  string `json:"recipient"`
+			Name       string `json:"name,omitempty"`
+			Expiration int    `json:"expiration,omitempty"`
 		}
 		request := Request{Recipient: recipient}
 		if name != nil {
