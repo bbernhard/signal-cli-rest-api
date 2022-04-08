@@ -1022,7 +1022,7 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Name         string `json:"name"`
+			Name         string `json:"given-name"`
 			Avatar       string `json:"avatar,omitempty"`
 			RemoveAvatar bool   `json:"remove-avatar"`
 		}
@@ -1039,7 +1039,7 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 		}
 		_, err = jsonRpc2Client.getRaw("updateProfile", request)
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateProfile", "--name", profileName}
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateProfile", "--given-name", profileName}
 		if base64Avatar == "" {
 			cmd = append(cmd, "--remove-avatar")
 		} else {
