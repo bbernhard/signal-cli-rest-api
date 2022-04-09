@@ -840,7 +840,7 @@ var doc = `{
         },
         "/v1/identities/{number}/trust/{numberToTrust}": {
             "put": {
-                "description": "Trust an identity.",
+                "description": "Trust an identity. When 'trust_all_known_keys' is set to' true', all known keys of this user are trusted. **This is only recommended for testing.**",
                 "produces": [
                     "application/json"
                 ],
@@ -1649,6 +1649,10 @@ var doc = `{
         "api.TrustIdentityRequest": {
             "type": "object",
             "properties": {
+                "trust_all_known_keys": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "verified_safety_number": {
                     "type": "string"
                 }
@@ -1727,6 +1731,12 @@ var doc = `{
         "client.GroupEntry": {
             "type": "object",
             "properties": {
+                "admins": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "blocked": {
                     "type": "boolean"
                 },

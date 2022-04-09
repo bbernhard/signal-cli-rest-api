@@ -1100,21 +1100,40 @@ func (s *SignalClient) ListIdentities(number string) (*[]IdentityEntry, error) {
 	return &identityEntries, nil
 }
 
-func (s *SignalClient) TrustIdentity(number string, numberToTrust string, verifiedSafetyNumber string) error {
+func (s *SignalClient) TrustIdentity(number string, numberToTrust string, verifiedSafetyNumber *string, trustAllKnownKeys *bool) error {
 	var err error
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			VerifiedSafetyNumber string `json:"verified-safety-number"`
+			VerifiedSafetyNumber string `json:"verified-safety-number,omitempty"`
+			TrustAllKnownKeys    bool   `json:"trust-all-known-keys,omitempty"`
 			Recipient            string `json:"recipient"`
 		}
-		request := Request{VerifiedSafetyNumber: verifiedSafetyNumber, Recipient: numberToTrust}
+		request := Request{Recipient: numberToTrust}
+
+		if verifiedSafetyNumber != nil {
+			request.VerifiedSafetyNumber = *verifiedSafetyNumber
+		}
+
+		if trustAllKnownKeys != nil {
+			request.TrustAllKnownKeys = *trustAllKnownKeys
+		}
+
 		jsonRpc2Client, err := s.getJsonRpc2Client(number)
 		if err != nil {
 			return err
 		}
 		_, err = jsonRpc2Client.getRaw("trust", request)
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "trust", numberToTrust, "--verified-safety-number", verifiedSafetyNumber}
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "trust", numberToTrust}
+
+		if verifiedSafetyNumber != nil {
+			cmd = append(cmd, []string{"--verified-safety-number", *verifiedSafetyNumber}...)
+		}
+
+		if trustAllKnownKeys != nil && *trustAllKnownKeys {
+			cmd = append(cmd, "--trust-all-known-keys")
+		}
+
 		_, err = runSignalCli(true, cmd, "", s.signalCliMode)
 	}
 	return err

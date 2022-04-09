@@ -116,7 +116,8 @@ type UpdateProfileRequest struct {
 }
 
 type TrustIdentityRequest struct {
-	VerifiedSafetyNumber string `json:"verified_safety_number"`
+	VerifiedSafetyNumber *string `json:"verified_safety_number"`
+	TrustAllKnownKeys    *bool   `json:"trust_all_known_keys" example:"false"`
 }
 
 type SendMessageResponse struct {
@@ -967,7 +968,7 @@ func (a *Api) ListIdentities(c *gin.Context) {
 
 // @Summary Trust Identity
 // @Tags Identities
-// @Description Trust an identity.
+// @Description Trust an identity. When 'trust_all_known_keys' is set to' true', all known keys of this user are trusted. **This is only recommended for testing.**
 // @Produce  json
 // @Success 204 {string} OK
 // @Param data body TrustIdentityRequest true "Input Data"
@@ -996,12 +997,22 @@ func (a *Api) TrustIdentity(c *gin.Context) {
 		return
 	}
 
-	if req.VerifiedSafetyNumber == "" {
-		c.JSON(400, Error{Msg: "Couldn't process request - verified safety number missing"})
+	if (req.VerifiedSafetyNumber == nil && req.TrustAllKnownKeys == nil) || (req.VerifiedSafetyNumber == nil && req.TrustAllKnownKeys != nil && !*req.TrustAllKnownKeys) {
+		c.JSON(400, Error{Msg: "Couldn't process request - please either provide a safety number (preferred & more secure) or set 'trust_all_known_keys' to true"})
 		return
 	}
 
-	err = a.signalClient.TrustIdentity(number, numberToTrust, req.VerifiedSafetyNumber)
+	if req.VerifiedSafetyNumber != nil && req.TrustAllKnownKeys != nil && *req.TrustAllKnownKeys {
+		c.JSON(400, Error{Msg: "Couldn't process request - please either provide a safety number or set 'trust_all_known_keys' to true. But do not set both parameters at once!"})
+		return
+	}
+
+	if req.VerifiedSafetyNumber != nil && *req.VerifiedSafetyNumber == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - please provide a valid safety number"})
+		return
+	}
+
+	err = a.signalClient.TrustIdentity(number, numberToTrust, req.VerifiedSafetyNumber, req.TrustAllKnownKeys)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return

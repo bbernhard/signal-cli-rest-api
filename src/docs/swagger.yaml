@@ -135,6 +135,9 @@ definitions:
     type: object
   api.TrustIdentityRequest:
     properties:
+      trust_all_known_keys:
+        example: false
+        type: boolean
       verified_safety_number:
         type: string
     type: object
@@ -185,6 +188,10 @@ definitions:
     type: object
   client.GroupEntry:
     properties:
+      admins:
+        items:
+          type: string
+        type: array
       blocked:
         type: boolean
       id:
@@ -769,7 +776,7 @@ paths:
       - Identities
   /v1/identities/{number}/trust/{numberToTrust}:
     put:
-      description: Trust an identity.
+      description: Trust an identity. When 'trust_all_known_keys' is set to' true', all known keys of this user are trusted. **This is only recommended for testing.**
       parameters:
       - description: Input Data
         in: body
