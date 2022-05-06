@@ -6,17 +6,17 @@ import (
 	"io/ioutil"
 )
 
-type ConfigEntry struct {
+type JsonRpc2ClientConfigEntry struct {
 	TcpPort      int64  `yaml:"tcp_port"`
 	FifoPathname string `yaml:"fifo_pathname"`
 }
 
-type Config struct {
-	Entries map[string]ConfigEntry `yaml:"config,omitempty"`
+type JsonRpc2ClientConfigEntries struct {
+	Entries map[string]JsonRpc2ClientConfigEntry `yaml:"config,omitempty"`
 }
 
 type JsonRpc2ClientConfig struct {
-	config Config
+	config JsonRpc2ClientConfigEntries
 }
 
 func NewJsonRpc2ClientConfig() *JsonRpc2ClientConfig {
@@ -62,9 +62,9 @@ func (c *JsonRpc2ClientConfig) GetTcpPortsForNumbers() map[string]int64 {
 	return mapping
 }
 
-func (c *JsonRpc2ClientConfig) AddEntry(number string, configEntry ConfigEntry) {
+func (c *JsonRpc2ClientConfig) AddEntry(number string, configEntry JsonRpc2ClientConfigEntry) {
 	if c.config.Entries == nil {
-		c.config.Entries = make(map[string]ConfigEntry)
+		c.config.Entries = make(map[string]JsonRpc2ClientConfigEntry)
 	}
 	c.config.Entries[number] = configEntry
 }

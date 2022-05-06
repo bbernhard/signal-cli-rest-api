@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
-	uuid "github.com/gofrs/uuid"
-	log "github.com/sirupsen/logrus"
 	"net"
 	"time"
+
+	"github.com/bbernhard/signal-cli-rest-api/utils"
+	uuid "github.com/gofrs/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 type Error struct {
@@ -32,10 +34,13 @@ type JsonRpc2Client struct {
 	receivedMessageResponses chan JsonRpc2MessageResponse
 	receivedMessages         chan JsonRpc2ReceivedMessage
 	lastTimeErrorMessageSent time.Time
+	signalCliApiConfig       *utils.SignalCliApiConfig
 }
 
-func NewJsonRpc2Client() *JsonRpc2Client {
-	return &JsonRpc2Client{}
+func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig) *JsonRpc2Client {
+	return &JsonRpc2Client{
+		signalCliApiConfig: signalCliApiConfig,
+	}
 }
 
 func (r *JsonRpc2Client) Dial(address string) error {
