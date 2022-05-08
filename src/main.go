@@ -150,8 +150,8 @@ func main() {
 		{
 			configuration.GET("", api.GetConfiguration)
 			configuration.POST("", api.SetConfiguration)
-			configuration.POST(":number/trustmode", api.SetTrustMode)
-			configuration.GET(":number/trustmode", api.GetTrustMode)
+			configuration.POST(":number/settings", api.SetTrustMode)
+			configuration.GET(":number/settings", api.GetTrustMode)
 		}
 
 		health := v1.Group("/health")

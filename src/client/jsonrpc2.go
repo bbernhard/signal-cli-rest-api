@@ -10,6 +10,7 @@ import (
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	uuid "github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
+	"github.com/tidwall/sjson"
 )
 
 type Error struct {
@@ -35,11 +36,13 @@ type JsonRpc2Client struct {
 	receivedMessages         chan JsonRpc2ReceivedMessage
 	lastTimeErrorMessageSent time.Time
 	signalCliApiConfig       *utils.SignalCliApiConfig
+	number					 string
 }
 
-func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig) *JsonRpc2Client {
+func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string) *JsonRpc2Client {
 	return &JsonRpc2Client{
 		signalCliApiConfig: signalCliApiConfig,
+		number: number,
 	}
 }
 
@@ -64,6 +67,16 @@ func (r *JsonRpc2Client) getRaw(command string, args interface{}) (string, error
 		Params  interface{} `json:"params,omitempty"`
 	}
 
+	trustModeStr := ""
+	trustMode, err := r.signalCliApiConfig.GetTrustModeForNumber(r.number)
+	if err == nil {
+		trustModeStr, err = utils.TrustModeToString(trustMode)
+		if err != nil {
+			trustModeStr = ""
+			log.Error("Invalid trust mode: ", trustModeStr)
+		}
+	}
+
 	u, err := uuid.NewV4()
 	if err != nil {
 		return "", err
@@ -77,6 +90,13 @@ func (r *JsonRpc2Client) getRaw(command string, args interface{}) (string, error
 	fullCommandBytes, err := json.Marshal(fullCommand)
 	if err != nil {
 		return "", err
+	}
+
+	if trustModeStr != "" {
+		fullCommandBytes, err = sjson.SetBytes(fullCommandBytes, "params.trustNewIdentities", trustModeStr)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	log.Debug("full command: ", string(fullCommandBytes))

@@ -1439,6 +1439,16 @@ func (a *Api) AddDevice(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// @Summary Set account specific settings.
+// @Tags General
+// @Description Set account specific settings.
+// @Accept json
+// @Produce json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Param data body TrustModeRequest true "Request"
+// @Failure 400 {object} Error
+// @Router /v1/configuration/{number}/settings [post]
 func (a *Api) SetTrustMode(c *gin.Context) {
 	number := c.Param("number")
 	if number == "" {
@@ -1468,6 +1478,16 @@ func (a *Api) SetTrustMode(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// @Summary List account specific settings.
+// @Tags General
+// @Description List account specific settings.
+// @Accept json
+// @Produce json
+// @Param number path string true "Registered Phone Number"
+// @Success 200
+// @Param data body TrustModeResponse true "Request"
+// @Failure 400 {object} Error
+// @Router /v1/configuration/{number}/settings [get]
 func (a *Api) GetTrustMode(c *gin.Context) {
 	number := c.Param("number")
 	if number == "" {

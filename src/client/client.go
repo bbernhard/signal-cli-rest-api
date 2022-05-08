@@ -262,7 +262,7 @@ func (s *SignalClient) Init() error {
 
 		tcpPortsNumberMapping := s.jsonRpc2ClientConfig.GetTcpPortsForNumbers()
 		for number, tcpPort := range tcpPortsNumberMapping {
-			s.jsonRpc2Clients[number] = NewJsonRpc2Client(s.signalCliApiConfig)
+			s.jsonRpc2Clients[number] = NewJsonRpc2Client(s.signalCliApiConfig, number)
 			err := s.jsonRpc2Clients[number].Dial("127.0.0.1:" + strconv.FormatInt(tcpPort, 10))
 			if err != nil {
 				return err

@@ -209,6 +209,88 @@ var doc = `{
                 }
             }
         },
+        "/v1/configuration/{number}/settings": {
+            "get": {
+                "description": "List account specific settings.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "List account specific settings.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TrustModeResponse"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Set account specific settings.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Set account specific settings.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TrustModeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/contacts{number}": {
             "put": {
                 "description": "Updates the info associated to a number on the contact list.",
@@ -1654,6 +1736,22 @@ var doc = `{
                     "example": false
                 },
                 "verified_safety_number": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TrustModeRequest": {
+            "type": "object",
+            "properties": {
+                "trust_mode": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TrustModeResponse": {
+            "type": "object",
+            "properties": {
+                "trust_mode": {
                     "type": "string"
                 }
             }
