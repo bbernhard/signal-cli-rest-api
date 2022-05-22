@@ -141,6 +141,16 @@ definitions:
       verified_safety_number:
         type: string
     type: object
+  api.TrustModeRequest:
+    properties:
+      trust_mode:
+        type: string
+    type: object
+  api.TrustModeResponse:
+    properties:
+      trust_mode:
+        type: string
+    type: object
   api.TypingIndicatorRequest:
     properties:
       recipient:
@@ -354,6 +364,61 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: Set the REST API configuration.
+      tags:
+      - General
+  /v1/configuration/{number}/settings:
+    get:
+      consumes:
+      - application/json
+      description: List account specific settings.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.TrustModeResponse'
+      produces:
+      - application/json
+      responses:
+        "200": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: List account specific settings.
+      tags:
+      - General
+    post:
+      consumes:
+      - application/json
+      description: Set account specific settings.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.TrustModeRequest'
+      produces:
+      - application/json
+      responses:
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Set account specific settings.
       tags:
       - General
   /v1/contacts{number}:

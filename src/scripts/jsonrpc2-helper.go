@@ -113,7 +113,7 @@ func main() {
 
 			fifoPathname := fifoBasePathName + strconv.FormatInt(ctr, 10)
 			tcpPort := tcpBasePort + ctr
-			jsonRpc2ClientConfig.AddEntry(number, utils.ConfigEntry{TcpPort: tcpPort, FifoPathname: fifoPathname})
+			jsonRpc2ClientConfig.AddEntry(number, utils.JsonRpc2ClientConfigEntry{TcpPort: tcpPort, FifoPathname: fifoPathname})
 			ctr += 1
 
 			os.Remove(fifoPathname) //remove any existing named pipe

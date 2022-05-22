@@ -131,7 +131,8 @@ func main() {
 	}
 
 	jsonRpc2ClientConfigPathPath := *signalCliConfig + "/jsonrpc2.yml"
-	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath)
+	signalCliApiConfigPath := *signalCliConfig + "/api-config.yml"
+	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath, signalCliApiConfigPath)
 	err = signalClient.Init()
 	if err != nil {
 		log.Fatal("Couldn't init Signal Client: ", err.Error())
@@ -149,6 +150,8 @@ func main() {
 		{
 			configuration.GET("", api.GetConfiguration)
 			configuration.POST("", api.SetConfiguration)
+			configuration.POST(":number/settings", api.SetTrustMode)
+			configuration.GET(":number/settings", api.GetTrustMode)
 		}
 
 		health := v1.Group("/health")

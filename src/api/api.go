@@ -124,6 +124,14 @@ type SendMessageResponse struct {
 	Timestamp string `json:"timestamp"`
 }
 
+type TrustModeRequest struct {
+	TrustMode string `json:"trust_mode"`
+}
+
+type TrustModeResponse struct {
+	TrustMode string `json:"trust_mode"`
+}
+
 var connectionUpgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
@@ -1429,4 +1437,72 @@ func (a *Api) AddDevice(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// @Summary Set account specific settings.
+// @Tags General
+// @Description Set account specific settings.
+// @Accept json
+// @Produce json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Param data body TrustModeRequest true "Request"
+// @Failure 400 {object} Error
+// @Router /v1/configuration/{number}/settings [post]
+func (a *Api) SetTrustMode(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req TrustModeRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	trustMode, err := utils.StringToTrustMode(req.TrustMode)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Invalid trust mode"})
+		return
+	}
+
+	err = a.signalClient.SetTrustMode(number, trustMode)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't set trust mode"})
+		log.Error("Couldn't set trust mode: ", err.Error())
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary List account specific settings.
+// @Tags General
+// @Description List account specific settings.
+// @Accept json
+// @Produce json
+// @Param number path string true "Registered Phone Number"
+// @Success 200
+// @Param data body TrustModeResponse true "Request"
+// @Failure 400 {object} Error
+// @Router /v1/configuration/{number}/settings [get]
+func (a *Api) GetTrustMode(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var err error
+	trustMode := TrustModeResponse{}
+	trustMode.TrustMode, err = utils.TrustModeToString(a.signalClient.GetTrustMode(number))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Invalid trust mode"})
+		log.Error("Invalid trust mode: ", err.Error())
+		return
+	}
+
+	c.JSON(200, trustMode)
 }
