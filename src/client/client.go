@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"fmt"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/gabriel-vasile/mimetype"
@@ -427,7 +428,7 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 	return err
 }
 
-func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool) error {
+func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool, deleteLocalData bool) error {
 	if s.signalCliMode == JsonRpc {
 		return errors.New("This functionality is only available in normal/native mode!")
 	}
@@ -438,6 +439,17 @@ func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool) error
 	}
 
 	_, err := s.cliClient.Execute(true, command, "")
+
+	if deleteLocalData {
+		command := []string{"--config", s.signalCliConfig, "-a", number, "deleteLocalAccountData"}
+		_, err2 := s.cliClient.Execute(true, command, "")
+		if (err2 != nil) && (err != nil) {
+			err = fmt.Errorf("%w (%w)", err, err2)
+		} else if (err2 != nil) && (err == nil) {
+			err = err2
+		}
+	}
+
 	return err
 }
 

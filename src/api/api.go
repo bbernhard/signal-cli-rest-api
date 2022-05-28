@@ -70,6 +70,7 @@ type RegisterNumberRequest struct {
 
 type UnregisterNumberRequest struct {
 	DeleteAccount bool `json:"delete_account" example:"false"`
+	DeleteLocalData bool `json:"delete_local_data" example:"false"`
 }
 
 type VerifyNumberSettings struct {
@@ -223,6 +224,7 @@ func (a *Api) UnregisterNumber(c *gin.Context) {
 	number := c.Param("number")
 
 	deleteAccount := false
+	deleteLocalData := false
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(c.Request.Body)
 	if buf.String() != "" {
@@ -234,9 +236,10 @@ func (a *Api) UnregisterNumber(c *gin.Context) {
 			return
 		}
 		deleteAccount = req.DeleteAccount
+		deleteLocalData = req.DeleteLocalData
 	}
 
-	err := a.signalClient.UnregisterNumber(number, deleteAccount)
+	err := a.signalClient.UnregisterNumber(number, deleteAccount, deleteLocalData)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
