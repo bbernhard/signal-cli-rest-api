@@ -1770,6 +1770,10 @@ var doc = `{
                 "delete_account": {
                     "type": "boolean",
                     "example": false
+                },
+                "delete_local_data": {
+                    "type": "boolean",
+                    "example": false
                 }
             }
         },

@@ -161,6 +161,9 @@ definitions:
       delete_account:
         example: false
         type: boolean
+      delete_local_data:
+        example: false
+        type: boolean
     type: object
   api.UpdateContactRequest:
     properties:
