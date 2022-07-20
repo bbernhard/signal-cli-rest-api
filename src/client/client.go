@@ -848,7 +848,7 @@ func (s *SignalClient) DeleteGroup(number string, groupId string) error {
 	return err
 }
 
-func (s *SignalClient) GetQrCodeLink(deviceName string) ([]byte, error) {
+func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int, qrCodeErrorCorrectionLevel qrcode.RecoveryLevel) ([]byte, error) {
 	if s.signalCliMode == JsonRpc {
 		return []byte{}, errors.New(endpointNotSupportedInJsonRpcMode)
 	}
@@ -859,7 +859,7 @@ func (s *SignalClient) GetQrCodeLink(deviceName string) ([]byte, error) {
 		return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
 	}
 
-	q, err := qrcode.NewWithForcedVersion(string(tsdeviceLink), 10, qrcode.Highest)
+	q, err := qrcode.NewWithForcedVersion(string(tsdeviceLink), qrCodeVersion, qrCodeErrorCorrectionLevel)
 	if err != nil {
 		return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
 	}

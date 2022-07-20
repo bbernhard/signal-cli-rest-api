@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
+	qrcode "github.com/skip2/go-qrcode"
 
 	"github.com/bbernhard/signal-cli-rest-api/client"
 	utils "github.com/bbernhard/signal-cli-rest-api/utils"
@@ -802,7 +803,35 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 		return
 	}
 
-	png, err := a.signalClient.GetQrCodeLink(deviceName)
+	qrCodeVersion := c.DefaultQuery("qr_code_version", "10")
+	qrCodeVersionInt, err := strconv.Atoi(qrCodeVersion)
+	if err != nil || qrCodeVersionInt < 1 || qrCodeVersionInt > 40 {
+		c.JSON(400, Error{Msg: "Invalid qr_code_version parameter provided. allowed values: 1...40"})
+		return
+	}
+
+
+	qrCodeErrorCorrectionLevel := c.DefaultQuery("qr_code_error_correction_level", "high")
+	if(!(qrCodeErrorCorrectionLevel == "low" || qrCodeErrorCorrectionLevel == "medium" || qrCodeErrorCorrectionLevel == "high" || qrCodeErrorCorrectionLevel == "highest")) {
+		c.JSON(400, Error{Msg: "Invalid qr_code_error_correction_level parameter provided. allowed values: 'low', 'medium', 'high', 'highest'"})
+		return
+	}
+
+	qrCodeErrorCorrectionLvl := qrcode.High
+	if qrCodeErrorCorrectionLevel == "low" {
+		qrCodeErrorCorrectionLvl = qrcode.Low
+	} else if qrCodeErrorCorrectionLevel == "medium" {
+		qrCodeErrorCorrectionLvl = qrcode.Medium
+	} else if qrCodeErrorCorrectionLevel == "high" {
+		qrCodeErrorCorrectionLvl = qrcode.High
+	} else if qrCodeErrorCorrectionLevel == "highest" {
+		qrCodeErrorCorrectionLvl = qrcode.Highest
+	} else {
+		c.JSON(400, Error{Msg: "Invalid qr_code_error_correction_level parameter provided. allowed values: 'low', 'medium', 'high', 'highest'"})
+		return
+	}
+
+	png, err := a.signalClient.GetQrCodeLink(deviceName, qrCodeVersionInt, qrCodeErrorCorrectionLvl)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
