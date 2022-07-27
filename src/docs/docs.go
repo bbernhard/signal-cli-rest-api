@@ -1686,7 +1686,8 @@ var doc = `{
             "type": "object",
             "properties": {
                 "base64_attachment": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "<BASE64 ENCODED DATA> or 'data:<MIME-TYPE>;base64,<BASE64 ENCODED DATA>' or 'data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>'"
                 },
                 "is_group": {
                     "type": "boolean"
@@ -1711,7 +1712,8 @@ var doc = `{
                 "base64_attachments": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "<BASE64 ENCODED DATA> or 'data:<MIME-TYPE>;base64,<BASE64 ENCODED DATA>' or 'data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>'"
                     }
                 },
                 "message": {

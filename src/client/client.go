@@ -4,12 +4,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"fmt"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/gabriel-vasile/mimetype"
@@ -134,6 +134,16 @@ func cleanupTmpFiles(paths []string) {
 	}
 }
 
+func cleanupAttachmentEntries(attachmentEntries []AttachmentEntry) {
+	for _, attachmentEntry := range attachmentEntries {
+		if len(attachmentEntry.FilePath) == 0 {
+			continue
+		}
+
+		os.Remove(attachmentEntry.FilePath)
+	}
+}
+
 func convertInternalGroupIdToGroupId(internalId string) string {
 	return groupPrefix + base64.StdEncoding.EncodeToString([]byte(internalId))
 }
@@ -193,7 +203,6 @@ func getContainerId() (string, error) {
 	containerId := strings.Replace(lines[0], "/docker/", "", -1)
 	return containerId, nil
 }
-
 
 func ConvertGroupIdToInternalGroupId(id string) (string, error) {
 
@@ -300,35 +309,41 @@ func (s *SignalClient) send(number string, message string,
 		groupId = string(grpId)
 	}
 
-	attachmentTmpPaths := []string{}
+	attachmentEntries := []AttachmentEntry{}
 	for _, base64Attachment := range base64Attachments {
+		attachmentEntry := NewAttachmentEntry(base64Attachment)
+
 		u, err := uuid.NewV4()
 		if err != nil {
 			return nil, err
 		}
 
-		dec, err := base64.StdEncoding.DecodeString(base64Attachment)
+		dec, err := base64.StdEncoding.DecodeString(attachmentEntry.Base64)
 		if err != nil {
 			return nil, err
 		}
 
 		mimeType := mimetype.Detect(dec)
 
-		attachmentTmpPath := s.attachmentTmpDir + u.String() + mimeType.Extension()
-		attachmentTmpPaths = append(attachmentTmpPaths, attachmentTmpPath)
+		if attachmentEntry.isWithMetaData() {
+			attachmentEntries = append(attachmentEntries, *attachmentEntry)
+			continue
+		}
+		attachmentEntry.FilePath = s.attachmentTmpDir + u.String() + mimeType.Extension()
+		attachmentEntries = append(attachmentEntries, *attachmentEntry)
 
-		f, err := os.Create(attachmentTmpPath)
+		f, err := os.Create(attachmentEntry.FilePath)
 		if err != nil {
 			return nil, err
 		}
 		defer f.Close()
 
 		if _, err := f.Write(dec); err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
+			cleanupAttachmentEntries(attachmentEntries)
 			return nil, err
 		}
 		if err := f.Sync(); err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
+			cleanupAttachmentEntries(attachmentEntries)
 			return nil, err
 		}
 
@@ -354,13 +369,13 @@ func (s *SignalClient) send(number string, message string,
 		} else {
 			request.Recipients = recipients
 		}
-		if len(attachmentTmpPaths) > 0 {
-			request.Attachments = append(request.Attachments, attachmentTmpPaths...)
+		for _, attachmentEntry := range attachmentEntries {
+			request.Attachments = append(request.Attachments, attachmentEntry.toDataForSignal())
 		}
 
 		rawData, err := jsonRpc2Client.getRaw("send", request)
 		if err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
+			cleanupAttachmentEntries(attachmentEntries)
 			return nil, err
 		}
 
@@ -379,14 +394,16 @@ func (s *SignalClient) send(number string, message string,
 			cmd = append(cmd, []string{"-g", groupId}...)
 		}
 
-		if len(attachmentTmpPaths) > 0 {
+		if len(attachmentEntries) > 0 {
 			cmd = append(cmd, "-a")
-			cmd = append(cmd, attachmentTmpPaths...)
+			for _, attachmentEntry := range attachmentEntries {
+				cmd = append(cmd, attachmentEntry.toDataForSignal())
+			}
 		}
 
 		rawData, err := s.cliClient.Execute(true, cmd, message)
 		if err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
+			cleanupAttachmentEntries(attachmentEntries)
 			if strings.Contains(err.Error(), signalCliV2GroupError) {
 				return nil, errors.New("Cannot send message to group - please first update your profile.")
 			}
@@ -394,12 +411,12 @@ func (s *SignalClient) send(number string, message string,
 		}
 		resp.Timestamp, err = strconv.ParseInt(strings.TrimSuffix(rawData, "\n"), 10, 64)
 		if err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
+			cleanupAttachmentEntries(attachmentEntries)
 			return nil, err
 		}
 	}
 
-	cleanupTmpFiles(attachmentTmpPaths)
+	cleanupAttachmentEntries(attachmentEntries)
 
 	return &resp, nil
 }
