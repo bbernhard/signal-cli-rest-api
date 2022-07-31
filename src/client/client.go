@@ -461,7 +461,7 @@ func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool, delet
 		command := []string{"--config", s.signalCliConfig, "-a", number, "deleteLocalAccountData"}
 		_, err2 := s.cliClient.Execute(true, command, "")
 		if (err2 != nil) && (err != nil) {
-			err = fmt.Errorf("%w (%w)", err, err2)
+			err = fmt.Errorf("%w (%s)", err, err2.Error())
 		} else if (err2 != nil) && (err == nil) {
 			err = err2
 		}

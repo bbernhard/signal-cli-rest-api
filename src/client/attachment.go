@@ -28,7 +28,7 @@ func NewAttachmentEntry(attachmentData string) *AttachmentEntry {
 func (attachmentEntry *AttachmentEntry) extractMetaData(attachmentData string) {
 	base64FlagIndex := strings.LastIndex(attachmentData, "base64,")
 
-	if !strings.Contains(attachmentData, "data:") && base64FlagIndex == -1 {
+	if !strings.Contains(attachmentData, "data:") || base64FlagIndex == -1 {
 		attachmentEntry.Base64 = attachmentData
 		return
 	}
@@ -77,12 +77,15 @@ func (attachmentEntry *AttachmentEntry) isWithMetaData() bool {
 }
 
 func (attachmentEntry *AttachmentEntry) toDataForSignal() string {
-	result := ""
-	if !attachmentEntry.isWithMetaData() && len(attachmentEntry.FilePath) > 0 {
+	if len(attachmentEntry.FilePath) > 0 {
 		return attachmentEntry.FilePath
 	}
 
-	result = "data:" + attachmentEntry.MimeInfo
+	if !attachmentEntry.isWithMetaData() {
+		return attachmentEntry.Base64
+	}
+
+	result := "data:" + attachmentEntry.MimeInfo
 
 	if len(attachmentEntry.FileName) > 0 {
 		result = result + ";filename=" + attachmentEntry.FileName

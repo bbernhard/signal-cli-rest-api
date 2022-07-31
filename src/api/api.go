@@ -69,7 +69,7 @@ type RegisterNumberRequest struct {
 }
 
 type UnregisterNumberRequest struct {
-	DeleteAccount bool `json:"delete_account" example:"false"`
+	DeleteAccount   bool `json:"delete_account" example:"false"`
 	DeleteLocalData bool `json:"delete_local_data" example:"false"`
 }
 
@@ -88,7 +88,7 @@ type SendMessageV1 struct {
 	Number           string   `json:"number"`
 	Recipients       []string `json:"recipients"`
 	Message          string   `json:"message"`
-	Base64Attachment string   `json:"base64_attachment"`
+	Base64Attachment string   `json:"base64_attachment" example:"'<BASE64 ENCODED DATA>' OR 'data:<MIME-TYPE>;base64,<BASE64 ENCODED DATA>' OR 'data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>'"`
 	IsGroup          bool     `json:"is_group"`
 }
 
@@ -96,7 +96,7 @@ type SendMessageV2 struct {
 	Number            string   `json:"number"`
 	Recipients        []string `json:"recipients"`
 	Message           string   `json:"message"`
-	Base64Attachments []string `json:"base64_attachments"`
+	Base64Attachments []string `json:"base64_attachments" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
 }
 
 type TypingIndicatorRequest struct {
