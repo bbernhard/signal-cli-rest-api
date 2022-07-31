@@ -34,7 +34,7 @@ func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *tes
 			"-base64 -data -filename", "INVALIDMTIzNDU=", false, "INVALIDMTIzNDU=", "", "", "INVALIDMTIzNDU=",
 		},
 		{
-			"-base64 +data -filename", "data:someData;INVALIDMTIzNDU=", false, "INVALIDMTIzNDU=", "", "", "data:someData;INVALIDMTIzNDU=",
+			"-base64 +data -filename", "data:someData;INVALIDMTIzNDU=", false, "data:someData;INVALIDMTIzNDU=", "", "", "data:someData;INVALIDMTIzNDU=",
 		},
 		{
 			"-base64 -data +filename", "filename=file.name;INVALIDMTIzNDU=", false, "filename=file.name;INVALIDMTIzNDU=", "", "", "filename=file.name;INVALIDMTIzNDU=",
