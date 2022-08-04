@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/h2non/filetype"
 
 	uuid "github.com/gofrs/uuid"
@@ -136,11 +135,7 @@ func cleanupTmpFiles(paths []string) {
 
 func cleanupAttachmentEntries(attachmentEntries []AttachmentEntry) {
 	for _, attachmentEntry := range attachmentEntries {
-		if len(attachmentEntry.FilePath) == 0 {
-			continue
-		}
-
-		os.Remove(attachmentEntry.FilePath)
+		attachmentEntry.cleanUp()
 	}
 }
 
@@ -311,43 +306,15 @@ func (s *SignalClient) send(number string, message string,
 
 	attachmentEntries := []AttachmentEntry{}
 	for _, base64Attachment := range base64Attachments {
-		attachmentEntry := NewAttachmentEntry(base64Attachment)
+		attachmentEntry := NewAttachmentEntry(base64Attachment, s.attachmentTmpDir)
 
-		u, err := uuid.NewV4()
+		err := attachmentEntry.storeBase64AsTemporaryFile()
 		if err != nil {
+			cleanupAttachmentEntries(attachmentEntries)
 			return nil, err
 		}
 
-		dec, err := base64.StdEncoding.DecodeString(attachmentEntry.Base64)
-		if err != nil {
-			return nil, err
-		}
-
-		mimeType := mimetype.Detect(dec)
-
-		if attachmentEntry.isWithMetaData() {
-			attachmentEntries = append(attachmentEntries, *attachmentEntry)
-			continue
-		}
-		attachmentEntry.FilePath = s.attachmentTmpDir + u.String() + mimeType.Extension()
 		attachmentEntries = append(attachmentEntries, *attachmentEntry)
-
-		f, err := os.Create(attachmentEntry.FilePath)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-
-		if _, err := f.Write(dec); err != nil {
-			cleanupAttachmentEntries(attachmentEntries)
-			return nil, err
-		}
-		if err := f.Sync(); err != nil {
-			cleanupAttachmentEntries(attachmentEntries)
-			return nil, err
-		}
-
-		f.Close()
 	}
 
 	if s.signalCliMode == JsonRpc {
