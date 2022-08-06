@@ -4,15 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"fmt"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/h2non/filetype"
 
 	uuid "github.com/gofrs/uuid"
@@ -134,6 +133,12 @@ func cleanupTmpFiles(paths []string) {
 	}
 }
 
+func cleanupAttachmentEntries(attachmentEntries []AttachmentEntry) {
+	for _, attachmentEntry := range attachmentEntries {
+		attachmentEntry.cleanUp()
+	}
+}
+
 func convertInternalGroupIdToGroupId(internalId string) string {
 	return groupPrefix + base64.StdEncoding.EncodeToString([]byte(internalId))
 }
@@ -193,7 +198,6 @@ func getContainerId() (string, error) {
 	containerId := strings.Replace(lines[0], "/docker/", "", -1)
 	return containerId, nil
 }
-
 
 func ConvertGroupIdToInternalGroupId(id string) (string, error) {
 
@@ -300,39 +304,17 @@ func (s *SignalClient) send(number string, message string,
 		groupId = string(grpId)
 	}
 
-	attachmentTmpPaths := []string{}
+	attachmentEntries := []AttachmentEntry{}
 	for _, base64Attachment := range base64Attachments {
-		u, err := uuid.NewV4()
+		attachmentEntry := NewAttachmentEntry(base64Attachment, s.attachmentTmpDir)
+
+		err := attachmentEntry.storeBase64AsTemporaryFile()
 		if err != nil {
+			cleanupAttachmentEntries(attachmentEntries)
 			return nil, err
 		}
 
-		dec, err := base64.StdEncoding.DecodeString(base64Attachment)
-		if err != nil {
-			return nil, err
-		}
-
-		mimeType := mimetype.Detect(dec)
-
-		attachmentTmpPath := s.attachmentTmpDir + u.String() + mimeType.Extension()
-		attachmentTmpPaths = append(attachmentTmpPaths, attachmentTmpPath)
-
-		f, err := os.Create(attachmentTmpPath)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-
-		if _, err := f.Write(dec); err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
-			return nil, err
-		}
-		if err := f.Sync(); err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
-			return nil, err
-		}
-
-		f.Close()
+		attachmentEntries = append(attachmentEntries, *attachmentEntry)
 	}
 
 	if s.signalCliMode == JsonRpc {
@@ -354,13 +336,13 @@ func (s *SignalClient) send(number string, message string,
 		} else {
 			request.Recipients = recipients
 		}
-		if len(attachmentTmpPaths) > 0 {
-			request.Attachments = append(request.Attachments, attachmentTmpPaths...)
+		for _, attachmentEntry := range attachmentEntries {
+			request.Attachments = append(request.Attachments, attachmentEntry.toDataForSignal())
 		}
 
 		rawData, err := jsonRpc2Client.getRaw("send", request)
 		if err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
+			cleanupAttachmentEntries(attachmentEntries)
 			return nil, err
 		}
 
@@ -379,14 +361,16 @@ func (s *SignalClient) send(number string, message string,
 			cmd = append(cmd, []string{"-g", groupId}...)
 		}
 
-		if len(attachmentTmpPaths) > 0 {
+		if len(attachmentEntries) > 0 {
 			cmd = append(cmd, "-a")
-			cmd = append(cmd, attachmentTmpPaths...)
+			for _, attachmentEntry := range attachmentEntries {
+				cmd = append(cmd, attachmentEntry.toDataForSignal())
+			}
 		}
 
 		rawData, err := s.cliClient.Execute(true, cmd, message)
 		if err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
+			cleanupAttachmentEntries(attachmentEntries)
 			if strings.Contains(err.Error(), signalCliV2GroupError) {
 				return nil, errors.New("Cannot send message to group - please first update your profile.")
 			}
@@ -394,12 +378,12 @@ func (s *SignalClient) send(number string, message string,
 		}
 		resp.Timestamp, err = strconv.ParseInt(strings.TrimSuffix(rawData, "\n"), 10, 64)
 		if err != nil {
-			cleanupTmpFiles(attachmentTmpPaths)
+			cleanupAttachmentEntries(attachmentEntries)
 			return nil, err
 		}
 	}
 
-	cleanupTmpFiles(attachmentTmpPaths)
+	cleanupAttachmentEntries(attachmentEntries)
 
 	return &resp, nil
 }
@@ -444,7 +428,7 @@ func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool, delet
 		command := []string{"--config", s.signalCliConfig, "-a", number, "deleteLocalAccountData"}
 		_, err2 := s.cliClient.Execute(true, command, "")
 		if (err2 != nil) && (err != nil) {
-			err = fmt.Errorf("%w (%w)", err, err2)
+			err = fmt.Errorf("%w (%s)", err, err2.Error())
 		} else if (err2 != nil) && (err == nil) {
 			err = err2
 		}

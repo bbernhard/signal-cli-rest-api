@@ -241,7 +241,9 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "200": {},
+                    "200": {
+                        "description": ""
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -281,7 +283,9 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": ""
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -323,7 +327,9 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": ""
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -365,7 +371,9 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": ""
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1200,7 +1208,9 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "201": {},
+                    "201": {
+                        "description": ""
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1472,7 +1482,9 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": ""
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1686,7 +1698,8 @@ var doc = `{
             "type": "object",
             "properties": {
                 "base64_attachment": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "'\u003cBASE64 ENCODED DATA\u003e' OR 'data:\u003cMIME-TYPE\u003e;base64,\u003cBASE64 ENCODED DATA\u003e' OR 'data:\u003cMIME-TYPE\u003e;filename=\u003cFILENAME\u003e;base64,\u003cBASE64 ENCODED DATA\u003e'"
                 },
                 "is_group": {
                     "type": "boolean"
@@ -1712,7 +1725,12 @@ var doc = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "\u003cBASE64 ENCODED DATA\u003e",
+                        "data:\u003cMIME-TYPE\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e",
+                        "data:\u003cMIME-TYPE\u003e;filename=\u003cFILENAME\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e"
+                    ]
                 },
                 "message": {
                     "type": "string"
