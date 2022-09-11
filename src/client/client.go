@@ -354,7 +354,7 @@ func (s *SignalClient) send(number string, message string,
 			return nil, err
 		}
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "send"}
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "send", "--message-from-stdin"}
 		if !isGroup {
 			cmd = append(cmd, recipients...)
 		} else {
