@@ -75,6 +75,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& export GRAALVM_HOME=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION} \
 		&& export PATH=/tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin:$PATH \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
+		&& sed -i 's/Signal-Android\/5.22.3/Signal-Android\/5.51.7/g' src/main/java/org/asamk/signal/BaseConfig.java \
 		&& chmod +x /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu \ 
 		&& /tmp/graalvm-ce-java${GRAALVM_JAVA_VERSION}-${GRAALVM_VERSION}/bin/gu install native-image \
 		&& ./gradlew -q nativeCompile; \
@@ -84,8 +85,10 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& echo "deb https://packaging.gitlab.io/signal-cli focal main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
 		&& mkdir -p /tmp/signal-cli-native \
 		&& cd /tmp/signal-cli-native \
-		&& apt-get -qq update \
-		&& apt-get -qq download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} < /dev/null > /dev/null \
+		&& wget https://gitlab.com/packaging/signal-cli/-/jobs/2730692987/artifacts/download?file_type=archive -O /tmp/signal-cli-native/archive.zip \
+		&& unzip archive.zip \
+		#&& apt-get -qq update \
+		#&& apt-get -qq download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} < /dev/null > /dev/null \
 		&& ar x *.deb \
 		&& tar xf data.tar.gz \
 		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
@@ -102,6 +105,14 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 # replace libsignal-client
 
 RUN ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/libsignal-client-${LIBSIGNAL_CLIENT_VERSION}.jar || (echo "\n\nsignal-client jar file with version ${LIBSIGNAL_CLIENT_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/libsignal-client-* && echo "\n\n" && exit 1)
+
+# workaround until upstream is fixed
+RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib \
+	&& unzip signal-cli-${SIGNAL_CLI_VERSION}.jar \
+	&& sed -i 's/Signal-Android\/5.22.3/Signal-Android\/5.51.7/g' org/asamk/signal/BaseConfig.class \
+	&& zip -r signal-cli-${SIGNAL_CLI_VERSION}.jar org/ META-INF/ \
+	&& rm -rf META-INF \
+	&& rm -rf org
 
 RUN cd /tmp/ \
 	&& zip -qu /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/libsignal-client-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal_jni.so \
