@@ -93,15 +93,15 @@ type SendMessageV1 struct {
 }
 
 type SendMessageV2 struct {
-	Number            string   `json:"number"`
-	Recipients        []string `json:"recipients"`
-	Message           string   `json:"message"`
-	Base64Attachments []string `json:"base64_attachments" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
-	Mentions          []string `json:"mentions"`
-	QuoteTimestamp    *int64  `json:"quote_timestamp"`
-	QuoteAuthor       *string  `json:"quote_author"`
-	QuoteMessage      *string  `json:"quote_message"`
-	QuoteMentions     []string `json:"quote_mentions"`
+	Number            string                    `json:"number"`
+	Recipients        []string                  `json:"recipients"`
+	Message           string                    `json:"message"`
+	Base64Attachments []string                  `json:"base64_attachments" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
+	Mentions          []client.MessageMention   `json:"mentions"`
+	QuoteTimestamp    *int64                    `json:"quote_timestamp"`
+	QuoteAuthor       *string                   `json:"quote_author"`
+	QuoteMessage      *string                   `json:"quote_message"`
+	QuoteMentions     []client.MessageMention   `json:"quote_mentions"`
 }
 
 type TypingIndicatorRequest struct {

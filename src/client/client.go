@@ -59,6 +59,12 @@ func (g GroupLinkState) String() string {
 	return []string{"", "enabled", "enabled-with-approval", "disabled"}[g]
 }
 
+type MessageMention struct {
+    Start               int64     `json:"start"`
+    Length              int64     `json:"length"`
+    Author              string    `json:"author"`
+}
+
 type GroupEntry struct {
 	Name            string   `json:"name"`
 	Id              string   `json:"id"`
@@ -283,9 +289,13 @@ func (s *SignalClient) Init() error {
 	return nil
 }
 
+func (s *MessageMention) toString() string {
+    return fmt.Sprintf("%d:%d:%s", s.Start, s.Length, s.Author)
+}
+
 func (s *SignalClient) send(number string, message string,
-	recipients []string, base64Attachments []string, isGroup bool, mentions []string,
-	quote_timestamp *int64, quote_author *string, quote_message *string, quote_mentions []string) (*SendResponse, error) {
+	recipients []string, base64Attachments []string, isGroup bool, mentions []MessageMention,
+	quote_timestamp *int64, quote_author *string, quote_message *string, quote_mentions []MessageMention) (*SendResponse, error) {
 
 	var resp SendResponse
 
@@ -346,11 +356,25 @@ func (s *SignalClient) send(number string, message string,
 		for _, attachmentEntry := range attachmentEntries {
 			request.Attachments = append(request.Attachments, attachmentEntry.toDataForSignal())
 		}
-		request.Mentions = mentions
+		if mentions != nil {
+		    request.Mentions = make([]string, len(mentions))
+		    for i, mention := range mentions {
+		        request.Mentions[i] = mention.toString()
+		    }
+		} else {
+		    request.Mentions = nil
+		}
 		request.QuoteTimestamp = quote_timestamp
 		request.QuoteAuthor = quote_author
 		request.QuoteMessage = quote_message
-		request.QuoteMentions = quote_mentions
+		if quote_mentions != nil {
+		    request.QuoteMentions = make([]string, len(quote_mentions))
+		    for i, mention := range quote_mentions {
+		        request.QuoteMentions[i] = mention.toString()
+		    }
+		} else {
+		    request.QuoteMentions = nil
+		}
 
 		rawData, err := jsonRpc2Client.getRaw("send", request)
 		if err != nil {
@@ -382,7 +406,7 @@ func (s *SignalClient) send(number string, message string,
 
 		for _, mention := range mentions {
 			cmd = append(cmd, "--mention")
-			cmd = append(cmd, mention)
+			cmd = append(cmd, mention.toString())
 		}
 
 		if quote_timestamp != nil {
@@ -402,7 +426,7 @@ func (s *SignalClient) send(number string, message string,
 
 		for _, mention := range quote_mentions {
 			cmd = append(cmd, "--quote-mention")
-			cmd = append(cmd, mention)
+			cmd = append(cmd, mention.toString())
 		}
 
 		rawData, err := s.cliClient.Execute(true, cmd, message)
@@ -495,7 +519,7 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 }
 
 func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (*SendResponse, error) {
-	timestamp, err := s.send(number, message, recipients, base64Attachments, isGroup, []string{}, nil, nil, nil, []string{})
+	timestamp, err := s.send(number, message, recipients, base64Attachments, isGroup, nil, nil, nil, nil, nil)
 	return timestamp, err
 }
 
@@ -514,8 +538,8 @@ func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 	return jsonRpc2Clients
 }
 
-func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, mentions []string,
-	quote_timestamp *int64, quote_author *string, quote_message *string, quote_mentions []string) (*[]SendResponse, error) {
+func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, mentions []MessageMention,
+	quote_timestamp *int64, quote_author *string, quote_message *string, quote_mentions []MessageMention) (*[]SendResponse, error) {
 	if len(recps) == 0 {
 		return nil, errors.New("Please provide at least one recipient")
 	}
