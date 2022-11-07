@@ -295,7 +295,7 @@ func (s *MessageMention) toString() string {
 
 func (s *SignalClient) send(number string, message string,
 	recipients []string, base64Attachments []string, isGroup bool, mentions []MessageMention,
-	quote_timestamp *int64, quote_author *string, quote_message *string, quote_mentions []MessageMention) (*SendResponse, error) {
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention) (*SendResponse, error) {
 
 	var resp SendResponse
 
@@ -364,12 +364,12 @@ func (s *SignalClient) send(number string, message string,
 		} else {
 		    request.Mentions = nil
 		}
-		request.QuoteTimestamp = quote_timestamp
-		request.QuoteAuthor = quote_author
-		request.QuoteMessage = quote_message
-		if quote_mentions != nil {
-		    request.QuoteMentions = make([]string, len(quote_mentions))
-		    for i, mention := range quote_mentions {
+		request.QuoteTimestamp = quoteTimestamp
+		request.QuoteAuthor = quoteAuthor
+		request.QuoteMessage = quoteMessage
+		if quoteMentions != nil {
+		    request.QuoteMentions = make([]string, len(quoteMentions))
+		    for i, mention := range quoteMentions {
 		        request.QuoteMentions[i] = mention.toString()
 		    }
 		} else {
@@ -409,22 +409,22 @@ func (s *SignalClient) send(number string, message string,
 			cmd = append(cmd, mention.toString())
 		}
 
-		if quote_timestamp != nil {
+		if quoteTimestamp != nil {
 			cmd = append(cmd, "--quote-timestamp")
-			cmd = append(cmd, strconv.FormatInt(*quote_timestamp, 10))
+			cmd = append(cmd, strconv.FormatInt(*quoteTimestamp, 10))
 		}
 
-		if quote_author != nil {
+		if quoteAuthor != nil {
 			cmd = append(cmd, "--quote-author")
-			cmd = append(cmd, *quote_author)
+			cmd = append(cmd, *quoteAuthor)
 		}
 
-		if quote_message != nil {
+		if quoteMessage != nil {
 			cmd = append(cmd, "--quote-message")
-			cmd = append(cmd, *quote_message)
+			cmd = append(cmd, *quoteMessage)
 		}
 
-		for _, mention := range quote_mentions {
+		for _, mention := range quoteMentions {
 			cmd = append(cmd, "--quote-mention")
 			cmd = append(cmd, mention.toString())
 		}
@@ -539,7 +539,7 @@ func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 }
 
 func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, mentions []MessageMention,
-	quote_timestamp *int64, quote_author *string, quote_message *string, quote_mentions []MessageMention) (*[]SendResponse, error) {
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention) (*[]SendResponse, error) {
 	if len(recps) == 0 {
 		return nil, errors.New("Please provide at least one recipient")
 	}
@@ -569,7 +569,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 
 	timestamps := []SendResponse{}
 	for _, group := range groups {
-		timestamp, err := s.send(number, message, []string{group}, base64Attachments, true, mentions, quote_timestamp, quote_author, quote_message, quote_mentions)
+		timestamp, err := s.send(number, message, []string{group}, base64Attachments, true, mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions)
 		if err != nil {
 			return nil, err
 		}
@@ -577,7 +577,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	}
 
 	if len(recipients) > 0 {
-		timestamp, err := s.send(number, message, recipients, base64Attachments, false, mentions, quote_timestamp, quote_author, quote_message, quote_mentions)
+		timestamp, err := s.send(number, message, recipients, base64Attachments, false, mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions)
 		if err != nil {
 			return nil, err
 		}
