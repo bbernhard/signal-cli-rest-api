@@ -129,7 +129,6 @@ There are a bunch of environmental variables that can be set inside the docker c
 
 |     Name    | Client           | Library  | Language | Maintainer |
 | ------------- |:-------------:| :-----:|:-----:|:-----:|
-| [Shell Client](https://github.com/florian-h05/shell-script_collection/blob/main/signal-cli-rest-api_client.bash)      | X | | Shell | [@florian-h05](https://github.com/florian-h05)
 | [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/)      | | X | Python | [@bbernhard](https://github.com/bbernhard)
 | [signalbot](https://pypi.org/project/signalbot/) | | X | Python | [@filipre](https://github.com/filipre)
 
