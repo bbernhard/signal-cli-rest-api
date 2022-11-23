@@ -60,9 +60,9 @@ func (g GroupLinkState) String() string {
 }
 
 type MessageMention struct {
-    Start               int64     `json:"start"`
-    Length              int64     `json:"length"`
-    Author              string    `json:"author"`
+	Start  int64  `json:"start"`
+	Length int64  `json:"length"`
+	Author string `json:"author"`
 }
 
 type GroupEntry struct {
@@ -122,11 +122,11 @@ type SendResponse struct {
 }
 
 type About struct {
-	SupportedApiVersions []string `json:"versions"`
-	BuildNr              int      `json:"build"`
-	Mode                 string   `json:"mode"`
-	Version              string   `json:"version"`
-	Capabilities         map[string][]string    `json:"capabilities"`
+	SupportedApiVersions []string            `json:"versions"`
+	BuildNr              int                 `json:"build"`
+	Mode                 string              `json:"mode"`
+	Version              string              `json:"version"`
+	Capabilities         map[string][]string `json:"capabilities"`
 }
 
 type SearchResultEntry struct {
@@ -290,7 +290,7 @@ func (s *SignalClient) Init() error {
 }
 
 func (s *MessageMention) toString() string {
-    return fmt.Sprintf("%d:%d:%s", s.Start, s.Length, s.Author)
+	return fmt.Sprintf("%d:%d:%s", s.Start, s.Length, s.Author)
 }
 
 func (s *SignalClient) send(number string, message string,
@@ -336,15 +336,15 @@ func (s *SignalClient) send(number string, message string,
 		}
 
 		type Request struct {
-			Recipients  		[]string `json:"recipient,omitempty"`
-			Message     		string   `json:"message"`
-			GroupId     		string   `json:"group-id,omitempty"`
-			Attachments 		[]string `json:"attachment,omitempty"`
-			Mentions          	[]string `json:"mentions,omitempty"`
-			QuoteTimestamp  	*int64   `json:"quote-timestamp,omitempty"`
-			QuoteAuthor       	*string  `json:"quote-author,omitempty"`
-			QuoteMessage      	*string  `json:"quote-message,omitempty"`
-			QuoteMentions     	[]string `json:"quote-mentions,omitempty"`
+			Recipients     []string `json:"recipient,omitempty"`
+			Message        string   `json:"message"`
+			GroupId        string   `json:"group-id,omitempty"`
+			Attachments    []string `json:"attachment,omitempty"`
+			Mentions       []string `json:"mentions,omitempty"`
+			QuoteTimestamp *int64   `json:"quote-timestamp,omitempty"`
+			QuoteAuthor    *string  `json:"quote-author,omitempty"`
+			QuoteMessage   *string  `json:"quote-message,omitempty"`
+			QuoteMentions  []string `json:"quote-mentions,omitempty"`
 		}
 
 		request := Request{Message: message}
@@ -357,23 +357,23 @@ func (s *SignalClient) send(number string, message string,
 			request.Attachments = append(request.Attachments, attachmentEntry.toDataForSignal())
 		}
 		if mentions != nil {
-		    request.Mentions = make([]string, len(mentions))
-		    for i, mention := range mentions {
-		        request.Mentions[i] = mention.toString()
-		    }
+			request.Mentions = make([]string, len(mentions))
+			for i, mention := range mentions {
+				request.Mentions[i] = mention.toString()
+			}
 		} else {
-		    request.Mentions = nil
+			request.Mentions = nil
 		}
 		request.QuoteTimestamp = quoteTimestamp
 		request.QuoteAuthor = quoteAuthor
 		request.QuoteMessage = quoteMessage
 		if quoteMentions != nil {
-		    request.QuoteMentions = make([]string, len(quoteMentions))
-		    for i, mention := range quoteMentions {
-		        request.QuoteMentions[i] = mention.toString()
-		    }
+			request.QuoteMentions = make([]string, len(quoteMentions))
+			for i, mention := range quoteMentions {
+				request.QuoteMentions[i] = mention.toString()
+			}
 		} else {
-		    request.QuoteMentions = nil
+			request.QuoteMentions = nil
 		}
 
 		rawData, err := jsonRpc2Client.getRaw("send", request)
@@ -451,28 +451,20 @@ func (s *SignalClient) send(number string, message string,
 
 func (s *SignalClient) About() About {
 	about := About{
-        SupportedApiVersions: []string{"v1", "v2"},
-        BuildNr: 2,
-        Mode: getSignalCliModeString(s.signalCliMode),
-		Version: utils.GetEnv("BUILD_VERSION", "unset"),
-		Capabilities: map[string][]string{"v2/send": []string{"quotes", "mentions"}},
-    }
+		SupportedApiVersions: []string{"v1", "v2"},
+		BuildNr:              2,
+		Mode:                 getSignalCliModeString(s.signalCliMode),
+		Version:              utils.GetEnv("BUILD_VERSION", "unset"),
+		Capabilities:         map[string][]string{"v2/send": {"quotes", "mentions"}},
+	}
 	return about
 }
 
-func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha string) error {
+func (s *SignalClient) RegisterNumber(number string) error {
 	if s.signalCliMode == JsonRpc {
 		return errors.New(endpointNotSupportedInJsonRpcMode)
 	}
 	command := []string{"--config", s.signalCliConfig, "-a", number, "register"}
-
-	if useVoice {
-		command = append(command, "--voice")
-	}
-
-	if captcha != "" {
-		command = append(command, []string{"--captcha", captcha}...)
-	}
 
 	_, err := s.cliClient.Execute(true, command, "")
 	return err
