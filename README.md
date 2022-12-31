@@ -22,16 +22,41 @@ and [many more](https://bbernhard.github.io/signal-cli-rest-api/)
 This allows you to update `signal-cli-rest-api` by just deleting and recreating the container without the need to re-register your signal number
 
 ```bash
-$ mkdir $HOME/.local/share/signal-cli
+mkdir $HOME/.local/share/signal-cli
 ```
 
 
 2. Start a container
 
 ```bash
-$ sudo docker run -d --name signal-api --restart=always -p 8080:8080 \
+sudo docker run -d --name signal-api --restart=always -p 8080:8080 \
       -v $HOME/.local/share/signal-cli:/home/.local/share/signal-cli \
       -e 'MODE=native' bbernhard/signal-cli-rest-api
+```
+
+or, using `docker-compose`, create `docker-compose.yml`:
+
+```yaml
+---
+version: '3.3'
+services:
+    signal-cli-rest-api:
+        container_name: signal-api
+        restart: always
+        ports:
+            - '8080:8080'
+        volumes:
+            - '$HOME/.local/share/signal-cli:/home/.local/share/signal-cli'
+        environment:
+            - MODE=native
+        image: bbernhard/signal-cli-rest-api
+```
+
+then run the image:
+
+```bash
+# from within the same directory as docker-compose.yml
+docker-compose up -d
 ```
 
 3. Register or Link your Signal Number
@@ -45,7 +70,7 @@ Therefore open http://localhost:8080/v1/qrcodelink?device_name=signal-api in you
 Call the REST API endpoint and send a test message: Replace `+4412345` with your signal number in international number format, and `+44987654` with the recipients number.
 
 ```bash
-$ curl -X POST -H "Content-Type: application/json" 'http://localhost:8080/v2/send' \
+curl -X POST -H "Content-Type: application/json" 'http://localhost:8080/v2/send' \
      -d '{"message": "Test via Signal API!", "number": "+4412345", "recipients": [ "+44987654" ]}' 
 ```
 
@@ -70,7 +95,7 @@ The `signal-cli-rest-api` supports three different modes of execution, which can
 **Example of running `signal-cli-rest` in `native` mode**
 
 ```bash
-$ sudo docker run -d --name signal-api --restart=always -p 9922:8080 \
+sudo docker run -d --name signal-api --restart=always -p 9922:8080 \
               -v /home/user/signal-api:/home/.local/share/signal-cli \
               -e 'MODE=native' bbernhard/signal-cli-rest-api
 ```
