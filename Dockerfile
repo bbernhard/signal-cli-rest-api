@@ -169,7 +169,6 @@ RUN groupadd -g 1000 signal-api \
 RUN arch="$(uname -m)"; \
         case "$arch" in \
             armv7l) echo "GRAALVM doesn't support 32bit" && rm /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native  ;; \
-			aarch64) echo "GRAALVM temporarily disabled for aarch64" && rm /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native  ;; \
         esac;
 
 EXPOSE ${PORT}
