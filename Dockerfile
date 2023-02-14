@@ -85,8 +85,9 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& echo "deb https://packaging.gitlab.io/signal-cli focal main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
 		&& mkdir -p /tmp/signal-cli-native \
 		&& cd /tmp/signal-cli-native \
-		&& wget https://gitlab.com/packaging/signal-cli/-/jobs/2730692987/artifacts/download?file_type=archive -O /tmp/signal-cli-native/archive.zip \
+		&& wget https://gitlab.com/packaging/signal-cli/-/jobs/3716873649/artifacts/download?file_type=archive -O /tmp/signal-cli-native/archive.zip \
 		&& unzip archive.zip \
+		&& mv signal-cli-native-arm64/*deb . \
 		#&& apt-get -qq update \
 		#&& apt-get -qq download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} < /dev/null > /dev/null \
 		&& ar x *.deb \
@@ -169,7 +170,6 @@ RUN groupadd -g 1000 signal-api \
 RUN arch="$(uname -m)"; \
         case "$arch" in \
             armv7l) echo "GRAALVM doesn't support 32bit" && rm /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native  ;; \
-			aarch64) echo "GRAALVM temporarily disabled for aarch64" && rm /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native  ;; \
         esac;
 
 EXPOSE ${PORT}
