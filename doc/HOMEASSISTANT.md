@@ -6,6 +6,7 @@ This document covers the following topics:
 * [Installation](#installation)
 * [Set up a phone number](#set-up-a-phone-number)
 * [Sending messages to Signal Messenger groups](#sending-messages-to-signal-messenger-groups)
+* [Sending messages to Signal to trigger events](#sending-messages-to-signal-to-trigger-events)
 
 See also the [documentation of the Home Assistant integration](https://www.home-assistant.io/integrations/signal_messenger/).
 
@@ -174,6 +175,42 @@ In order for groups to show up in the `groups` list, try the following steps:
   curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/receive/<number>'
   ```
 
+## Sending messages to Signal to trigger events
+
+You can use Signal Messenger REST API as a Home Assistant trigger. In this example, we will make a simple chatbot. If you write "time" to your Signal account linked to Signal Messenger REST API, the automation gets triggered, with the condition that the number (attribute source) is correct, to take action by sending a Signal notification back with the current time: now().
+
+To accomplish this, edit the configuration of Home Assistant, adding a [RESTful resource](https://www.home-assistant.io/integrations/rest/) as follows:
+
+```yaml
+- resource: "http://127.0.0.1:8080/v1/receive/<number>"
+  headers:
+    Content-Type: application/json
+  sensor:
+    - name: "Signal message received"
+      value_template: "{{ value_json[0].envelope.dataMessage.message }}" #this will fetch the message
+      json_attributes_path: $[0].envelope
+      json_attributes:
+       - source #using attributes you can get additional information, in this case the phone number.
+  ```
+You can create an automation as follows:
+
+```yaml
+...
+trigger:
+  - platform: state
+    entity_id:
+      - sensor.signal_message_received
+    to: time
+condition:
+  - condition: state
+    entity_id: sensor.signal_message_received
+    attribute: source
+    state: "<yournumber>"
+action:
+  - service: notify.signal
+    data:
+      message: "{{ now() }}"
+```
 
 ## API details
 
