@@ -6,7 +6,8 @@ This document covers the following topics:
 * [Installation](#installation)
 * [Set up a phone number](#set-up-a-phone-number)
 * [Sending messages to Signal Messenger groups](#sending-messages-to-signal-messenger-groups)
-* [Sending messages to Signal to trigger events](##sending-messages-to-signal-to-trigger-events)
+* [Sending messages to Signal to trigger events](#sending-messages-to-signal-to-trigger-events)
+
 See also the [documentation of the Home Assistant integration](https://www.home-assistant.io/integrations/signal_messenger/).
 
 ## Installation
