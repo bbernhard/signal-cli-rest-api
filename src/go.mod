@@ -3,25 +3,40 @@ module github.com/bbernhard/signal-cli-rest-api
 go 1.14
 
 require (
+	github.com/PuerkitoBio/purell v1.2.0 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
-	github.com/cyphar/filepath-securejoin v0.2.2
-	github.com/gabriel-vasile/mimetype v1.1.2
-	github.com/gin-gonic/gin v1.7.7
-	github.com/go-openapi/spec v0.19.8 // indirect
-	github.com/go-openapi/swag v0.19.9 // indirect
-	github.com/gofrs/uuid v3.3.0+incompatible
-	github.com/gorilla/websocket v1.4.2
-	github.com/h2non/filetype v1.1.0
-	github.com/mailru/easyjson v0.7.1 // indirect
+	github.com/bytedance/sonic v1.8.3 // indirect
+	github.com/cyphar/filepath-securejoin v0.2.3
+	github.com/gabriel-vasile/mimetype v1.4.1
+	github.com/gin-gonic/gin v1.9.0
+	github.com/go-openapi/jsonreference v0.20.2 // indirect
+	github.com/go-openapi/spec v0.20.8 // indirect
+	github.com/gofrs/uuid v4.4.0+incompatible
+	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/gorilla/websocket v1.5.0
+	github.com/h2non/filetype v1.1.3
+	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
+	github.com/kr/pty v1.1.5 // indirect
+	github.com/leodido/go-urn v1.2.2 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/sirupsen/logrus v1.6.0
+	github.com/satori/go.uuid v1.2.0 // indirect
+	github.com/sirupsen/logrus v1.9.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14
-	github.com/swaggo/gin-swagger v1.2.0
-	github.com/swaggo/swag v1.6.7
-	github.com/tidwall/sjson v1.2.4
-	golang.org/x/net v0.0.0-20200625001655-4c5254603344 // indirect
-	golang.org/x/text v0.3.3 // indirect
-	golang.org/x/tools v0.0.0-20200626171337-aa94e735be7f // indirect
-	gopkg.in/yaml.v2 v2.3.0
+	github.com/swaggo/files v1.0.0
+	github.com/swaggo/gin-swagger v1.5.3
+	github.com/swaggo/swag v1.8.10
+	github.com/tidwall/gjson v1.14.4 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
+	github.com/tidwall/sjson v1.2.5
+	github.com/ugorji/go/codec v1.2.10 // indirect
+	github.com/urfave/cli v1.20.0 // indirect
+	golang.org/x/arch v0.3.0 // indirect
+	golang.org/x/crypto v0.7.0 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
+	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
+	gopkg.in/yaml.v2 v2.4.0
 )
