@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gabriel-vasile/mimetype"
@@ -93,15 +94,16 @@ type SendMessageV1 struct {
 }
 
 type SendMessageV2 struct {
-	Number            string                    `json:"number"`
-	Recipients        []string                  `json:"recipients"`
-	Message           string                    `json:"message"`
-	Base64Attachments []string                  `json:"base64_attachments" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
-	Mentions          []client.MessageMention   `json:"mentions"`
-	QuoteTimestamp    *int64                    `json:"quote_timestamp"`
-	QuoteAuthor       *string                   `json:"quote_author"`
-	QuoteMessage      *string                   `json:"quote_message"`
-	QuoteMentions     []client.MessageMention   `json:"quote_mentions"`
+	Number            string                  `json:"number"`
+	Recipients        []string                `json:"recipients"`
+	Message           string                  `json:"message"`
+	Base64Attachments []string                `json:"base64_attachments" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
+	Sticker           string                  `json:"sticker"`
+	Mentions          []client.MessageMention `json:"mentions"`
+	QuoteTimestamp    *int64                  `json:"quote_timestamp"`
+	QuoteAuthor       *string                 `json:"quote_author"`
+	QuoteMessage      *string                 `json:"quote_message"`
+	QuoteMentions     []client.MessageMention `json:"quote_mentions"`
 }
 
 type TypingIndicatorRequest struct {
@@ -359,7 +361,13 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
-	timestamps, err := a.signalClient.SendV2(req.Number, req.Message, req.Recipients, req.Base64Attachments,
+	if req.Sticker != "" && !strings.Contains(req.Sticker, ":") {
+		c.JSON(400, gin.H{"error": "Couldn't process request - please provide valid sticker delimiter"})
+		return
+	}
+
+	timestamps, err := a.signalClient.SendV2(
+		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
 		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
