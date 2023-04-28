@@ -114,6 +114,8 @@ The Swagger API documentation can be found [here](https://bbernhard.github.io/si
 
 [Running Signal Messenger REST API in Azure Web App for Containers](https://stefanstranger.github.io/2021/06/01/RunningSignalRESTAPIinAppService/) by [@stefanstranger](https://github.com/stefanstranger)
 
+[Sending Signal Messages](https://blog.aawadia.dev/2023/04/24/signal-api/) by [@asad-awadia](https://github.com/asad-awadia)
+
 ## Advanced Settings
 There are a bunch of environmental variables that can be set inside the docker container in order to change some technical details. This settings are meant for developers and advanced users. Usually you do *not* need to change anything here - the default values are perfectly fine!
 
