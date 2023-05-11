@@ -3,13 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-
 	"github.com/bbernhard/signal-cli-rest-api/api"
 	"github.com/bbernhard/signal-cli-rest-api/client"
 	docs "github.com/bbernhard/signal-cli-rest-api/docs"
@@ -19,6 +12,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strconv"
 )
 
 // @title Signal Cli REST API
@@ -265,43 +262,52 @@ func main() {
 			log.Fatal("AUTO_RECEIVE_SCHEDULE: Invalid schedule: ", err.Error())
 		}
 
+		type SignalCliAccountConfig struct {
+			Number string `json:"number"`
+		}
+
+		type SignalCliAccountConfigs struct {
+			Accounts []SignalCliAccountConfig `json:"accounts"`
+		}
+
+		signalCliConfigJsonData, err := ioutil.ReadFile(*signalCliConfig + "/data/accounts.json")
+		if err != nil {
+			log.Fatal("AUTO_RECEIVE_SCHEDULE: Couldn't read accounts.json: ", err.Error())
+		}
+		var signalCliAccountConfigs SignalCliAccountConfigs
+		err = json.Unmarshal(signalCliConfigJsonData, &signalCliAccountConfigs)
+		if err != nil {
+			log.Fatal("AUTO_RECEIVE_SCHEDULE: Couldn't parse accounts.json: ", err.Error())
+		}
+
 		c := cron.New()
 		c.Schedule(schedule, cron.FuncJob(func() {
-			err := filepath.Walk(*signalCliConfig, func(path string, info os.FileInfo, err error) error {
-				filename := filepath.Base(path)
-				if strings.HasPrefix(filename, "+") && info.Mode().IsRegular() {
-					log.Debug("AUTO_RECEIVE_SCHEDULE: Calling receive for number ", filename)
-					resp, err := http.Get("http://127.0.0.1:" + port + "/v1/receive/" + filename)
-					if err != nil {
-						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", filename, ": ", err.Error())
-					}
-					if resp.StatusCode != 200 {
-						jsonResp, err := ioutil.ReadAll(resp.Body)
-						resp.Body.Close()
-						if err != nil {
-							log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't read json response: ", err.Error())
-							return nil
-						}
-
-						type ReceiveResponse struct {
-							Error string `json:"error"`
-						}
-						var receiveResponse ReceiveResponse
-						err = json.Unmarshal(jsonResp, &receiveResponse)
-						if err != nil {
-							log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't parse json response: ", err.Error())
-							return nil
-						}
-
-						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", filename, ": ", receiveResponse)
-
-					}
+			for _, account := range signalCliAccountConfigs.Accounts {
+				log.Debug("AUTO_RECEIVE_SCHEDULE: Calling receive for number ", account.Number)
+				resp, err := http.Get("http://127.0.0.1:" + port + "/v1/receive/" + account.Number)
+				if err != nil {
+					log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", err.Error())
 				}
+				if resp.StatusCode != 200 {
+					jsonResp, err := ioutil.ReadAll(resp.Body)
+					resp.Body.Close()
+					if err != nil {
+						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't read json response: ", err.Error())
+						continue
+					}
 
-				return nil
-			})
-			if err != nil {
-				log.Fatal("AUTO_RECEIVE_SCHEDULE: Couldn't get registered numbers")
+					type ReceiveResponse struct {
+						Error string `json:"error"`
+					}
+					var receiveResponse ReceiveResponse
+					err = json.Unmarshal(jsonResp, &receiveResponse)
+					if err != nil {
+						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't parse json response: ", err.Error())
+						continue
+					}
+
+					log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", receiveResponse)
+				}
 			}
 		}))
 		c.Start()
