@@ -454,6 +454,13 @@ func wsPing(ws *websocket.Conn, stop chan struct{}) {
 	}
 }
 
+func StringToBool(input string) bool {
+	if input == "true" {
+		return true
+	}
+	return false
+}
+
 // @Summary Receive Signal Messages.
 // @Tags Messages
 // @Description Receives Signal Messages from the Signal Network. If you are running the docker container in normal/native mode, this is a GET endpoint. In json-rpc mode this is a websocket endpoint.
@@ -463,6 +470,8 @@ func wsPing(ws *websocket.Conn, stop chan struct{}) {
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param timeout query string false "Receive timeout in seconds (default: 1)"
+// @Param ignore_attachments query string false "Specify whether the attachments of the received message should be ignored" (default: false)"
+// @Param ignore_stories query string false "Specify whether stories should be ignored when receiving messages" (default: false)"
 // @Router /v1/receive/{number} [get]
 func (a *Api) Receive(c *gin.Context) {
 	number := c.Param("number")
@@ -486,7 +495,19 @@ func (a *Api) Receive(c *gin.Context) {
 			return
 		}
 
-		jsonStr, err := a.signalClient.Receive(number, timeoutInt)
+		ignoreAttachments := c.DefaultQuery("ignore_attachments", "false")
+		if ignoreAttachments != "true" && ignoreAttachments != "false" {
+			c.JSON(400, Error {Msg: "Couldn't process request - ignore_attachments parameter needs to be either 'true' or 'false'"})
+			return
+		}
+
+		ignoreStories := c.DefaultQuery("ignore_stories", "false")
+		if ignoreStories != "true" && ignoreStories != "false" {
+			c.JSON(400, Error {Msg: "Couldn't process request - ignore_stories parameter needs to be either 'true' or 'false'"})
+			return
+		}
+
+		jsonStr, err := a.signalClient.Receive(number, timeoutInt, StringToBool(ignoreAttachments), StringToBool(ignoreStories))
 		if err != nil {
 			c.JSON(400, Error{Msg: err.Error()})
 			return

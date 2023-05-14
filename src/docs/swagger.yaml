@@ -106,9 +106,7 @@ definitions:
   api.SendMessageV1:
     properties:
       base64_attachment:
-        example: '''<BASE64 ENCODED DATA>'' OR ''data:<MIME-TYPE>;base64,<BASE64 ENCODED
-          DATA>'' OR ''data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED
-          DATA>'''
+        example: '''<BASE64 ENCODED DATA>'' OR ''data:<MIME-TYPE>;base64,<BASE64 ENCODED DATA>'' OR ''data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>'''
         type: string
       is_group:
         type: boolean
@@ -131,14 +129,30 @@ definitions:
         items:
           type: string
         type: array
+      mentions:
+        items:
+          $ref: '#/definitions/client.MessageMention'
+        type: array
       message:
         type: string
       number:
         type: string
+      quote_author:
+        type: string
+      quote_mentions:
+        items:
+          $ref: '#/definitions/client.MessageMention'
+        type: array
+      quote_message:
+        type: string
+      quote_timestamp:
+        type: integer
       recipients:
         items:
           type: string
         type: array
+      sticker:
+        type: string
     type: object
   api.TrustIdentityRequest:
     properties:
@@ -197,6 +211,12 @@ definitions:
     properties:
       build:
         type: integer
+      capabilities:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
       mode:
         type: string
       version:
@@ -247,6 +267,15 @@ definitions:
         type: string
       status:
         type: string
+    type: object
+  client.MessageMention:
+    properties:
+      author:
+        type: string
+      length:
+        type: integer
+      start:
+        type: integer
     type: object
 info:
   contact: {}
@@ -396,8 +425,7 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: ""
+        "200": {}
         "400":
           description: Bad Request
           schema:
@@ -424,8 +452,7 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: ""
+        "204": {}
         "400":
           description: Bad Request
           schema:
@@ -453,22 +480,19 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: ""
+        "204": {}
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/api.Error'
-      summary: Updates the info associated to a number on the contact list. If the
-        contact doesn’t exist yet, it will be added.
+      summary: Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.
       tags:
       - Contacts
   /v1/devices/{number}:
     post:
       consumes:
       - application/json
-      description: Links another device to this device. Only works, if this is the
-        master device.
+      description: Links another device to this device. Only works, if this is the master device.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -484,8 +508,7 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: ""
+        "204": {}
         "400":
           description: Bad Request
           schema:
@@ -857,8 +880,7 @@ paths:
       - Identities
   /v1/identities/{number}/trust/{numberToTrust}:
     put:
-      description: Trust an identity. When 'trust_all_known_keys' is set to' true',
-        all known keys of this user are trusted. **This is only recommended for testing.**
+      description: Trust an identity. When 'trust_all_known_keys' is set to' true', all known keys of this user are trusted. **This is only recommended for testing.**
       parameters:
       - description: Input Data
         in: body
@@ -993,9 +1015,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Receives Signal Messages from the Signal Network. If you are running
-        the docker container in normal/native mode, this is a GET endpoint. In json-rpc
-        mode this is a websocket endpoint.
+      description: Receives Signal Messages from the Signal Network. If you are running the docker container in normal/native mode, this is a GET endpoint. In json-rpc mode this is a websocket endpoint.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -1005,6 +1025,14 @@ paths:
       - description: 'Receive timeout in seconds (default: 1)'
         in: query
         name: timeout
+        type: string
+      - description: Specify whether the attachments of the received message should be ignored
+        in: query
+        name: ignore_attachments
+        type: string
+      - description: Specify whether stories should be ignored when receiving messages
+        in: query
+        name: ignore_stories
         type: string
       produces:
       - application/json
@@ -1041,8 +1069,7 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: ""
+        "201": {}
         "400":
           description: Bad Request
           schema:
@@ -1089,8 +1116,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Check if one or more phone numbers are registered with the Signal
-        Service.
+      description: Check if one or more phone numbers are registered with the Signal Service.
       parameters:
       - collectionFormat: multi
         description: Numbers to check
@@ -1208,9 +1234,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Disables push support for this device. **WARNING:** If *delete_account*
-        is set to *true*, the account will be deleted from the Signal Server. This
-        cannot be undone without loss.
+      description: Disables push support for this device. **WARNING:** If *delete_account* is set to *true*, the account will be deleted from the Signal Server. This cannot be undone without loss.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -1225,8 +1249,7 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: ""
+        "204": {}
         "400":
           description: Bad Request
           schema:

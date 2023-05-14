@@ -595,11 +595,19 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	return &timestamps, nil
 }
 
-func (s *SignalClient) Receive(number string, timeout int64) (string, error) {
+func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments bool, ignoreStories bool) (string, error) {
 	if s.signalCliMode == JsonRpc {
 		return "", errors.New("Not implemented")
 	} else {
 		command := []string{"--config", s.signalCliConfig, "--output", "json", "-a", number, "receive", "-t", strconv.FormatInt(timeout, 10)}
+
+		if ignoreAttachments {
+			command = append(command, "--ignore-attachments")
+		}
+
+		if ignoreStories {
+			command = append(command, "--ignore-stories")
+		}
 
 		out, err := s.cliClient.Execute(true, command, "")
 		if err != nil {

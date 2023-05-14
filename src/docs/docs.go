@@ -241,9 +241,7 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": ""
-                    },
+                    "200": {},
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -283,9 +281,7 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": ""
-                    },
+                    "204": {},
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -327,9 +323,7 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": ""
-                    },
+                    "204": {},
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -371,9 +365,7 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": ""
-                    },
+                    "204": {},
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1156,6 +1148,18 @@ var doc = `{
                         "description": "Receive timeout in seconds (default: 1)",
                         "name": "timeout",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Specify whether the attachments of the received message should be ignored",
+                        "name": "ignore_attachments",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Specify whether stories should be ignored when receiving messages",
+                        "name": "ignore_stories",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1208,9 +1212,7 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": ""
-                    },
+                    "201": {},
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1482,9 +1484,7 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": ""
-                    },
+                    "204": {},
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1732,17 +1732,41 @@ var doc = `{
                         "data:\u003cMIME-TYPE\u003e;filename=\u003cFILENAME\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e"
                     ]
                 },
+                "mentions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/client.MessageMention"
+                    }
+                },
                 "message": {
                     "type": "string"
                 },
                 "number": {
                     "type": "string"
                 },
+                "quote_author": {
+                    "type": "string"
+                },
+                "quote_mentions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/client.MessageMention"
+                    }
+                },
+                "quote_message": {
+                    "type": "string"
+                },
+                "quote_timestamp": {
+                    "type": "integer"
+                },
                 "recipients": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
+                },
+                "sticker": {
+                    "type": "string"
                 }
             }
         },
@@ -1834,6 +1858,15 @@ var doc = `{
                 "build": {
                     "type": "integer"
                 },
+                "capabilities": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
                 "mode": {
                     "type": "string"
                 },
@@ -1909,6 +1942,20 @@ var doc = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "client.MessageMention": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "length": {
+                    "type": "integer"
+                },
+                "start": {
+                    "type": "integer"
                 }
             }
         }

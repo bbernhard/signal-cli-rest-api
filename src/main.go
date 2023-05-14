@@ -280,14 +280,33 @@ func main() {
 			log.Fatal("AUTO_RECEIVE_SCHEDULE: Couldn't parse accounts.json: ", err.Error())
 		}
 
+
+		autoReceiveScheduleReceiveTimeout := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_RECEIVE_TIMEOUT", "10")
+		autoReceiveScheduleIgnoreAttachments := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_IGNORE_ATTACHMENTS", "false")
+		autoReceiveScheduleIgnoreStories := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_IGNORE_STORIES", "false")
+
 		c := cron.New()
 		c.Schedule(schedule, cron.FuncJob(func() {
 			for _, account := range signalCliAccountConfigs.Accounts {
+				client := &http.Client{}
+
 				log.Debug("AUTO_RECEIVE_SCHEDULE: Calling receive for number ", account.Number)
-				resp, err := http.Get("http://127.0.0.1:" + port + "/v1/receive/" + account.Number)
+				req, err := http.NewRequest("GET", "http://127.0.0.1:" + port + "/v1/receive/" + account.Number, nil)
 				if err != nil {
 					log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", err.Error())
 				}
+
+				q := req.URL.Query()
+				q.Add("timeout", autoReceiveScheduleReceiveTimeout)
+				q.Add("ignore_attachments", autoReceiveScheduleIgnoreAttachments)
+				q.Add("ignore_stories", autoReceiveScheduleIgnoreStories)
+				req.URL.RawQuery = q.Encode()
+
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", err.Error())
+				}
+
 				if resp.StatusCode != 200 {
 					jsonResp, err := ioutil.ReadAll(resp.Body)
 					resp.Body.Close()
