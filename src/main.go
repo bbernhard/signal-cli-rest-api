@@ -270,63 +270,67 @@ func main() {
 			Accounts []SignalCliAccountConfig `json:"accounts"`
 		}
 
-		signalCliConfigJsonData, err := ioutil.ReadFile(*signalCliConfig + "/data/accounts.json")
-		if err != nil {
-			log.Fatal("AUTO_RECEIVE_SCHEDULE: Couldn't read accounts.json: ", err.Error())
-		}
-		var signalCliAccountConfigs SignalCliAccountConfigs
-		err = json.Unmarshal(signalCliConfigJsonData, &signalCliAccountConfigs)
-		if err != nil {
-			log.Fatal("AUTO_RECEIVE_SCHEDULE: Couldn't parse accounts.json: ", err.Error())
-		}
-
-
 		autoReceiveScheduleReceiveTimeout := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_RECEIVE_TIMEOUT", "10")
 		autoReceiveScheduleIgnoreAttachments := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_IGNORE_ATTACHMENTS", "false")
 		autoReceiveScheduleIgnoreStories := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_IGNORE_STORIES", "false")
 
 		c := cron.New()
 		c.Schedule(schedule, cron.FuncJob(func() {
-			for _, account := range signalCliAccountConfigs.Accounts {
-				client := &http.Client{}
-
-				log.Debug("AUTO_RECEIVE_SCHEDULE: Calling receive for number ", account.Number)
-				req, err := http.NewRequest("GET", "http://127.0.0.1:" + port + "/v1/receive/" + account.Number, nil)
+			accountsJsonPath := *signalCliConfig + "/data/accounts.json"
+			if _, err := os.Stat(accountsJsonPath); err == nil {
+				signalCliConfigJsonData, err := ioutil.ReadFile(accountsJsonPath)
 				if err != nil {
-					log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", err.Error())
+					log.Fatal("AUTO_RECEIVE_SCHEDULE: Couldn't read accounts.json: ", err.Error())
 				}
-
-				q := req.URL.Query()
-				q.Add("timeout", autoReceiveScheduleReceiveTimeout)
-				q.Add("ignore_attachments", autoReceiveScheduleIgnoreAttachments)
-				q.Add("ignore_stories", autoReceiveScheduleIgnoreStories)
-				req.URL.RawQuery = q.Encode()
-
-				resp, err := client.Do(req)
+				var signalCliAccountConfigs SignalCliAccountConfigs
+				err = json.Unmarshal(signalCliConfigJsonData, &signalCliAccountConfigs)
 				if err != nil {
-					log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", err.Error())
+					log.Fatal("AUTO_RECEIVE_SCHEDULE: Couldn't parse accounts.json: ", err.Error())
 				}
 
-				if resp.StatusCode != 200 {
-					jsonResp, err := ioutil.ReadAll(resp.Body)
-					resp.Body.Close()
+				for _, account := range signalCliAccountConfigs.Accounts {
+					client := &http.Client{}
+
+					log.Debug("AUTO_RECEIVE_SCHEDULE: Calling receive for number ", account.Number)
+					req, err := http.NewRequest("GET", "http://127.0.0.1:"+port+"/v1/receive/"+account.Number, nil)
 					if err != nil {
-						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't read json response: ", err.Error())
-						continue
+						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", err.Error())
 					}
 
-					type ReceiveResponse struct {
-						Error string `json:"error"`
-					}
-					var receiveResponse ReceiveResponse
-					err = json.Unmarshal(jsonResp, &receiveResponse)
+					q := req.URL.Query()
+					q.Add("timeout", autoReceiveScheduleReceiveTimeout)
+					q.Add("ignore_attachments", autoReceiveScheduleIgnoreAttachments)
+					q.Add("ignore_stories", autoReceiveScheduleIgnoreStories)
+					req.URL.RawQuery = q.Encode()
+
+					resp, err := client.Do(req)
 					if err != nil {
-						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't parse json response: ", err.Error())
-						continue
+						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", err.Error())
 					}
 
-					log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", receiveResponse)
+					if resp.StatusCode != 200 {
+						jsonResp, err := ioutil.ReadAll(resp.Body)
+						resp.Body.Close()
+						if err != nil {
+							log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't read json response: ", err.Error())
+							continue
+						}
+
+						type ReceiveResponse struct {
+							Error string `json:"error"`
+						}
+						var receiveResponse ReceiveResponse
+						err = json.Unmarshal(jsonResp, &receiveResponse)
+						if err != nil {
+							log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't parse json response: ", err.Error())
+							continue
+						}
+
+						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", receiveResponse)
+					}
 				}
+			} else {
+				log.Info("AUTO_RECEIVE_SCHEDULE: accounts.json doesn't exist")
 			}
 		}))
 		c.Start()
