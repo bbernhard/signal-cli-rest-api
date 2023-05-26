@@ -1290,6 +1290,12 @@ var doc = `{
                 "summary": "Check if one or more phone numbers are registered with the Signal Service.",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path"
+                    },
+                    {
                         "type": "array",
                         "items": {
                             "type": "string"

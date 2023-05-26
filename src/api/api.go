@@ -1382,6 +1382,7 @@ func (a *Api) SendStopTyping(c *gin.Context) {
 // @Description Check if one or more phone numbers are registered with the Signal Service.
 // @Accept  json
 // @Produce  json
+// @Param number path string false "Registered Phone Number"
 // @Param numbers query []string true "Numbers to check" collectionFormat(multi)
 // @Success 200 {object} []SearchResponse
 // @Failure 400 {object} Error
@@ -1393,7 +1394,9 @@ func (a *Api) SearchForNumbers(c *gin.Context) {
 		return
 	}
 
-	searchResults, err := a.signalClient.SearchForNumbers(query["numbers"])
+	number := c.Param("number")
+
+	searchResults, err := a.signalClient.SearchForNumbers(number, query["numbers"])
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return

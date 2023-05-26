@@ -235,6 +235,7 @@ func main() {
 		search := v1.Group("/search")
 		{
 			search.GET("", api.SearchForNumbers)
+			search.GET(":number", api.SearchForNumbers)
 		}
 
 		contacts := v1.Group("/contacts")

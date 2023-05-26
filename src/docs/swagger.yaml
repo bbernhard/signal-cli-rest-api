@@ -1118,6 +1118,10 @@ paths:
       - application/json
       description: Check if one or more phone numbers are registered with the Signal Service.
       parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        type: string
       - collectionFormat: multi
         description: Numbers to check
         in: query

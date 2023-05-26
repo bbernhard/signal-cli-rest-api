@@ -1348,7 +1348,7 @@ func (s *SignalClient) SendStopTyping(number string, recipient string) error {
 	return err
 }
 
-func (s *SignalClient) SearchForNumbers(numbers []string) ([]SearchResultEntry, error) {
+func (s *SignalClient) SearchForNumbers(number string, numbers []string) ([]SearchResultEntry, error) {
 	searchResultEntries := []SearchResultEntry{}
 
 	var err error
@@ -1374,7 +1374,11 @@ func (s *SignalClient) SearchForNumbers(numbers []string) ([]SearchResultEntry, 
 			return searchResultEntries, err
 		}
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "--output", "json", "getUserStatus"}
+		cmd := []string{"--config", s.signalCliConfig, "--output", "json"}
+		if number != "" {
+			cmd = append(cmd, []string{"-a", number}...)
+		}
+		cmd = append(cmd, "getUserStatus")
 		cmd = append(cmd, numbers...)
 		rawData, err = s.cliClient.Execute(true, cmd, "")
 	}
