@@ -351,6 +351,7 @@ func (s *SignalClient) send(number string, message string,
 			QuoteAuthor    *string  `json:"quote-author,omitempty"`
 			QuoteMessage   *string  `json:"quote-message,omitempty"`
 			QuoteMentions  []string `json:"quote-mentions,omitempty"`
+			TextStyles     []string `json:"text-style,omitempty"`
 		}
 
 		request := Request{Message: message}
@@ -382,6 +383,10 @@ func (s *SignalClient) send(number string, message string,
 			}
 		} else {
 			request.QuoteMentions = nil
+		}
+
+		if len(signalCliTextFormatStrings) > 0 {
+			request.TextStyles = signalCliTextFormatStrings
 		}
 
 		rawData, err := jsonRpc2Client.getRaw("send", request)
