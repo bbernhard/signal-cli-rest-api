@@ -11,18 +11,19 @@ const (
 )
 
 const (
-	None        int = 0
-	BoldBegin       = 1
-	BoldEnd         = 2
-	ItalicBegin     = 3
-	ItalicEnd1      = 4
-	ItalicEnd2      = 5
+	None        int   = 0
+	ItalicBegin       = 1
+	ItalicEnd         = 2
+	BoldBegin         = 3
+	BoldEnd1          = 4
+	BoldEnd2          = 5
 )
 
 func ParseMarkdownMessage(message string) (string, []string) {
 	textFormat := Normal
 	textFormatBegin := 0
-	textFormatEnd := 0
+	textFormatLength := 0
+	numOfAsterisks := 0
 	state := None
 	signalCliFormatStrings := []string{}
 	fullString := ""
@@ -31,34 +32,36 @@ func ParseMarkdownMessage(message string) (string, []string) {
 
 	for i, v := range runes { //iterate through rune
 		if v == '*' {
-			if state == BoldBegin {
+			if state == ItalicBegin {
 				if i-1 == textFormatBegin {
-					state = ItalicBegin
-					textFormat = Italic
-					textFormatBegin = i
+					state = BoldBegin
+					textFormat = Bold
+					textFormatBegin = i - numOfAsterisks
+					textFormatLength = 0
 				} else {
-					state = BoldEnd
-					textFormatEnd = i - 1
+					state = ItalicEnd
 				}
 			} else if state == None {
-				state = BoldBegin
-				textFormat = Bold
-				textFormatBegin = i
-			} else if state == ItalicBegin {
-				state = ItalicEnd1
-				textFormatEnd = i - 1
-			} else if state == ItalicEnd1 {
-				state = ItalicEnd2
+				state = ItalicBegin
+				textFormat = Italic
+				textFormatBegin = i - numOfAsterisks
+				textFormatLength = 0
+			} else if state == BoldBegin {
+				state = BoldEnd1
+			} else if state == BoldEnd1 {
+				state = BoldEnd2
 			}
+			numOfAsterisks += 1
 		} else {
+			textFormatLength += 1
 			fullString += string(v)
 		}
 
-		if state == BoldEnd || state == ItalicEnd2 {	
-			signalCliFormatStrings = append(signalCliFormatStrings, strconv.Itoa(textFormatBegin)+":"+strconv.Itoa(textFormatEnd-textFormatBegin)+":"+textFormat)
+		if state == ItalicEnd || state == BoldEnd2 {
+			signalCliFormatStrings = append(signalCliFormatStrings, strconv.Itoa(textFormatBegin)+":"+strconv.Itoa(textFormatLength)+":"+textFormat)
 			state = None
 			textFormatBegin = 0
-			textFormatEnd = 0
+			textFormatLength = 0
 			textFormat = Normal
 		}
 	}
