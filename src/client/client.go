@@ -295,12 +295,17 @@ func (s *MessageMention) toString() string {
 
 func (s *SignalClient) send(number string, message string,
 	recipients []string, base64Attachments []string, isGroup bool, sticker string, mentions []MessageMention,
-	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention) (*SendResponse, error) {
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string) (*SendResponse, error) {
 
 	var resp SendResponse
 
 	if len(recipients) == 0 {
 		return nil, errors.New("Please specify at least one recipient")
+	}
+
+	signalCliTextFormatStrings := []string{}
+	if textMode != nil && *textMode == "styled" {
+		message, signalCliTextFormatStrings = utils.ParseMarkdownMessage(message)
 	}
 
 	var groupId string = ""
@@ -398,6 +403,11 @@ func (s *SignalClient) send(number string, message string,
 			cmd = append(cmd, recipients...)
 		} else {
 			cmd = append(cmd, []string{"-g", groupId}...)
+		}
+
+		if len(signalCliTextFormatStrings) > 0 {
+			cmd = append(cmd, "--text-style")
+			cmd = append(cmd, signalCliTextFormatStrings...)
 		}
 
 		if len(attachmentEntries) > 0 {
@@ -527,7 +537,7 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 }
 
 func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (*SendResponse, error) {
-	timestamp, err := s.send(number, message, recipients, base64Attachments, isGroup, "", nil, nil, nil, nil, nil)
+	timestamp, err := s.send(number, message, recipients, base64Attachments, isGroup, "", nil, nil, nil, nil, nil, nil)
 	return timestamp, err
 }
 
@@ -547,7 +557,7 @@ func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 }
 
 func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, sticker string, mentions []MessageMention,
-	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention) (*[]SendResponse, error) {
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string) (*[]SendResponse, error) {
 	if len(recps) == 0 {
 		return nil, errors.New("Please provide at least one recipient")
 	}
@@ -577,7 +587,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 
 	timestamps := []SendResponse{}
 	for _, group := range groups {
-		timestamp, err := s.send(number, message, []string{group}, base64Attachments, true, sticker, mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions)
+		timestamp, err := s.send(number, message, []string{group}, base64Attachments, true, sticker, mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode)
 		if err != nil {
 			return nil, err
 		}
@@ -585,7 +595,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	}
 
 	if len(recipients) > 0 {
-		timestamp, err := s.send(number, message, recipients, base64Attachments, false, sticker, mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions)
+		timestamp, err := s.send(number, message, recipients, base64Attachments, false, sticker, mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode)
 		if err != nil {
 			return nil, err
 		}

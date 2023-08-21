@@ -104,6 +104,7 @@ type SendMessageV2 struct {
 	QuoteAuthor       *string                 `json:"quote_author"`
 	QuoteMessage      *string                 `json:"quote_message"`
 	QuoteMentions     []client.MessageMention `json:"quote_mentions"`
+	TextMode          *string                 `json:"text_mode"`
 }
 
 type TypingIndicatorRequest struct {
@@ -368,7 +369,7 @@ func (a *Api) SendV2(c *gin.Context) {
 
 	timestamps, err := a.signalClient.SendV2(
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
-		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions)
+		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions, req.TextMode)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
