@@ -108,6 +108,20 @@ It is recommended to use a fresh number. Some things might not work as expected,
 
 4. The REST API will be linked to your main account. You can use it then to send message on your own personal behalf.
 
+### Trouble shooting: if you get the response `Binary output can mess up your terminal`
+If you get the following response back from from linking a new number to the API
+
+```
+Warning: Binary output can mess up your terminal. Use "--output -" to tell 
+Warning: curl to output it to your terminal anyway, or consider "--output 
+Warning: <FILE>" to save to a file.
+```
+Execute the same API call again and add `--output img.jpg` to save the QR code response back as a image file. Then scan the QR code from the signal mobile app signed in using the required mobile number. 
+
+```sh
+curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/qrcodelink?device_name=HomeAssistant' --output img.jpg
+```
+
 ### Trouble shooting: Number is locked with a PIN
 If you are trying to verify a number that has a PIN assigned to it, you will get an error message saying: "Verification failed! This number is locked with a pin". You can provide the PIN using "--data '{"pin": "your registration lock pin"}'" to the `curl` verification call:
 
