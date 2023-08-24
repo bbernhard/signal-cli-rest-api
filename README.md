@@ -127,6 +127,8 @@ There are a bunch of environmental variables that can be set inside the docker c
 
 * `SWAGGER_IP`: The IP that's used in the Swagger UI for the interactive examples. Defaults to the container ip.
 
+* `PORT`: Defaults to port `8080` unless this env var is set to tell it otherwise. 
+  
 ## Clients & Libraries
 
 |     Name    | Client           | Library  | Language | Maintainer |
