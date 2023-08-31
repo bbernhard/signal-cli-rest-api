@@ -474,12 +474,12 @@ func (s *SignalClient) send(number string, message string,
 
 func (s *SignalClient) About() About {
 	about := About{
-        SupportedApiVersions: []string{"v1", "v2"},
-        BuildNr: 2,
-        Mode: getSignalCliModeString(s.signalCliMode),
-		Version: utils.GetEnv("BUILD_VERSION", "unset"),
-		Capabilities: map[string][]string{"v2/send": []string{"quotes", "mentions"}},
-    }
+		SupportedApiVersions: []string{"v1", "v2"},
+		BuildNr:              2,
+		Mode:                 getSignalCliModeString(s.signalCliMode),
+		Version:              utils.GetEnv("BUILD_VERSION", "unset"),
+		Capabilities:         map[string][]string{"v2/send": []string{"quotes", "mentions"}},
+	}
 	return about
 }
 
@@ -610,7 +610,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	return &timestamps, nil
 }
 
-func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments bool, ignoreStories bool) (string, error) {
+func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments bool, ignoreStories bool, maxMessages int64) (string, error) {
 	if s.signalCliMode == JsonRpc {
 		return "", errors.New("Not implemented")
 	} else {
@@ -622,6 +622,11 @@ func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments b
 
 		if ignoreStories {
 			command = append(command, "--ignore-stories")
+		}
+
+		if maxMessages > 0 {
+			command = append(command, "--max-messages")
+			command = append(command, strconv.FormatInt(maxMessages, 10))
 		}
 
 		out, err := s.cliClient.Execute(true, command, "")
