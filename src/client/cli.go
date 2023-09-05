@@ -83,10 +83,9 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 		cmd.Stdin = strings.NewReader(stdin)
 	}
 	if wait {
-		var errBuffer bytes.Buffer
-		var outBuffer bytes.Buffer
-		cmd.Stderr = &errBuffer
-		cmd.Stdout = &outBuffer
+		var combinedOutput bytes.Buffer
+		cmd.Stdout = &combinedOutput
+		cmd.Stderr = &combinedOutput
 
 		err := cmd.Start()
 		if err != nil {
@@ -106,11 +105,11 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 			return "", errors.New("process killed as timeout reached")
 		case err := <-done:
 			if err != nil {
-				return "", errors.New(errBuffer.String())
+				return "", errors.New(combinedOutput.String())
 			}
 		}
 
-		return outBuffer.String(), nil
+		return combinedOutput.String(), nil
 	} else {
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
