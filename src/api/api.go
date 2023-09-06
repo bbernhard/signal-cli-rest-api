@@ -1229,6 +1229,38 @@ func (a *Api) QuitGroup(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// @Summary Refresh the state of a Signal Group.
+// @Tags Groups
+// @Description Refresh the state of a Signal Group.
+// @Accept  json
+// @Produce  json
+// @Success 204 {string} OK
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
+// @Router /v1/groups/{number}/{groupid}/refresh [post]
+func (a *Api) RefreshGroup(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	groupId := c.Param("groupid")
+	internalGroupId, err := client.ConvertGroupIdToInternalGroupId(groupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	err = a.signalClient.RefreshGroup(number, internalGroupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 // @Summary Send a reaction.
 // @Tags Reactions
 // @Description React to a message

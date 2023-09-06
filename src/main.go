@@ -186,6 +186,7 @@ func main() {
 			groups.POST(":number/:groupid/block", api.BlockGroup)
 			groups.POST(":number/:groupid/join", api.JoinGroup)
 			groups.POST(":number/:groupid/quit", api.QuitGroup)
+			groups.POST(":number/:groupid/refresh", api.RefreshGroup)
 			groups.POST(":number/:groupid/members", api.AddMembersToGroup)
 			groups.DELETE(":number/:groupid/members", api.RemoveMembersFromGroup)
 			groups.POST(":number/:groupid/admins", api.AddAdminsToGroup)
