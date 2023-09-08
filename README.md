@@ -82,7 +82,7 @@ This launches a instance of the REST service accessible under http://localhost:9
 
 > :warning: This setting is only needed in normal/native mode!
 
-[signal-cli](https://github.com/AsamK/signal-cli), which this REST API wrapper is based on, recommends to call `receive` on a regular basis. So, if you are not already calling the `receive` endpoint regularily, it is recommended to set the `AUTO_RECEIVE_SCHEDULE` parameter in the docker-compose.yml file. The `AUTO_RECEIVE_SCHEDULE` accepts cron schedule expressions and automatically calls the `receive` endpoint at the given time. e.g: `0 22 * * *` calls `receive` daily at 10pm. If you are not familiar with cron schedule expressions, you can use this [website](https://crontab.guru).
+[signal-cli](https://github.com/AsamK/signal-cli), which this REST API wrapper is based on, recommends to call `receive` on a regular basis. So, if you are not already calling the `receive` endpoint regularly, it is recommended to set the `AUTO_RECEIVE_SCHEDULE` parameter in the docker-compose.yml file. The `AUTO_RECEIVE_SCHEDULE` accepts cron schedule expressions and automatically calls the `receive` endpoint at the given time. e.g: `0 22 * * *` calls `receive` daily at 10pm. If you are not familiar with cron schedule expressions, you can use this [website](https://crontab.guru).
 
 **WARNING** Calling `receive` will fetch all the messages for the registered Signal number from the Signal Server! So, if you are using the REST API for receiving messages, it's _not_ a good idea to use the `AUTO_RECEIVE_SCHEDULE` parameter, as you might lose some messages that way.
 
@@ -127,6 +127,8 @@ There are a bunch of environmental variables that can be set inside the docker c
 
 * `SWAGGER_IP`: The IP that's used in the Swagger UI for the interactive examples. Defaults to the container ip.
 
+* `PORT`: Defaults to port `8080` unless this env var is set to tell it otherwise. 
+  
 ## Clients & Libraries
 
 |     Name    | Client           | Library  | Language | Maintainer |

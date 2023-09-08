@@ -473,6 +473,7 @@ func StringToBool(input string) bool {
 // @Param timeout query string false "Receive timeout in seconds (default: 1)"
 // @Param ignore_attachments query string false "Specify whether the attachments of the received message should be ignored" (default: false)"
 // @Param ignore_stories query string false "Specify whether stories should be ignored when receiving messages" (default: false)"
+// @Param max_messages query string false "Specify the maximum number of messages to receive (default: unlimited)". Not available in json-rpc mode.
 // @Router /v1/receive/{number} [get]
 func (a *Api) Receive(c *gin.Context) {
 	number := c.Param("number")
@@ -496,19 +497,26 @@ func (a *Api) Receive(c *gin.Context) {
 			return
 		}
 
+		maxMessages := c.DefaultQuery("max_messages", "0")
+		maxMessagesInt, err := strconv.ParseInt(maxMessages, 10, 32)
+		if err != nil {
+			c.JSON(400, Error{Msg: "Couldn't process request - max_messages needs to be numeric!"})
+			return
+		}
+
 		ignoreAttachments := c.DefaultQuery("ignore_attachments", "false")
 		if ignoreAttachments != "true" && ignoreAttachments != "false" {
-			c.JSON(400, Error {Msg: "Couldn't process request - ignore_attachments parameter needs to be either 'true' or 'false'"})
+			c.JSON(400, Error{Msg: "Couldn't process request - ignore_attachments parameter needs to be either 'true' or 'false'"})
 			return
 		}
 
 		ignoreStories := c.DefaultQuery("ignore_stories", "false")
 		if ignoreStories != "true" && ignoreStories != "false" {
-			c.JSON(400, Error {Msg: "Couldn't process request - ignore_stories parameter needs to be either 'true' or 'false'"})
+			c.JSON(400, Error{Msg: "Couldn't process request - ignore_stories parameter needs to be either 'true' or 'false'"})
 			return
 		}
 
-		jsonStr, err := a.signalClient.Receive(number, timeoutInt, StringToBool(ignoreAttachments), StringToBool(ignoreStories))
+		jsonStr, err := a.signalClient.Receive(number, timeoutInt, StringToBool(ignoreAttachments), StringToBool(ignoreStories), maxMessagesInt)
 		if err != nil {
 			c.JSON(400, Error{Msg: err.Error()})
 			return
