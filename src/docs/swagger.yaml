@@ -153,6 +153,8 @@ definitions:
         type: array
       sticker:
         type: string
+      text_mode:
+        type: string
     type: object
   api.TrustIdentityRequest:
     properties:
@@ -946,6 +948,10 @@ paths:
         name: device_name
         required: true
         type: string
+      - description: QRCode Version (defaults to 10)
+        in: query
+        name: qrcode_version
+        type: integer
       produces:
       - application/json
       responses:
@@ -1033,6 +1039,10 @@ paths:
       - description: Specify whether stories should be ignored when receiving messages
         in: query
         name: ignore_stories
+        type: string
+      - description: 'Specify the maximum number of messages to receive (default: unlimited)'
+        in: query
+        name: max_messages
         type: string
       produces:
       - application/json

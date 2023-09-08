@@ -1026,6 +1026,12 @@ var doc = `{
                         "name": "device_name",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "QRCode Version (defaults to 10)",
+                        "name": "qrcode_version",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1159,6 +1165,12 @@ var doc = `{
                         "type": "string",
                         "description": "Specify whether stories should be ignored when receiving messages",
                         "name": "ignore_stories",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Specify the maximum number of messages to receive (default: unlimited)",
+                        "name": "max_messages",
                         "in": "query"
                     }
                 ],
@@ -1772,6 +1784,9 @@ var doc = `{
                     }
                 },
                 "sticker": {
+                    "type": "string"
+                },
+                "text_mode": {
                     "type": "string"
                 }
             }

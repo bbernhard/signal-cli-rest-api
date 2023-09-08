@@ -836,17 +836,29 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 // @Produce  json
 // @Success 200 {string} string	"Image"
 // @Param device_name query string true "Device Name"
+// @Param qrcode_version query int false "QRCode Version (defaults to 10)"
 // @Failure 400 {object} Error
 // @Router /v1/qrcodelink [get]
 func (a *Api) GetQrCodeLink(c *gin.Context) {
 	deviceName := c.Query("device_name")
+	qrCodeVersion := c.Query("qrcode_version")
 
 	if deviceName == "" {
 		c.JSON(400, Error{Msg: "Please provide a name for the device"})
 		return
 	}
 
-	png, err := a.signalClient.GetQrCodeLink(deviceName)
+	qrCodeVersionInt := 10
+	if qrCodeVersion != "" {
+		var err error
+		qrCodeVersionInt, err = strconv.Atoi(qrCodeVersion)
+		if err != nil {
+			c.JSON(400, Error{Msg: "The qrcode_version parameter needs to be an integer!"})
+			return
+		}
+	}
+
+	png, err := a.signalClient.GetQrCodeLink(deviceName, qrCodeVersionInt)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
