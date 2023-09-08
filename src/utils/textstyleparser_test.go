@@ -32,3 +32,9 @@ func TestBoldAndItalicMessage(t *testing.T) {
 	expectMessageEqual(t, message, "This is a bold and italic message")
 	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"10:4:BOLD", "19:6:ITALIC"})
 }
+
+func TestTwoBoldFormattedStrings(t *testing.T) {
+	message, signalCliFormatStrings := ParseMarkdownMessage("This is a **bold** and another **bold** message")
+	expectMessageEqual(t, message, "This is a bold and another bold message")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"10:4:BOLD", "27:4:BOLD"})
+}

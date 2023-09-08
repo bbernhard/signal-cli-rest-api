@@ -27,13 +27,14 @@ func ParseMarkdownMessage(message string) (string, []string) {
 	state := None
 	signalCliFormatStrings := []string{}
 	fullString := ""
+	lastChar := ""
 
 	runes := []rune(message) //turn string to slice
 
 	for i, v := range runes { //iterate through rune
 		if v == '*' {
 			if state == ItalicBegin {
-				if i-1 == textFormatBegin {
+				if lastChar == "*" {
 					state = BoldBegin
 					textFormat = Bold
 					textFormatBegin = i - numOfAsterisks
@@ -56,6 +57,7 @@ func ParseMarkdownMessage(message string) (string, []string) {
 			textFormatLength += 1
 			fullString += string(v)
 		}
+		lastChar = string(v)
 
 		if state == ItalicEnd || state == BoldEnd2 {
 			signalCliFormatStrings = append(signalCliFormatStrings, strconv.Itoa(textFormatBegin)+":"+strconv.Itoa(textFormatLength)+":"+textFormat)
