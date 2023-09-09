@@ -1220,7 +1220,7 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	return err
 }
 
-func (s *SignalClient) RefreshGroup(number string, groupId string) error {
+func (s *SignalClient) UpdateGroup(number string, groupId string) error {
 	var err error
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
