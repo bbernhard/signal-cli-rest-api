@@ -1220,6 +1220,24 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	return err
 }
 
+func (s *SignalClient) UpdateGroup(number string, groupId string) error {
+	var err error
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			GroupId string `json:"groupId"`
+		}
+		request := Request{GroupId: groupId}
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("updateGroup", request)
+	} else {
+		_, err = s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-g", groupId}, "")
+	}
+	return err
+}
+
 func (s *SignalClient) SendReaction(number string, recipient string, emoji string, target_author string, timestamp int64, remove bool) error {
 	// see https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc#sendreaction
 	var err error
