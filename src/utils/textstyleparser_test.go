@@ -38,3 +38,15 @@ func TestTwoBoldFormattedStrings(t *testing.T) {
 	expectMessageEqual(t, message, "This is a bold and another bold message")
 	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"10:4:BOLD", "27:4:BOLD"})
 }
+
+func TestStrikethrough(t *testing.T) {
+	message, signalCliFormatStrings := ParseMarkdownMessage("This is a ~strikethrough~ and a **bold** message")
+	expectMessageEqual(t, message, "This is a strikethrough and a bold message")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"10:13:STRIKETHROUGH", "30:4:BOLD"})
+}
+
+func TestMonospace(t *testing.T) {
+	message, signalCliFormatStrings := ParseMarkdownMessage("This is a `monospace` and a **bold** message")
+	expectMessageEqual(t, message, "This is a monospace and a bold message")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"10:9:MONOSPACE", "26:4:BOLD"})
+}
