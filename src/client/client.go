@@ -52,11 +52,35 @@ const (
 )
 
 func (g GroupPermission) String() string {
-	return []string{"", "default", "every-member", "only-admins"}[g]
+	return []string{"", "every-member", "only-admins"}[g]
+}
+
+func (g GroupPermission) FromString(input string) GroupPermission {
+	if input == "every-member" {
+		return EveryMember
+	}
+	if input == "only-admins" {
+		return OnlyAdmins
+	}
+	return DefaultGroupPermission
 }
 
 func (g GroupLinkState) String() string {
 	return []string{"", "enabled", "enabled-with-approval", "disabled"}[g]
+}
+
+func (g GroupLinkState) FromString(input string) GroupLinkState {
+	if input == "enabled" {
+		return Enabled
+	}
+	if input == "enabled-with-approval" {
+		return EnabledWithApproval
+	}
+	if input == "disabled" {
+		return Disabled
+	}
+
+	return DefaultGroupLinkState
 }
 
 type MessageMention struct {
@@ -662,10 +686,30 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 	var internalGroupId string
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Name    string   `json:"name"`
-			Members []string `json:"members"`
+			Name        string   `json:"name"`
+			Members     []string `json:"members"`
+			Link        string   `json:"link,omitempty"`
+			Description string   `json:"description,omitempty"`
+			EditGroupPermissions string `json:"setPermissionEditDetails,omitempty"`
+			AddMembersPermissions string `json:"setPermissionAddMember,omitempty"`
 		}
 		request := Request{Name: name, Members: members}
+
+		if groupLinkState != DefaultGroupLinkState {
+			request.Link = groupLinkState.String()
+		}
+
+		if description != "" {
+			request.Description = description
+		}
+
+		if editGroupPermission != DefaultGroupPermission {
+			request.EditGroupPermissions = editGroupPermission.String()
+		}
+
+		if addMembersPermission != DefaultGroupPermission {
+			request.AddMembersPermissions = addMembersPermission.String()
+		}
 
 		jsonRpc2Client, err := s.getJsonRpc2Client(number)
 		if err != nil {

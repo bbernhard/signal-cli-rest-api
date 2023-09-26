@@ -546,24 +546,33 @@ func (a *Api) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	if req.Permissions.AddMembers != "" && !utils.StringInSlice(req.Permissions.AddMembers, []string{"every-member", "only-admins"}) {
-		c.JSON(400, Error{Msg: "Invalid add members permission provided - only 'every-member' and 'only-admins' allowed!"})
-		return
-	}
-
-	if req.Permissions.EditGroup != "" && !utils.StringInSlice(req.Permissions.EditGroup, []string{"every-member", "only-admins"}) {
-		c.JSON(400, Error{Msg: "Invalid edit group permissions provided - only 'every-member' and 'only-admins' allowed!"})
-		return
-	}
-
-	if req.GroupLinkState != "" && !utils.StringInSlice(req.GroupLinkState, []string{"enabled", "enabled-with-approval", "disabled"}) {
-		c.JSON(400, Error{Msg: "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!"})
-		return
-	}
-
 	editGroupPermission := client.DefaultGroupPermission
 	addMembersPermission := client.DefaultGroupPermission
 	groupLinkState := client.DefaultGroupLinkState
+
+	if req.Permissions.AddMembers != "" {
+		if !utils.StringInSlice(req.Permissions.AddMembers, []string{"every-member", "only-admins"}) {
+			c.JSON(400, Error{Msg: "Invalid add members permission provided - only 'every-member' and 'only-admins' allowed!"})
+			return
+		}
+		addMembersPermission = addMembersPermission.FromString(req.Permissions.AddMembers)
+	}
+
+	if req.Permissions.EditGroup != "" {
+		if !utils.StringInSlice(req.Permissions.EditGroup, []string{"every-member", "only-admins"}) {
+			c.JSON(400, Error{Msg: "Invalid edit group permissions provided - only 'every-member' and 'only-admins' allowed!"})
+			return
+		}
+		editGroupPermission = editGroupPermission.FromString(req.Permissions.EditGroup)
+	}
+
+	if req.GroupLinkState != "" {
+		if !utils.StringInSlice(req.GroupLinkState, []string{"enabled", "enabled-with-approval", "disabled"}) {
+			c.JSON(400, Error{Msg: "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!"})
+			return
+		}
+		groupLinkState = groupLinkState.FromString(req.GroupLinkState)
+	}
 
 	groupId, err := a.signalClient.CreateGroup(number, req.Name, req.Members, req.Description, editGroupPermission, addMembersPermission, groupLinkState)
 	if err != nil {
