@@ -19,6 +19,7 @@ ARG BUILD_VERSION_ARG
 ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION
 
 COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
+COPY ext/libraries/libsignal-client/signal-cli-native.patch /tmp/signal-cli-native.patch
 
 # use architecture specific libsignal_jni.so
 RUN arch="$(uname -m)"; \
@@ -76,6 +77,13 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& export PATH=/tmp/graalvm/bin:$PATH \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& sed -i 's/Signal-Android\/5.22.3/Signal-Android\/5.51.7/g' src/main/java/org/asamk/signal/BaseConfig.java \
+		&& ./gradlew build \
+		&& ./gradlew installDist \
+		&& cd /tmp \
+		&& cp signal-cli-${SIGNAL_CLI_VERSION}-source/build/install/signal-cli/lib/libsignal-client-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal-client.jar \
+		&& zip -qu libsignal-client.jar libsignal_jni.so \
+		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
+		&& git apply /tmp/signal-cli-native.patch \
 		&& ./gradlew -q nativeCompile; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
 		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64 - many thanks to @morph027" \

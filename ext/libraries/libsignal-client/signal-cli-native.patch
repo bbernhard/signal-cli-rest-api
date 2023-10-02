@@ -1,0 +1,23 @@
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 0d89c075..fda49332 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -43,6 +43,7 @@ dependencies {
+     implementation(libs.slf4j.jul)
+     implementation(libs.logback)
+     implementation(project(":lib"))
++    implementation(files("/tmp/libsignal-client.jar"))
+ }
+ 
+ configurations {
+@@ -51,6 +52,10 @@ configurations {
+     }
+ }
+ 
++configurations.all {
++    exclude(group = "org.signal", module = "libsignal-client")
++}
++
+ 
+ tasks.withType<AbstractArchiveTask>().configureEach {
+     isPreserveFileTimestamps = false
