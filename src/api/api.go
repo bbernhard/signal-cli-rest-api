@@ -48,6 +48,11 @@ type CreateGroupRequest struct {
 	GroupLinkState string           `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
 }
 
+type UpdateGroupRequest struct {
+	Base64Avatar *string `json:"base64_avatar"`
+	Description *string `json:"description"`
+}
+
 type ChangeGroupMembersRequest struct {
 	Members []string `json:"members"`
 }
@@ -1259,6 +1264,7 @@ func (a *Api) QuitGroup(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param groupid path string true "Group ID"
+// @Param data body UpdateGroupRequest true "Input Data"
 // @Router /v1/groups/{number}/{groupid} [put]
 func (a *Api) UpdateGroup(c *gin.Context) {
 	number := c.Param("number")
@@ -1274,7 +1280,15 @@ func (a *Api) UpdateGroup(c *gin.Context) {
 		return
 	}
 
-	err = a.signalClient.UpdateGroup(number, internalGroupId)
+	var req UpdateGroupRequest
+	err = c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	err = a.signalClient.UpdateGroup(number, internalGroupId, req.Base64Avatar, req.Description)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return

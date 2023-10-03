@@ -197,6 +197,13 @@ definitions:
       recipient:
         type: string
     type: object
+  api.UpdateGroupRequest:
+    properties:
+      base64_avatar:
+        type: string
+      description:
+        type: string
+    type: object
   api.UpdateProfileRequest:
     properties:
       base64_avatar:
@@ -632,6 +639,41 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: List a Signal Group.
+      tags:
+      - Groups
+    put:
+      consumes:
+      - application/json
+      description: Update the state of a Signal Group.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupid
+        required: true
+        type: string
+      - description: Input Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Update the state of a Signal Group.
       tags:
       - Groups
   /v1/groups/{number}/{groupid}/admins:

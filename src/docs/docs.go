@@ -505,6 +505,58 @@ var doc = `{
                     }
                 }
             },
+            "put": {
+                "description": "Update the state of a Signal Group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Update the state of a Signal Group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input Data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "Delete the specified Signal Group.",
                 "consumes": [
@@ -1850,6 +1902,17 @@ var doc = `{
                     "type": "string"
                 },
                 "recipient": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.UpdateGroupRequest": {
+            "type": "object",
+            "properties": {
+                "base64_avatar": {
+                    "type": "string"
+                },
+                "description": {
                     "type": "string"
                 }
             }

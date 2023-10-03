@@ -1282,21 +1282,80 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	return err
 }
 
-func (s *SignalClient) UpdateGroup(number string, groupId string) error {
+func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *string, groupDescription *string) error {
 	var err error
+	var avatarTmpPath string = ""
+	if base64Avatar != nil {
+		u, err := uuid.NewV4()
+		if err != nil {
+			return err
+		}
+
+		avatarBytes, err := base64.StdEncoding.DecodeString(*base64Avatar)
+		if err != nil {
+			return errors.New("Couldn't decode base64 encoded avatar: " + err.Error())
+		}
+
+		fType, err := filetype.Get(avatarBytes)
+		if err != nil {
+			return err
+		}
+
+		avatarTmpPath = s.avatarTmpDir + u.String() + "." + fType.Extension
+
+		f, err := os.Create(avatarTmpPath)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		if _, err := f.Write(avatarBytes); err != nil {
+			cleanupTmpFiles([]string{avatarTmpPath})
+			return err
+		}
+		if err := f.Sync(); err != nil {
+			cleanupTmpFiles([]string{avatarTmpPath})
+			return err
+		}
+		f.Close()
+	}
+
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			GroupId string `json:"groupId"`
+			GroupId     string `json:"groupId"`
+			Avatar      string `json:"avatar,omitempty"`
+			Description *string `json:"description,omitempty"`
 		}
 		request := Request{GroupId: groupId}
+
+		if base64Avatar != nil {
+			request.Avatar = avatarTmpPath
+		}
+
+		request.Description = groupDescription
+
+
 		jsonRpc2Client, err := s.getJsonRpc2Client(number)
 		if err != nil {
 			return err
 		}
 		_, err = jsonRpc2Client.getRaw("updateGroup", request)
 	} else {
-		_, err = s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-g", groupId}, "")
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-g", groupId}
+		if base64Avatar != nil {
+			cmd = append(cmd, []string{"-a", avatarTmpPath}...)
+		}
+
+		if groupDescription != nil {
+			cmd = append(cmd, []string{"-d", *groupDescription}...)
+		}
+		_, err = s.cliClient.Execute(true, cmd, "")
 	}
+
+	if avatarTmpPath != "" {
+		cleanupTmpFiles([]string{avatarTmpPath})
+	}
+
 	return err
 }
 
