@@ -52,7 +52,15 @@ const (
 )
 
 func (g GroupPermission) String() string {
-	return []string{"", "every-member", "only-admins"}[g]
+	switch g {
+	case DefaultGroupPermission:
+		return ""
+	case EveryMember:
+		return "every-member"
+	case OnlyAdmins:
+		return "only-admins"
+	}
+	return ""
 }
 
 func (g GroupPermission) FromString(input string) GroupPermission {
@@ -66,7 +74,17 @@ func (g GroupPermission) FromString(input string) GroupPermission {
 }
 
 func (g GroupLinkState) String() string {
-	return []string{"", "enabled", "enabled-with-approval", "disabled"}[g]
+	switch g {
+	case DefaultGroupLinkState:
+		return ""
+	case Enabled:
+		return "enabled"
+	case EnabledWithApproval:
+		return "enabled-with-approval"
+	case Disabled:
+		return "disabled"
+	}
+	return ""
 }
 
 func (g GroupLinkState) FromString(input string) GroupLinkState {
