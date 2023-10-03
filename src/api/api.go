@@ -153,7 +153,7 @@ type SearchResponse struct {
 }
 
 type AddDeviceRequest struct {
-	Uri string `json:uri"`
+	Uri string `json:"uri"`
 }
 
 type Api struct {
