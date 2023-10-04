@@ -993,8 +993,25 @@ func (s *SignalClient) GetGroup(number string, groupId string) (*GroupEntry, err
 }
 
 func (s *SignalClient) DeleteGroup(number string, groupId string) error {
-	_, err := s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-a", number, "quitGroup", "-g", string(groupId)}, "")
-	return err
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			GroupId      string   `json:"groupId"`
+		}
+		request := Request{GroupId: groupId}
+
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("quitGroup", request)
+		return err
+	} else {
+		ret, err := s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-a", number, "quitGroup", "-g", string(groupId)}, "")
+		if strings.Contains(ret, "User is not a group member") {
+			return errors.New("Can't delete group: User is not a group member")
+		}
+		return err
+	}
 }
 
 func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int) ([]byte, error) {
