@@ -505,7 +505,7 @@ func (s *SignalClient) send(number string, message string,
 		resp.Timestamp, err = strconv.ParseInt(strings.TrimSuffix(rawData, "\n"), 10, 64)
 		if err != nil {
 			cleanupAttachmentEntries(attachmentEntries)
-			return nil, err
+			return nil, errors.New(strings.Replace(rawData, "\n", "", -1)) //in case we can't parse the timestamp, it means signal-cli threw an error. So instead of returning the parsing error, return the actual error from signal-cli
 		}
 	}
 
