@@ -106,14 +106,14 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 			return "", errors.New("process killed as timeout reached")
 		case err := <-done:
 			if err != nil {
-				combinedOutput := stdoutBuffer.String() + " " + stderrBuffer.String()
+				combinedOutput := stdoutBuffer.String() + stderrBuffer.String()
 				log.Debug("signal-cli output (stdout): ", stdoutBuffer.String())
 				log.Debug("signal-cli output (stderr): ", stderrBuffer.String())
 				return "", errors.New(combinedOutput)
 			}
 		}
 
-		combinedOutput := stdoutBuffer.String() + " " + stderrBuffer.String()
+		combinedOutput := stdoutBuffer.String() + stderrBuffer.String()
 		log.Debug("signal-cli output (stdout): ", stdoutBuffer.String())
 		log.Debug("signal-cli output (stderr): ", stderrBuffer.String())
 		return combinedOutput, nil
