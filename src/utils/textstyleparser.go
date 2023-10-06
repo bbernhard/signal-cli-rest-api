@@ -25,6 +25,22 @@ const (
 	StrikethroughEnd   = 9
 )
 
+func getUtf16CharacterCount(s string) int {
+	stringLength := len(s)
+	if stringLength == 1 {
+		return 1
+	}
+	return stringLength/2
+}
+
+func getAdditionalCharacterCount(characterCount int) int {
+	additionalCharacterCount := characterCount - 1
+	if additionalCharacterCount > 0 {
+		return additionalCharacterCount
+	}
+	return 0
+}
+
 func ParseMarkdownMessage(message string) (string, []string) {
 	textFormat := Normal
 	textFormatBegin := 0
@@ -34,6 +50,7 @@ func ParseMarkdownMessage(message string) (string, []string) {
 	signalCliFormatStrings := []string{}
 	fullString := ""
 	lastChar := ""
+	additionalCharacterCount := 0
 
 	runes := []rune(message) //turn string to slice
 
@@ -43,7 +60,7 @@ func ParseMarkdownMessage(message string) (string, []string) {
 				if lastChar == "*" {
 					state = BoldBegin
 					textFormat = Bold
-					textFormatBegin = i - numOfControlChars
+					textFormatBegin = i - numOfControlChars + additionalCharacterCount
 					textFormatLength = 0
 				} else {
 					state = ItalicEnd
@@ -51,7 +68,7 @@ func ParseMarkdownMessage(message string) (string, []string) {
 			} else if state == None {
 				state = ItalicBegin
 				textFormat = Italic
-				textFormatBegin = i - numOfControlChars
+				textFormatBegin = i - numOfControlChars + additionalCharacterCount
 				textFormatLength = 0
 			} else if state == BoldBegin {
 				state = BoldEnd1
@@ -63,7 +80,7 @@ func ParseMarkdownMessage(message string) (string, []string) {
 			if state == None {
 				state = MonoSpaceBegin
 				textFormat = Monospace
-				textFormatBegin = i - numOfControlChars
+				textFormatBegin = i - numOfControlChars + additionalCharacterCount
 				textFormatLength = 0
 			} else if state == MonoSpaceBegin {
 				state = MonoSpaceEnd
@@ -73,7 +90,7 @@ func ParseMarkdownMessage(message string) (string, []string) {
 			if state == None {
 				state = StrikethroughBegin
 				textFormat = Strikethrough
-				textFormatBegin = i - numOfControlChars
+				textFormatBegin = i - numOfControlChars + additionalCharacterCount
 				textFormatLength = 0
 			} else if state == StrikethroughBegin {
 				state = StrikethroughEnd
@@ -82,11 +99,12 @@ func ParseMarkdownMessage(message string) (string, []string) {
 		} else {
 			textFormatLength += 1
 			fullString += string(v)
+			additionalCharacterCount += getAdditionalCharacterCount(getUtf16CharacterCount(string(v)))
 		}
 		lastChar = string(v)
 
 		if state == ItalicEnd || state == BoldEnd2 || state == MonoSpaceEnd || state == StrikethroughEnd {
-			signalCliFormatStrings = append(signalCliFormatStrings, strconv.Itoa(textFormatBegin)+":"+strconv.Itoa(textFormatLength)+":"+textFormat)
+			signalCliFormatStrings = append(signalCliFormatStrings, strconv.Itoa(textFormatBegin)+":"+strconv.Itoa(textFormatLength + additionalCharacterCount)+":"+textFormat)
 			state = None
 			textFormatBegin = 0
 			textFormatLength = 0

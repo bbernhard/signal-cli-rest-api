@@ -50,3 +50,27 @@ func TestMonospace(t *testing.T) {
 	expectMessageEqual(t, message, "This is a monospace and a bold message")
 	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"10:9:MONOSPACE", "26:4:BOLD"})
 }
+
+func TestMulticharacterEmoji(t *testing.T) {
+	message, signalCliFormatStrings := ParseMarkdownMessage("👋abcdefg")
+	expectMessageEqual(t, message, "👋abcdefg")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
+}
+
+func TestMulticharacterEmojiWithBoldText(t *testing.T) {
+	message, signalCliFormatStrings := ParseMarkdownMessage("👋**abcdefg**")
+	expectMessageEqual(t, message, "👋abcdefg")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"2:8:BOLD"})
+}
+
+func TestMultipleMulticharacterEmoji(t *testing.T) {
+	message, signalCliFormatStrings := ParseMarkdownMessage("👋🏾abcdefg")
+	expectMessageEqual(t, message, "👋🏾abcdefg")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
+}
+
+func TestMultipleMulticharacterEmojiWithBoldText(t *testing.T) {
+	message, signalCliFormatStrings := ParseMarkdownMessage("👋🏾**abcdefg**")
+	expectMessageEqual(t, message, "👋🏾abcdefg")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"4:9:BOLD"})
+}
