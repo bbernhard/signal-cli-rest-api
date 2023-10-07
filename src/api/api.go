@@ -1623,3 +1623,27 @@ func (a *Api) GetTrustMode(c *gin.Context) {
 
 	c.JSON(200, trustMode)
 }
+
+// @Summary Send a synchronization message with the local contacts list to all linked devices.
+// @Tags Contacts
+// @Description Send a synchronization message with the local contacts list to all linked devices. This command should only be used if this is the primary device.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/contacts{number}/sync [post]
+func (a *Api) SendContacts(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	err := a.signalClient.SendContacts(number)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}

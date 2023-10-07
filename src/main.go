@@ -242,6 +242,7 @@ func main() {
 		contacts := v1.Group("/contacts")
 		{
 			contacts.PUT(":number", api.UpdateContact)
+			contacts.POST(":number/sync", api.SendContacts)
 		}
 	}
 
