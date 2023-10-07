@@ -109,7 +109,7 @@ type SendMessageV2 struct {
 	QuoteAuthor       *string                 `json:"quote_author"`
 	QuoteMessage      *string                 `json:"quote_message"`
 	QuoteMentions     []client.MessageMention `json:"quote_mentions"`
-	TextMode          *string                 `json:"text_mode"`
+	TextMode          *string                 `json:"text_mode" enums:"normal,styled"`
 }
 
 type TypingIndicatorRequest struct {
@@ -341,7 +341,7 @@ func (a *Api) Send(c *gin.Context) {
 
 // @Summary Send a signal message.
 // @Tags Messages
-// @Description Send a signal message
+// @Description Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: *italic text*, **bold text**, ~strikethrough text~.
 // @Accept  json
 // @Produce  json
 // @Success 201 {object} SendMessageResponse
