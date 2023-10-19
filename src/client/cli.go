@@ -23,6 +23,32 @@ func NewCliClient(signalCliMode SignalCliMode, signalCliApiConfig *utils.SignalC
 	}
 }
 
+func stripInfoAndWarnMessages(input string) (string, string, string) {
+	output := ""
+	infoMessages := ""
+	warnMessages := ""
+	lines := strings.Split(input, "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "INFO") {
+			if infoMessages != "" {
+				infoMessages += "\n"
+			}
+			infoMessages += line
+		} else if strings.HasPrefix(line, "WARN") {
+			if warnMessages != "" {
+				warnMessages += "\n"
+			}
+			warnMessages += line
+		} else {
+			if output != "" {
+				output += "\n"
+			}
+			output += line
+		}
+	}
+	return output, infoMessages, warnMessages
+}
+
 func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, error) {
 	containerId, err := getContainerId()
 
@@ -116,7 +142,20 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 		combinedOutput := stdoutBuffer.String() + stderrBuffer.String()
 		log.Debug("signal-cli output (stdout): ", stdoutBuffer.String())
 		log.Debug("signal-cli output (stderr): ", stderrBuffer.String())
-		return combinedOutput, nil
+		strippedOutput, infoMessages, warnMessages := stripInfoAndWarnMessages(combinedOutput)
+		for _, line := range strings.Split(infoMessages, "\n") {
+			if line != "" {
+				log.Info(line)
+			}
+		}
+
+		for _, line := range strings.Split(warnMessages, "\n") {
+			if line != "" {
+				log.Warn(line)
+			}
+		}
+
+		return strippedOutput, nil
 	} else {
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
