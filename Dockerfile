@@ -4,7 +4,7 @@ ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.12.2+2
 
 ARG SWAG_VERSION=1.6.7
 ARG GRAALVM_JAVA_VERSION=17
-ARG GRAALVM_VERSION=17.0.8
+ARG GRAALVM_VERSION=22.3.0
 
 ARG BUILD_VERSION_ARG=unset
 
@@ -61,9 +61,9 @@ RUN cd /tmp/ \
 
 RUN arch="$(uname -m)"; \
         case "$arch" in \
-            aarch64) wget -nv https://download.oracle.com/graalvm/${GRAALVM_JAVA_VERSION}/archive/graalvm-jdk-${GRAALVM_VERSION}_linux-aarch64_bin.tar.gz -O /tmp/gvm.tar.gz ;; \
+            aarch64) wget -nv https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-aarch64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \
             armv7l) echo "GRAALVM doesn't support 32bit" ;; \
-            x86_64) wget -nv https://download.oracle.com/graalvm/${GRAALVM_JAVA_VERSION}/archive/graalvm-jdk-${GRAALVM_VERSION}_linux-x64_bin.tar.gz -O /tmp/gvm.tar.gz ;; \ 
+            x86_64) wget -nv https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-amd64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \
 			*) echo "Invalid architecture" ;; \
         esac;
 
@@ -73,7 +73,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& cd signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& git checkout -q v${SIGNAL_CLI_VERSION} \
 		&& cd /tmp && mkdir -p /tmp/graalvm && tar xf gvm.tar.gz -C /tmp/graalvm --strip-components=1 \
-		&& export JAVA_HOME=/tmp/graalvm \
+		&& export GRAALVM_HOME=/tmp/graalvm \
 		&& export PATH=/tmp/graalvm/bin:$PATH \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& sed -i 's/Signal-Android\/5.22.3/Signal-Android\/5.51.7/g' src/main/java/org/asamk/signal/BaseConfig.java \
@@ -84,7 +84,9 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& cp signal-cli-${SIGNAL_CLI_VERSION}-source/build/install/signal-cli/lib/libsignal-client-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal-client.jar \
 		&& zip -qu libsignal-client.jar libsignal_jni.so \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
+		&& /tmp/graalvm/bin/gu install native-image \
 		&& git apply /tmp/signal-cli-native.patch \
+		&& chmod +x /tmp/graalvm/bin/gu \
 		&& ./gradlew -q nativeCompile; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
 		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64 - many thanks to @morph027" \
