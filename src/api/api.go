@@ -109,7 +109,7 @@ type SendMessageV2 struct {
 	QuoteAuthor       *string                 `json:"quote_author"`
 	QuoteMessage      *string                 `json:"quote_message"`
 	QuoteMentions     []client.MessageMention `json:"quote_mentions"`
-	TextMode          *string                 `json:"text_mode"`
+	TextMode          *string                 `json:"text_mode" enums:"normal,styled"`
 }
 
 type TypingIndicatorRequest struct {
@@ -341,7 +341,7 @@ func (a *Api) Send(c *gin.Context) {
 
 // @Summary Send a signal message.
 // @Tags Messages
-// @Description Send a signal message
+// @Description Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: *italic text*, **bold text**, ~strikethrough text~.
 // @Accept  json
 // @Produce  json
 // @Success 201 {object} SendMessageResponse
@@ -1622,4 +1622,28 @@ func (a *Api) GetTrustMode(c *gin.Context) {
 	}
 
 	c.JSON(200, trustMode)
+}
+
+// @Summary Send a synchronization message with the local contacts list to all linked devices.
+// @Tags Contacts
+// @Description Send a synchronization message with the local contacts list to all linked devices. This command should only be used if this is the primary device.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/contacts{number}/sync [post]
+func (a *Api) SendContacts(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	err := a.signalClient.SendContacts(number)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }

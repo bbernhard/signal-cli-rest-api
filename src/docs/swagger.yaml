@@ -154,6 +154,9 @@ definitions:
       sticker:
         type: string
       text_mode:
+        enum:
+        - normal
+        - styled
         type: string
     type: object
   api.TrustIdentityRequest:
@@ -495,6 +498,28 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.
+      tags:
+      - Contacts
+  /v1/contacts{number}/sync:
+    post:
+      consumes:
+      - application/json
+      description: Send a synchronization message with the local contacts list to all linked devices. This command should only be used if this is the primary device.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Send a synchronization message with the local contacts list to all linked devices.
       tags:
       - Contacts
   /v1/devices/{number}:
@@ -1317,7 +1342,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a signal message
+      description: 'Send a signal message. Set the text_mode to ''styled'' in case you want to add formatting to your text message. Styling Options: *italic text*, **bold text**, ~strikethrough text~.'
       parameters:
       - description: Input Data
         in: body

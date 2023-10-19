@@ -333,6 +333,39 @@ var doc = `{
                 }
             }
         },
+        "/v1/contacts{number}/sync": {
+            "post": {
+                "description": "Send a synchronization message with the local contacts list to all linked devices. This command should only be used if this is the primary device.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Send a synchronization message with the local contacts list to all linked devices.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/devices/{number}": {
             "post": {
                 "description": "Links another device to this device. Only works, if this is the master device.",
@@ -1566,7 +1599,7 @@ var doc = `{
         },
         "/v2/send": {
             "post": {
-                "description": "Send a signal message",
+                "description": "Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: *italic text*, **bold text**, ~strikethrough text~.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1839,7 +1872,11 @@ var doc = `{
                     "type": "string"
                 },
                 "text_mode": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "normal",
+                        "styled"
+                    ]
                 }
             }
         },

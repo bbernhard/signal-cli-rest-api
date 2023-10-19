@@ -1582,6 +1582,21 @@ func (s *SignalClient) SearchForNumbers(number string, numbers []string) ([]Sear
 	return searchResultEntries, err
 }
 
+func (s* SignalClient) SendContacts(number string) error {
+	var err error
+	if s.signalCliMode == JsonRpc {
+		jsonRpc2Client, err := s.getJsonRpc2Client(number)
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("sendContacts", nil)
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "sendContacts"}
+		_, err = s.cliClient.Execute(true, cmd, "")
+	}
+	return err
+}
+
 func (s *SignalClient) UpdateContact(number string, recipient string, name *string, expirationInSeconds *int) error {
 	var err error
 	if s.signalCliMode == JsonRpc {
