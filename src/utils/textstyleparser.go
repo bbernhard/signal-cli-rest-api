@@ -10,6 +10,7 @@ const (
 	Italic        = "ITALIC"
 	Monospace     = "MONOSPACE"
 	Strikethrough = "STRIKETHROUGH"
+	Spoiler       = "SPOILER"
 )
 
 const (
@@ -23,6 +24,10 @@ const (
 	MonoSpaceEnd       = 7
 	StrikethroughBegin = 8
 	StrikethroughEnd   = 9
+	SpoilerBegin1      = 10
+	SpoilerBegin       = 11
+	SpoilerEnd1        = 12
+	SpoilerEnd2        = 13
 )
 
 func getUtf16CharacterCount(s string) int {
@@ -76,6 +81,20 @@ func ParseMarkdownMessage(message string) (string, []string) {
 				state = BoldEnd2
 			}
 			numOfControlChars += 1
+		} else if v == '|' {
+			if state == None {
+				state = SpoilerBegin1
+			} else if state == SpoilerBegin1 && lastChar == "|" {
+				state = SpoilerBegin
+				textFormat = Spoiler
+				textFormatBegin = i - numOfControlChars + additionalCharacterCount
+				textFormatLength = 0
+			} else if state == SpoilerBegin {
+				state = SpoilerEnd1
+			} else if state == SpoilerEnd1 && lastChar == "|" {
+				state = SpoilerEnd2
+			}
+			numOfControlChars += 1
 		} else if v == '`' {
 			if state == None {
 				state = MonoSpaceBegin
@@ -103,7 +122,7 @@ func ParseMarkdownMessage(message string) (string, []string) {
 		}
 		lastChar = string(v)
 
-		if state == ItalicEnd || state == BoldEnd2 || state == MonoSpaceEnd || state == StrikethroughEnd {
+		if state == ItalicEnd || state == BoldEnd2 || state == MonoSpaceEnd || state == StrikethroughEnd || state == SpoilerEnd2 {
 			signalCliFormatStrings = append(signalCliFormatStrings, strconv.Itoa(textFormatBegin)+":"+strconv.Itoa(textFormatLength + additionalCharacterCount)+":"+textFormat)
 			state = None
 			textFormatBegin = 0
