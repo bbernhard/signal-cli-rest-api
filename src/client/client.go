@@ -1299,7 +1299,7 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	return err
 }
 
-func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *string, groupDescription *string) error {
+func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *string, groupDescription *string, groupName *string) error {
 	var err error
 	var avatarTmpPath string = ""
 	if base64Avatar != nil {
@@ -1342,6 +1342,7 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 			GroupId     string `json:"groupId"`
 			Avatar      string `json:"avatar,omitempty"`
 			Description *string `json:"description,omitempty"`
+			Name        *string `json:"name,omitempty"`
 		}
 		request := Request{GroupId: groupId}
 
@@ -1350,6 +1351,7 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 		}
 
 		request.Description = groupDescription
+		request.Name = groupName
 
 
 		jsonRpc2Client, err := s.getJsonRpc2Client(number)
@@ -1366,6 +1368,11 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 		if groupDescription != nil {
 			cmd = append(cmd, []string{"-d", *groupDescription}...)
 		}
+
+		if groupName != nil {
+			cmd = append(cmd, []string{"-n", *groupName}...)
+		}
+
 		_, err = s.cliClient.Execute(true, cmd, "")
 	}
 

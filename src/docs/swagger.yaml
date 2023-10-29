@@ -206,6 +206,8 @@ definitions:
         type: string
       description:
         type: string
+      name:
+        type: string
     type: object
   api.UpdateProfileRequest:
     properties:
