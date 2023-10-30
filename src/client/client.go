@@ -526,7 +526,6 @@ func (s *SignalClient) About() About {
 }
 
 func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha string) error {
-	var err error
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			UseVoice      bool   `json:"voice,omitempty"`
@@ -548,6 +547,7 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 			return err
 		}
 		_, err = jsonRpc2Client.getRaw("register", nil, request)
+		return err
 	} else {
 		command := []string{"--config", s.signalCliConfig, "-a", number, "register"}
 
@@ -559,9 +559,9 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 			command = append(command, []string{"--captcha", captcha}...)
 		}
 
-		_, err = s.cliClient.Execute(true, command, "")
+		_, err := s.cliClient.Execute(true, command, "")
+		return err
 	}
-	return err
 }
 
 func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool, deleteLocalData bool) error {
@@ -591,17 +591,33 @@ func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool, delet
 
 func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin string) error {
 	if s.signalCliMode == JsonRpc {
-		return errors.New(endpointNotSupportedInJsonRpcMode)
-	}
+		type Request struct {
+			VerificationCode      string   `json:"verificationCode,omitempty"`
+			Account               string   `json:"account,omitempty"`
+			Pin                   string   `json:"pin,omitempty"`
+		}
+		request := Request{Account: number, VerificationCode: token}
 
-	cmd := []string{"--config", s.signalCliConfig, "-a", number, "verify", token}
-	if pin != "" {
-		cmd = append(cmd, "--pin")
-		cmd = append(cmd, pin)
-	}
+		if pin != "" {
+			request.Pin = pin
+		}
 
-	_, err := s.cliClient.Execute(true, cmd, "")
-	return err
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("verify", nil, request)
+		return err
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "verify", token}
+		if pin != "" {
+			cmd = append(cmd, "--pin")
+			cmd = append(cmd, pin)
+		}
+
+		_, err := s.cliClient.Execute(true, cmd, "")
+		return err
+	}
 }
 
 func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (*SendResponse, error) {
