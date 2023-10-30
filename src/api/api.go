@@ -415,7 +415,7 @@ func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan s
 					}
 
 					if response.Account == number {
-						err = ws.WriteMessage(websocket.TextMessage, []byte(data)) //TODO split up data in different channels
+						err = ws.WriteMessage(websocket.TextMessage, []byte(data))
 						if err != nil {
 							if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 								log.Error("Couldn't write message: " + err.Error())
