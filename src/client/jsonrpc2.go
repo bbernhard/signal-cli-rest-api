@@ -59,7 +59,7 @@ func (r *JsonRpc2Client) Dial(address string) error {
 	return nil
 }
 
-func (r *JsonRpc2Client) getRaw(command string, args interface{}) (string, error) {
+func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{}) (string, error) {
 	type Request struct {
 		JsonRpc string      `json:"jsonrpc"`
 		Method  string      `json:"method"`
@@ -94,6 +94,13 @@ func (r *JsonRpc2Client) getRaw(command string, args interface{}) (string, error
 
 	if trustModeStr != "" {
 		fullCommandBytes, err = sjson.SetBytes(fullCommandBytes, "params.trustNewIdentities", trustModeStr)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if account != nil {
+		fullCommandBytes, err = sjson.SetBytes(fullCommandBytes, "params.account", account)
 		if err != nil {
 			return "", err
 		}
