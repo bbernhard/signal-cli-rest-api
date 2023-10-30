@@ -1,16 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/bbernhard/signal-cli-rest-api/utils"
-	"github.com/gabriel-vasile/mimetype"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -18,7 +14,7 @@ const supervisorctlConfigTemplate = `
 [program:%s]
 environment=JAVA_HOME=/opt/java/openjdk
 process_name=%s
-command=bash -c "nc -l -p %d <%s | signal-cli --output=json -u %s --config %s jsonRpc >%s"
+command=bash -c "nc -l -p %d <%s | signal-cli --output=json --config %s jsonRpc >%s"
 autostart=true
 autorestart=true
 startretries=10
@@ -32,37 +28,6 @@ stdout_logfile_backups=10
 numprocs=1
 `
 
-func isSignalCliLinkedNumberConfigFile(filename string) (bool, error) {
-	fileExtension := filepath.Ext(filename)
-	if fileExtension != "" {
-		return false, nil
-	}
-
-	mimetype, err := mimetype.DetectFile(filename)
-	if err != nil {
-		return false, err
-	}
-	if mimetype.String() == "application/json" {
-		return true, nil
-	}
-	return false, nil
-}
-
-func getUsernameFromLinkedNumberConfigFile(filename string) (string, error) {
-	type LinkedNumberConfigFile struct {
-		Username string `json:"username"`
-	}
-	bytes, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-	var linkedNumberConfigFile LinkedNumberConfigFile
-	err = json.Unmarshal(bytes, &linkedNumberConfigFile)
-	if err != nil {
-		return "", err
-	}
-	return linkedNumberConfigFile.Username, nil
-}
 func main() {
 	signalCliConfigDir := "/home/.local/share/signal-cli/"
 	signalCliConfigDirEnv := utils.GetEnv("SIGNAL_CLI_CONFIG_DIR", "")
@@ -73,81 +38,47 @@ func main() {
 		}
 	}
 
-	signalCliConfigDataDir := signalCliConfigDir + "data"
-
 	jsonRpc2ClientConfig := utils.NewJsonRpc2ClientConfig()
 
-	var tcpBasePort int64 = 6000
-	fifoBasePathName := "/tmp/sigsocket"
-	var ctr int64 = 0
+	var tcpPort int64 = 6001
+	fifoPathname := "/tmp/sigsocket1"
 
-	items, err := ioutil.ReadDir(signalCliConfigDataDir)
+	jsonRpc2ClientConfig.AddEntry(utils.MULTI_ACCOUNT_NUMBER, utils.JsonRpc2ClientConfigEntry{TcpPort: tcpPort, FifoPathname: fifoPathname})
+
+	os.Remove(fifoPathname) //remove any existing named pipe
+
+	_, err := exec.Command("mkfifo", fifoPathname).Output()
 	if err != nil {
-		log.Fatal("Couldn't read contents of ", signalCliConfigDataDir, ". Is your phone number properly registered? Please be aware that registering a phone number only works in normal/native mode and is currently not supported in json-rpc mode!")
+		log.Fatal("Couldn't create fifo with name ", fifoPathname, ": ", err.Error())
 	}
-	for _, item := range items {
-		if item.IsDir() {
-			continue
-		}
-		filename := filepath.Base(item.Name())
-		isSignalCliLinkedNumberConfigFile, err := isSignalCliLinkedNumberConfigFile(signalCliConfigDataDir + "/" + filename)
-		if err != nil {
-			log.Error("Couldn't determine whether file ", filename, " is a signal-cli config file: ", err.Error())
-			continue
-		}
 
-		if strings.HasPrefix(filename, "+") || isSignalCliLinkedNumberConfigFile {
-			var number string = ""
-			if utils.IsPhoneNumber(filename) {
-				number = filename
-			} else if isSignalCliLinkedNumberConfigFile {
-				number, err = getUsernameFromLinkedNumberConfigFile(signalCliConfigDataDir + "/" + filename)
-				if err != nil {
-					log.Debug("Skipping ", filename, " as it is not a valid signal-cli config file: ", err.Error())
-					continue
-				}
-			} else {
-				log.Error("Skipping ", filename, " as it is not a valid phone number!")
-				continue
-			}
+	uid := utils.GetEnv("SIGNAL_CLI_UID", "1000")
+	gid := utils.GetEnv("SIGNAL_CLI_GID", "1000")
+	_, err = exec.Command("chown", uid+":"+gid, fifoPathname).Output()
+	if err != nil {
+		log.Fatal("Couldn't change permissions of fifo with name ", fifoPathname, ": ", err.Error())
+	}
 
-			fifoPathname := fifoBasePathName + strconv.FormatInt(ctr, 10)
-			tcpPort := tcpBasePort + ctr
-			jsonRpc2ClientConfig.AddEntry(number, utils.JsonRpc2ClientConfigEntry{TcpPort: tcpPort, FifoPathname: fifoPathname})
-			ctr += 1
+	supervisorctlProgramName := "signal-cli-json-rpc-1"
+	supervisorctlLogFolder := "/var/log/" + supervisorctlProgramName
+	_, err = exec.Command("mkdir", "-p", supervisorctlLogFolder).Output()
+	if err != nil {
+		log.Fatal("Couldn't create log folder ", supervisorctlLogFolder, ": ", err.Error())
+	}
 
-			os.Remove(fifoPathname) //remove any existing named pipe
+	log.Info("Updated jsonrpc2.yml")
 
-			_, err = exec.Command("mkfifo", fifoPathname).Output()
-			if err != nil {
-				log.Fatal("Couldn't create fifo with name ", fifoPathname, ": ", err.Error())
-			}
+	//write supervisorctl config
+	supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-1.conf"
 
-			uid := utils.GetEnv("SIGNAL_CLI_UID", "1000")
-			gid := utils.GetEnv("SIGNAL_CLI_GID", "1000")
-			_, err = exec.Command("chown", uid+":"+gid, fifoPathname).Output()
-			if err != nil {
-				log.Fatal("Couldn't change permissions of fifo with name ", fifoPathname, ": ", err.Error())
-			}
 
-			supervisorctlProgramName := "signal-cli-json-rpc-" + strconv.FormatInt(ctr, 10)
-			supervisorctlLogFolder := "/var/log/" + supervisorctlProgramName
-			_, err = exec.Command("mkdir", "-p", supervisorctlLogFolder).Output()
-			if err != nil {
-				log.Fatal("Couldn't create log folder ", supervisorctlLogFolder, ": ", err.Error())
-			}
+	supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
+		tcpPort, fifoPathname, signalCliConfigDir, fifoPathname, supervisorctlProgramName, supervisorctlProgramName)
+	
 
-			log.Info("Found number ", number, " and added it to jsonrpc2.yml")
-
-			//write supervisorctl config
-			supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-" + strconv.FormatInt(ctr, 10) + ".conf"
-			supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
-				tcpPort, fifoPathname, number, signalCliConfigDir, fifoPathname, supervisorctlProgramName, supervisorctlProgramName)
-			err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
-			if err != nil {
-				log.Fatal("Couldn't write ", supervisorctlConfigFilename, ": ", err.Error())
-			}
-		}
+	err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
+	if err != nil {
+		log.Fatal("Couldn't write ", supervisorctlConfigFilename, ": ", err.Error())
 	}
 
 	// write jsonrpc.yml config file

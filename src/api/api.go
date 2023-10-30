@@ -384,7 +384,7 @@ func (a *Api) SendV2(c *gin.Context) {
 }
 
 func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan struct{}) {
-	receiveChannel, err := a.signalClient.GetReceiveChannel(number)
+	receiveChannel, err := a.signalClient.GetReceiveChannel()
 	if err != nil {
 		log.Error("Couldn't get receive channel: ", err.Error())
 		return
@@ -404,12 +404,24 @@ func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan s
 
 			if err == nil {
 				if data != "" {
-					err = ws.WriteMessage(websocket.TextMessage, []byte(data))
+					type Response struct {
+						Account string `json:"account"`
+					}
+					var response Response
+					err = json.Unmarshal([]byte(data), &response)
 					if err != nil {
-						if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-							log.Error("Couldn't write message: " + err.Error())
+						log.Error("Couldn't parse message ", data, ":", err.Error())
+						continue
+					}
+
+					if response.Account == number {
+						err = ws.WriteMessage(websocket.TextMessage, []byte(data)) //TODO split up data in different channels
+						if err != nil {
+							if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+								log.Error("Couldn't write message: " + err.Error())
+							}
+							return
 						}
-						return
 					}
 				}
 			} else {

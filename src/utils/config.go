@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 )
 
+const MULTI_ACCOUNT_NUMBER string = "<multi-account>"
+
 type JsonRpc2ClientConfigEntry struct {
 	TcpPort      int64  `yaml:"tcp_port"`
 	FifoPathname string `yaml:"fifo_pathname"`
