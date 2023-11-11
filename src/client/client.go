@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -1053,7 +1054,58 @@ func (s *SignalClient) DeleteGroup(number string, groupId string) error {
 
 func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int) ([]byte, error) {
 	if s.signalCliMode == JsonRpc {
-		return []byte{}, errors.New(endpointNotSupportedInJsonRpcMode)
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return []byte{}, err
+		}
+
+		type StartRequest struct{}
+		type Response struct {
+			DeviceLinkUri string `json:"deviceLinkUri"`
+		}
+
+		result, err := jsonRpc2Client.getRaw("startLink", nil, &StartRequest{})
+		if err != nil {
+			return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
+		}
+
+		var resp Response
+		err = json.Unmarshal([]byte(result), &resp)
+		if err != nil {
+			return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
+		}
+
+		q, err := qrcode.NewWithForcedVersion(string(resp.DeviceLinkUri), qrCodeVersion, qrcode.Highest)
+		if err != nil {
+			return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
+		}
+
+		var png []byte
+		png, err = q.PNG(256)
+		if err != nil {
+			return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
+		}
+
+		go (func() {
+			type FinishRequest struct {
+				DeviceLinkUri string `json:"deviceLinkUri"`
+				DeviceName    string `json:"deviceName"`
+			}
+
+			req := FinishRequest{
+				DeviceLinkUri: resp.DeviceLinkUri,
+				DeviceName:    deviceName,
+			}
+
+			result, err := jsonRpc2Client.getRaw("finishLink", nil, &req)
+			if err != nil {
+				log.Debug("Error linking device: ", err.Error())
+				return
+			}
+			log.Debug("Linking device result: ", result)
+		})()
+
+		return png, nil
 	}
 	command := []string{"--config", s.signalCliConfig, "link", "-n", deviceName}
 

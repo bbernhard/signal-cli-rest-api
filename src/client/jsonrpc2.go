@@ -32,17 +32,18 @@ type JsonRpc2ReceivedMessage struct {
 
 type JsonRpc2Client struct {
 	conn                     net.Conn
-	receivedMessageResponses chan JsonRpc2MessageResponse
+	receivedResponsesById    map[string]chan JsonRpc2MessageResponse
 	receivedMessages         chan JsonRpc2ReceivedMessage
 	lastTimeErrorMessageSent time.Time
 	signalCliApiConfig       *utils.SignalCliApiConfig
-	number					 string
+	number                   string
 }
 
 func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string) *JsonRpc2Client {
 	return &JsonRpc2Client{
-		signalCliApiConfig: signalCliApiConfig,
-		number: number,
+		signalCliApiConfig:       signalCliApiConfig,
+		number:                   number,
+		receivedResponsesById:    make(map[string]chan JsonRpc2MessageResponse),
 	}
 }
 
@@ -53,7 +54,6 @@ func (r *JsonRpc2Client) Dial(address string) error {
 		return err
 	}
 
-	r.receivedMessageResponses = make(chan JsonRpc2MessageResponse)
 	r.receivedMessages = make(chan JsonRpc2ReceivedMessage)
 
 	return nil
@@ -113,13 +113,12 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 		return "", err
 	}
 
+	responseChan := make(chan JsonRpc2MessageResponse)
+	r.receivedResponsesById[u.String()] = responseChan
+
 	var resp JsonRpc2MessageResponse
-	for {
-		resp = <-r.receivedMessageResponses
-		if resp.Id == u.String() {
-			break
-		}
-	}
+  resp = <-responseChan
+  delete(r.receivedResponsesById, u.String())
 
 	if resp.Err.Code != 0 {
 		return "", errors.New(resp.Err.Message)
@@ -157,7 +156,9 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 		err = json.Unmarshal([]byte(str), &resp2)
 		if err == nil {
 			if resp2.Id != "" {
-				r.receivedMessageResponses <- resp2
+				if responseChan, ok := r.receivedResponsesById[resp2.Id]; ok {
+					responseChan <- resp2
+				}
 			}
 		} else {
 			log.Error("Received unparsable message: ", str)
