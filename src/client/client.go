@@ -1103,6 +1103,7 @@ func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int) ([]by
 				return
 			}
 			log.Debug("Linking device result: ", result)
+			s.signalCliApiConfig.Load(s.signalCliApiConfigPath)
 		})()
 
 		return png, nil
