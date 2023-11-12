@@ -28,6 +28,9 @@ import (
 // @tag.name Devices
 // @tag.description Register and link Devices.
 
+// @tag.name Accounts
+// @tag.description List registered and linked accounts
+
 // @tag.name Groups
 // @tag.description Create, List and Delete Signal Groups.
 
@@ -196,6 +199,11 @@ func main() {
 		link := v1.Group("qrcodelink")
 		{
 			link.GET("", api.GetQrCodeLink)
+		}
+
+		accounts := v1.Group("accounts")
+		{
+			accounts.GET("", api.GetAccounts)
 		}
 
 		devices := v1.Group("devices")

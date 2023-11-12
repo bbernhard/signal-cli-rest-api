@@ -894,6 +894,23 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 	c.Data(200, "image/png", png)
 }
 
+// @Summary List all accounts
+// @Tags Accounts
+// @Description Lists all of the accounts linked or registered
+// @Produce json
+// @Success 200 {object} []string
+// @Failure 400 {object} Error
+// @Router /v1/accounts [get]
+func (a *Api) GetAccounts(c *gin.Context) {
+	devices, err := a.signalClient.GetAccounts()
+	if err != nil {
+		c.JSON(500, Error{Msg: "Couldn't get list of accounts: " + err.Error()})
+		return
+	}
+
+	c.JSON(200, devices)
+}
+
 // @Summary List all attachments.
 // @Tags Attachments
 // @Description List all downloaded attachments

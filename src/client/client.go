@@ -1076,6 +1076,45 @@ func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int) ([]by
 	return png, nil
 }
 
+func (s *SignalClient) GetAccounts() ([]string, error) {
+	accounts := make([]string, 0)
+	var rawData string
+	var err error
+
+	if s.signalCliMode == JsonRpc {
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return accounts, err
+		}
+		rawData, err = jsonRpc2Client.getRaw("listAccounts", nil, nil)
+		if err != nil {
+			return accounts, err
+		}
+
+	} else {
+		rawData, err = s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "--output", "json", "listAccounts"}, "")
+		if err != nil {
+			return accounts, err
+		}
+	}
+
+	type Account struct {
+		Number string `json:"number"`
+	}
+	accountObjs := []Account{}
+
+	err = json.Unmarshal([]byte(rawData), &accountObjs)
+	if err != nil {
+		return accounts, err
+	}
+
+	for _, account := range accountObjs {
+		accounts = append(accounts, account.Number)
+	}
+
+	return accounts, nil
+}
+
 func (s *SignalClient) GetAttachments() ([]string, error) {
 	files := []string{}
 

@@ -311,6 +311,25 @@ paths:
       summary: Lists general information about the API
       tags:
       - General
+  /v1/accounts:
+    get:
+      description: Lists all of the devices linked or registered
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: List all accounts
+      tags:
+      - Accounts
   /v1/attachments:
     get:
       description: List all downloaded attachments
@@ -1372,6 +1391,8 @@ tags:
   name: General
 - description: Register and link Devices.
   name: Devices
+- description: List registered and linked accounts
+  name: Accounts
 - description: Create, List and Delete Signal Groups.
   name: Groups
 - description: Send and Receive Signal Messages.
