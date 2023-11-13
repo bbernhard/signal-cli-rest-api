@@ -45,6 +45,35 @@ var doc = `{
                 }
             }
         },
+        "/v1/accounts": {
+            "get": {
+                "description": "Lists all of the devices linked or registered",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "List all accounts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/attachments": {
             "get": {
                 "description": "List all downloaded attachments",
@@ -1951,6 +1980,9 @@ var doc = `{
                 },
                 "description": {
                     "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },
@@ -2089,6 +2121,10 @@ var doc = `{
         {
             "description": "Register and link Devices.",
             "name": "Devices"
+        },
+        {
+            "description": "List registered and linked accounts",
+            "name": "Accounts"
         },
         {
             "description": "Create, List and Delete Signal Groups.",
