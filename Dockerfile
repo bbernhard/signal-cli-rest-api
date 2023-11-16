@@ -145,7 +145,7 @@ RUN cd /tmp/signal-cli-rest-api-src && swag init && go test ./client -v && go bu
 RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper 
 
 # Start a fresh container for release container
-FROM eclipse-temurin:17-focal
+FROM eclipse-temurin:17-jre-focal
 
 ENV GIN_MODE=release
 
