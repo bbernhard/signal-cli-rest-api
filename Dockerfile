@@ -8,7 +8,7 @@ ARG GRAALVM_VERSION=22.3.3
 
 ARG BUILD_VERSION_ARG=unset
 
-FROM golang:1.20-bullseye AS buildcontainer
+FROM golang:1.21-bullseye AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
 ARG LIBSIGNAL_CLIENT_VERSION
