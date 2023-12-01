@@ -1797,3 +1797,23 @@ func (s *SignalClient) GetTrustMode(number string) utils.SignalCliTrustMode {
 	}
 	return trustMode
 }
+
+func (s *SignalClient) SubmitRateLimitChallenge(number string, challengeToken string, captcha string) error {
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Challenge string `json:"challenge"`
+			Captcha string `json:"captcha"`
+		}
+		request := Request{Challenge: challengeToken, Captcha: captcha}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("submitRateLimitChallenge", &number, request)
+		return err
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "submitRateLimitChallenge", "--challenge", challengeToken, "--captcha", captcha}
+		_, err := s.cliClient.Execute(true, cmd, "")
+		return err
+	}
+}

@@ -204,6 +204,7 @@ func main() {
 		accounts := v1.Group("accounts")
 		{
 			accounts.GET("", api.GetAccounts)
+			accounts.POST(":number/rate-limit-challenge", api.SubmitRateLimitChallenge)
 		}
 
 		devices := v1.Group("devices")

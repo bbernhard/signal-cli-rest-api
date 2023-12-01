@@ -31,7 +31,7 @@
         },
         "/v1/accounts": {
             "get": {
-                "description": "Lists all of the devices linked or registered",
+                "description": "Lists all of the accounts linked or registered",
                 "produces": [
                     "application/json"
                 ],
@@ -49,6 +49,48 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/accounts/{number}/rate-limit-challenge": {
+            "post": {
+                "description": "When running into rate limits, sometimes the limit can be lifted, by solving a CAPTCHA. To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html. The \"challenge_token\" is the token from the failed send attempt. The \"captcha\" is the captcha result, starting with signalcaptcha://",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Lift rate limit restrictions by solving a captcha.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.RateLimitChallengeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1760,6 +1802,19 @@
             "properties": {
                 "Level": {
                     "type": "string"
+                }
+            }
+        },
+        "api.RateLimitChallengeRequest": {
+            "type": "object",
+            "properties": {
+                "captcha": {
+                    "type": "string",
+                    "example": "signalcaptcha://{captcha value}"
+                },
+                "challenge_token": {
+                    "type": "string",
+                    "example": "\u003cchallenge token\u003e"
                 }
             }
         },

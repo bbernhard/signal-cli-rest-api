@@ -162,6 +162,11 @@ type AddDeviceRequest struct {
 	Uri string `json:"uri"`
 }
 
+type RateLimitChallengeRequest struct {
+	ChallengeToken string `json:"challenge_token" example:"<challenge token>"`
+	Captcha string `json:"captcha" example:"signalcaptcha://{captcha value}"`
+}
+
 type Api struct {
 	signalClient *client.SignalClient
 }
@@ -1671,6 +1676,38 @@ func (a *Api) SendContacts(c *gin.Context) {
 	}
 
 	err := a.signalClient.SendContacts(number)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Lift rate limit restrictions by solving a captcha.
+// @Tags Accounts
+// @Description When running into rate limits, sometimes the limit can be lifted, by solving a CAPTCHA. To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html. The "challenge_token" is the token from the failed send attempt. The "captcha" is the captcha result, starting with signalcaptcha://
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Param data body RateLimitChallengeRequest true "Request"
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/accounts/{number}/rate-limit-challenge [post]
+func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req RateLimitChallengeRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	err = a.signalClient.SubmitRateLimitChallenge(number, req.ChallengeToken, req.Captcha)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
