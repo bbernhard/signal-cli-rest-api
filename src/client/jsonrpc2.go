@@ -33,7 +33,7 @@ type JsonRpc2ReceivedMessage struct {
 type JsonRpc2Client struct {
 	conn                     net.Conn
 	receivedResponsesById    map[string]chan JsonRpc2MessageResponse
-	receivedMessages         chan JsonRpc2ReceivedMessage
+	receivedMessagesChannels map[string]chan JsonRpc2ReceivedMessage
 	lastTimeErrorMessageSent time.Time
 	signalCliApiConfig       *utils.SignalCliApiConfig
 	number                   string
@@ -44,6 +44,7 @@ func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number stri
 		signalCliApiConfig:       signalCliApiConfig,
 		number:                   number,
 		receivedResponsesById:    make(map[string]chan JsonRpc2MessageResponse),
+		receivedMessagesChannels: make(map[string]chan JsonRpc2ReceivedMessage),
 	}
 }
 
@@ -53,8 +54,6 @@ func (r *JsonRpc2Client) Dial(address string) error {
 	if err != nil {
 		return err
 	}
-
-	r.receivedMessages = make(chan JsonRpc2ReceivedMessage)
 
 	return nil
 }
@@ -143,13 +142,15 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 		var resp1 JsonRpc2ReceivedMessage
 		json.Unmarshal([]byte(str), &resp1)
 		if resp1.Method == "receive" {
-			select {
-			case r.receivedMessages <- resp1:
-				log.Debug("Message sent to golang channel")
-			default:
-				log.Debug("Couldn't send message to golang channel, as there's no receiver")
+			for _, c := range r.receivedMessagesChannels {
+				select {
+				case c <- resp1:
+					log.Debug("Message sent to golang channel")
+				default:
+					log.Debug("Couldn't send message to golang channel, as there's no receiver")
+				}
+				continue
 			}
-			continue
 		}
 
 		var resp2 JsonRpc2MessageResponse
@@ -166,6 +167,19 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 	}
 }
 
-func (r *JsonRpc2Client) GetReceiveChannel() chan JsonRpc2ReceivedMessage {
-	return r.receivedMessages
+func (r *JsonRpc2Client) GetReceiveChannel() (chan JsonRpc2ReceivedMessage, string, error) {
+	c := make(chan JsonRpc2ReceivedMessage)
+
+	channelUuid, err := uuid.NewV4()
+	if err != nil {
+		return c, "", err
+	}
+
+	r.receivedMessagesChannels[channelUuid.String()] = c
+
+	return c, channelUuid.String(), nil
+}
+
+func (r *JsonRpc2Client) RemoveReceiveChannel(channelUuid string) {
+	delete(r.receivedMessagesChannels, channelUuid)
 }

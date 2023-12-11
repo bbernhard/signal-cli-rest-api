@@ -730,12 +730,20 @@ func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments b
 	}
 }
 
-func (s *SignalClient) GetReceiveChannel() (chan JsonRpc2ReceivedMessage, error) {
+func (s *SignalClient) GetReceiveChannel() (chan JsonRpc2ReceivedMessage, string, error) {
 	jsonRpc2Client, err := s.getJsonRpc2Client()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return jsonRpc2Client.GetReceiveChannel(), nil
+	return jsonRpc2Client.GetReceiveChannel()
+}
+
+func (s *SignalClient) RemoveReceiveChannel(channelUuid string) {
+	jsonRpc2Client, err := s.getJsonRpc2Client()
+	if err != nil {
+		return
+	}
+	jsonRpc2Client.RemoveReceiveChannel(channelUuid)
 }
 
 func (s *SignalClient) CreateGroup(number string, name string, members []string, description string, editGroupPermission GroupPermission, addMembersPermission GroupPermission, groupLinkState GroupLinkState) (string, error) {
