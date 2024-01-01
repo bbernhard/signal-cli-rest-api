@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	utils "github.com/bbernhard/signal-cli-rest-api/utils"
-	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"strings"
 	"time"
+
+	utils "github.com/paprickar/signal-cli-rest-api/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type CliClient struct {

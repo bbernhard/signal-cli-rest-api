@@ -15,9 +15,9 @@ import (
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/bbernhard/signal-cli-rest-api/client"
-	ds "github.com/bbernhard/signal-cli-rest-api/datastructs"
-	utils "github.com/bbernhard/signal-cli-rest-api/utils"
+	"github.com/paprickar/signal-cli-rest-api/client"
+	ds "github.com/paprickar/signal-cli-rest-api/datastructs"
+	utils "github.com/paprickar/signal-cli-rest-api/utils"
 )
 
 const (

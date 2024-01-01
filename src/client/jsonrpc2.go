@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bbernhard/signal-cli-rest-api/utils"
 	uuid "github.com/gofrs/uuid"
+	"github.com/paprickar/signal-cli-rest-api/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/sjson"
 )

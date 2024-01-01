@@ -41,12 +41,12 @@ case "$response" in
     [yY][eE][sS]|[yY])
 		
 		if [[ "$TAG" == "stable" ]]; then
-			curl --request POST --url 'https://api.github.com/repos/bbernhard/signal-cli-rest-api/actions/workflows/6006444/dispatches' --header 'authorization: Bearer '"$SIGNAL_CLI_GITHUB_ACTIONS_TOKEN"'' --data '{"ref": "'"$branch_name"'", "inputs": {"version": "'"$VERSION"'"}}'
+			curl --request POST --url 'https://api.github.com/repos/paprickar/signal-cli-rest-api/actions/workflows/6006444/dispatches' --header 'authorization: Bearer '"$SIGNAL_CLI_GITHUB_ACTIONS_TOKEN"'' --data '{"ref": "'"$branch_name"'", "inputs": {"version": "'"$VERSION"'"}}'
 			echo "Successfully triggered Github Actions Job"
         fi
 
 		if [[ "$TAG" == "dev" ]]; then
-			curl --request POST --url 'https://api.github.com/repos/bbernhard/signal-cli-rest-api/actions/workflows/6006443/dispatches' --header 'authorization: Bearer '"$SIGNAL_CLI_GITHUB_ACTIONS_TOKEN"'' --data '{"ref": "'"$branch_name"'", "inputs": {"version": "'"$VERSION"'"}}'
+			curl --request POST --url 'https://api.github.com/repos/paprickar/signal-cli-rest-api/actions/workflows/6006443/dispatches' --header 'authorization: Bearer '"$SIGNAL_CLI_GITHUB_ACTIONS_TOKEN"'' --data '{"ref": "'"$branch_name"'", "inputs": {"version": "'"$VERSION"'"}}'
 			echo "Successfully triggered Github Actions Job"
         fi
 

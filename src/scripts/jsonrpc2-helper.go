@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/bbernhard/signal-cli-rest-api/utils"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/paprickar/signal-cli-rest-api/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 const supervisorctlConfigTemplate = `
@@ -70,10 +71,8 @@ func main() {
 	//write supervisorctl config
 	supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-1.conf"
 
-
 	supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
 		tcpPort, fifoPathname, signalCliConfigDir, fifoPathname, supervisorctlProgramName, supervisorctlProgramName)
-	
 
 	err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
 	if err != nil {
