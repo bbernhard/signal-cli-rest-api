@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/h2non/filetype"
@@ -18,7 +19,7 @@ import (
 	uuid "github.com/gofrs/uuid"
 	qrcode "github.com/skip2/go-qrcode"
 
-	utils "github.com/bbernhard/signal-cli-rest-api/utils"
+	utils "github.com/paprickar/signal-cli-rest-api/utils"
 )
 
 const groupPrefix = "group."
@@ -529,9 +530,9 @@ func (s *SignalClient) About() About {
 func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha string) error {
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			UseVoice      bool   `json:"voice,omitempty"`
-			Captcha       string `json:"captcha,omitempty"`
-			Account       string `json:"account,omitempty"`
+			UseVoice bool   `json:"voice,omitempty"`
+			Captcha  string `json:"captcha,omitempty"`
+			Account  string `json:"account,omitempty"`
 		}
 		request := Request{Account: number}
 
@@ -593,9 +594,9 @@ func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool, delet
 func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin string) error {
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			VerificationCode      string   `json:"verificationCode,omitempty"`
-			Account               string   `json:"account,omitempty"`
-			Pin                   string   `json:"pin,omitempty"`
+			VerificationCode string `json:"verificationCode,omitempty"`
+			Account          string `json:"account,omitempty"`
+			Pin              string `json:"pin,omitempty"`
 		}
 		request := Request{Account: number, VerificationCode: token}
 
@@ -750,12 +751,12 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 	var internalGroupId string
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Name        string   `json:"name"`
-			Members     []string `json:"members"`
-			Link        string   `json:"link,omitempty"`
-			Description string   `json:"description,omitempty"`
-			EditGroupPermissions string `json:"setPermissionEditDetails,omitempty"`
-			AddMembersPermissions string `json:"setPermissionAddMember,omitempty"`
+			Name                  string   `json:"name"`
+			Members               []string `json:"members"`
+			Link                  string   `json:"link,omitempty"`
+			Description           string   `json:"description,omitempty"`
+			EditGroupPermissions  string   `json:"setPermissionEditDetails,omitempty"`
+			AddMembersPermissions string   `json:"setPermissionAddMember,omitempty"`
 		}
 		request := Request{Name: name, Members: members}
 
@@ -1041,7 +1042,7 @@ func (s *SignalClient) GetGroup(number string, groupId string) (*GroupEntry, err
 func (s *SignalClient) DeleteGroup(number string, groupId string) error {
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			GroupId      string   `json:"groupId"`
+			GroupId string `json:"groupId"`
 		}
 		request := Request{GroupId: groupId}
 
@@ -1476,8 +1477,8 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			GroupId     string `json:"groupId"`
-			Avatar      string `json:"avatar,omitempty"`
+			GroupId     string  `json:"groupId"`
+			Avatar      string  `json:"avatar,omitempty"`
 			Description *string `json:"description,omitempty"`
 			Name        *string `json:"name,omitempty"`
 		}
@@ -1489,7 +1490,6 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 
 		request.Description = groupDescription
 		request.Name = groupName
-
 
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
@@ -1726,7 +1726,7 @@ func (s *SignalClient) SearchForNumbers(number string, numbers []string) ([]Sear
 	return searchResultEntries, err
 }
 
-func (s* SignalClient) SendContacts(number string) error {
+func (s *SignalClient) SendContacts(number string) error {
 	var err error
 	if s.signalCliMode == JsonRpc {
 		jsonRpc2Client, err := s.getJsonRpc2Client()
@@ -1810,7 +1810,7 @@ func (s *SignalClient) SubmitRateLimitChallenge(number string, challengeToken st
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			Challenge string `json:"challenge"`
-			Captcha string `json:"captcha"`
+			Captcha   string `json:"captcha"`
 		}
 		request := Request{Challenge: challengeToken, Captcha: captcha}
 		jsonRpc2Client, err := s.getJsonRpc2Client()

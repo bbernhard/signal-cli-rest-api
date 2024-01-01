@@ -31,7 +31,7 @@ $ mkdir $HOME/.local/share/signal-cli
 ```bash
 $ sudo docker run -d --name signal-api --restart=always -p 8080:8080 \
       -v $HOME/.local/share/signal-cli:/home/.local/share/signal-cli \
-      -e 'MODE=native' bbernhard/signal-cli-rest-api
+      -e 'MODE=native' paprickar/signal-cli-rest-api
 ```
 
 3. Register or Link your Signal Number
@@ -72,7 +72,7 @@ The `signal-cli-rest-api` supports three different modes of execution, which can
 ```bash
 $ sudo docker run -d --name signal-api --restart=always -p 9922:8080 \
               -v /home/user/signal-api:/home/.local/share/signal-cli \
-              -e 'MODE=native' bbernhard/signal-cli-rest-api
+              -e 'MODE=native' paprickar/signal-cli-rest-api
 ```
 
 This launches a instance of the REST service accessible under http://localhost:9922/v2/send. To preserve the Signal number registration, i.e. for updates, the storage location for the `signal-cli` configuration is mapped as Docker Volume into a local `/home/user/signal-api` directory.
@@ -94,7 +94,7 @@ Sample `docker-compose.yml`file:
 version: "3"
 services:
   signal-cli-rest-api:
-    image: bbernhard/signal-cli-rest-api:latest
+    image: paprickar/signal-cli-rest-api:latest
     environment:
       - MODE=normal #supported modes: json-rpc, native, normal
       #- AUTO_RECEIVE_SCHEDULE=0 22 * * * #enable this parameter on demand (see description below)
@@ -108,7 +108,7 @@ services:
 
 ### API Reference
 
-The Swagger API documentation can be found [here](https://bbernhard.github.io/signal-cli-rest-api/). If you prefer a simple text file based API documentation have a look [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/EXAMPLES.md).
+The Swagger API documentation can be found [here](https://bbernhard.github.io/signal-cli-rest-api/). If you prefer a simple text file based API documentation have a look [here](https://github.com/paprickar/signal-cli-rest-api/blob/master/doc/EXAMPLES.md).
 
 ### Blog Posts
 

@@ -7,8 +7,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/bbernhard/signal-cli-rest-api/utils"
 	uuid "github.com/gofrs/uuid"
+	"github.com/paprickar/signal-cli-rest-api/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/sjson"
 )
@@ -116,8 +116,8 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 	r.receivedResponsesById[u.String()] = responseChan
 
 	var resp JsonRpc2MessageResponse
-  resp = <-responseChan
-  delete(r.receivedResponsesById, u.String())
+	resp = <-responseChan
+	delete(r.receivedResponsesById, u.String())
 
 	if resp.Err.Code != 0 {
 		return "", errors.New(resp.Err.Message)

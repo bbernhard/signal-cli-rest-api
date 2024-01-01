@@ -14,8 +14,8 @@ import (
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/bbernhard/signal-cli-rest-api/client"
-	utils "github.com/bbernhard/signal-cli-rest-api/utils"
+	"github.com/paprickar/signal-cli-rest-api/client"
+	utils "github.com/paprickar/signal-cli-rest-api/utils"
 )
 
 const (
@@ -164,7 +164,7 @@ type AddDeviceRequest struct {
 
 type RateLimitChallengeRequest struct {
 	ChallengeToken string `json:"challenge_token" example:"<challenge token>"`
-	Captcha string `json:"captcha" example:"signalcaptcha://{captcha value}"`
+	Captcha        string `json:"captcha" example:"signalcaptcha://{captcha value}"`
 }
 
 type Api struct {

@@ -3,19 +3,20 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"github.com/bbernhard/signal-cli-rest-api/api"
-	"github.com/bbernhard/signal-cli-rest-api/client"
-	docs "github.com/bbernhard/signal-cli-rest-api/docs"
-	"github.com/bbernhard/signal-cli-rest-api/utils"
-	"github.com/gin-gonic/gin"
-	"github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/paprickar/signal-cli-rest-api/api"
+	"github.com/paprickar/signal-cli-rest-api/client"
+	docs "github.com/paprickar/signal-cli-rest-api/docs"
+	"github.com/paprickar/signal-cli-rest-api/utils"
+	"github.com/robfig/cron/v3"
+	log "github.com/sirupsen/logrus"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // @title Signal Cli REST API
