@@ -530,7 +530,7 @@ paths:
       summary: Set account specific settings.
       tags:
       - General
-  /v1/contacts{number}:
+  /v1/contacts/{number}:
     put:
       consumes:
       - application/json
@@ -558,7 +558,7 @@ paths:
       summary: Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.
       tags:
       - Contacts
-  /v1/contacts{number}/sync:
+  /v1/contacts/{number}/sync:
     post:
       consumes:
       - application/json
