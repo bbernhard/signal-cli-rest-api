@@ -362,7 +362,7 @@ var doc = `{
                 }
             }
         },
-        "/v1/contacts{number}": {
+        "/v1/contacts/{number}": {
             "put": {
                 "description": "Updates the info associated to a number on the contact list.",
                 "consumes": [
@@ -404,7 +404,7 @@ var doc = `{
                 }
             }
         },
-        "/v1/contacts{number}/sync": {
+        "/v1/contacts/{number}/sync": {
             "post": {
                 "description": "Send a synchronization message with the local contacts list to all linked devices. This command should only be used if this is the primary device.",
                 "consumes": [

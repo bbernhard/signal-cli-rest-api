@@ -1532,7 +1532,7 @@ func (a *Api) SearchForNumbers(c *gin.Context) {
 // @Success 204
 // @Param data body UpdateContactRequest true "Contact"
 // @Failure 400 {object} Error
-// @Router /v1/contacts{number} [put]
+// @Router /v1/contacts/{number} [put]
 func (a *Api) UpdateContact(c *gin.Context) {
 	number := c.Param("number")
 	if number == "" {
@@ -1668,7 +1668,7 @@ func (a *Api) GetTrustMode(c *gin.Context) {
 // @Param number path string true "Registered Phone Number"
 // @Success 204
 // @Failure 400 {object} Error
-// @Router /v1/contacts{number}/sync [post]
+// @Router /v1/contacts/{number}/sync [post]
 func (a *Api) SendContacts(c *gin.Context) {
 	number := c.Param("number")
 	if number == "" {
