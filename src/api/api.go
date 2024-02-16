@@ -102,6 +102,7 @@ type SendMessageV1 struct {
 type SendMessageV2 struct {
 	Number            string                  `json:"number"`
 	Recipients        []string                `json:"recipients"`
+	Recipient         string                  `json:"recipient" swaggerignore:"true"` //some REST API consumers (like the Synology NAS) do not support an array as recipients, so we provide this string parameter here as backup. In order to not confuse anyone, the parameter won't be exposed in the Swagger UI (most users are fine with the recipients parameter).
 	Message           string                  `json:"message"`
 	Base64Attachments []string                `json:"base64_attachments" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
 	Sticker           string                  `json:"sticker"`
@@ -361,6 +362,13 @@ func (a *Api) SendV2(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
 		log.Error(err.Error())
 		return
+	}
+
+	//some REST API consumers (like the Synology NAS) do not allow to use an array for the recipients.
+	//so, in order to also support those platforms, a fallback parameter (recipient) is provided.
+	//this parameter is hidden in the swagger ui in order to not confuse users (most of them are fine with the recipients parameter).
+	if req.Recipient != "" {
+		req.Recipients = append(req.Recipients, req.Recipient)
 	}
 
 	if len(req.Recipients) == 0 {
