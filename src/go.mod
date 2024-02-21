@@ -9,6 +9,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/spec v0.20.8 // indirect
+	github.com/go-playground/validator/v10 v10.14.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/gorilla/websocket v1.5.0
 	github.com/h2non/filetype v1.1.3
@@ -21,5 +22,6 @@ require (
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5
+	golang.org/x/net v0.17.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
