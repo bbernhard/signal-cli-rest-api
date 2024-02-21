@@ -141,7 +141,12 @@ RUN cd /tmp/signal-cli-rest-api-src && swag init && go test ./client -v && go bu
 RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper 
 
 # Start a fresh container for release container
-FROM eclipse-temurin:21-jre-jammy
+
+# eclipse-temurin doesn't provide a OpenJDK 21 image for armv7 (see https://github.com/adoptium/containers/issues/502). Until this
+# is fixed we use the standard ubuntu image
+#FROM eclipse-temurin:21-jre-jammy
+
+FROM ubuntu:jammy
 
 ENV GIN_MODE=release
 
@@ -154,7 +159,7 @@ ENV BUILD_VERSION=$BUILD_VERSION_ARG
 
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get -qq update \
-	&& apt-get -qq install -y --no-install-recommends util-linux supervisor netcat < /dev/null > /dev/null \
+	&& apt-get -qq install -y --no-install-recommends util-linux supervisor netcat openjdk-21-jre < /dev/null > /dev/null \
 	&& rm -rf /var/lib/apt/lists/* 
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
