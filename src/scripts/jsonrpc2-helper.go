@@ -12,7 +12,6 @@ import (
 
 const supervisorctlConfigTemplate = `
 [program:%s]
-environment=JAVA_HOME=/opt/java/openjdk
 process_name=%s
 command=bash -c "nc -l -p %d <%s | signal-cli --output=json --config %s jsonRpc >%s"
 autostart=true
