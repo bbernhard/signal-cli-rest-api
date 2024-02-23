@@ -5,6 +5,10 @@ set -e
 
 [ -z "${SIGNAL_CLI_CONFIG_DIR}" ] && echo "SIGNAL_CLI_CONFIG_DIR environmental variable needs to be set! Aborting!" && exit 1;
 
+["${UID}" = "${SIGNAL_CLI_UID}" && "${GID}" = "${SIGNAL_CLI_GID}"] &&\
+  echo "UID and GID are already correct. Trying to start Signal Api" &&\
+  signal-cli-rest-api -signal-cli-config=${SIGNAL_CLI_CONFIG_DIR};
+
 usermod -u ${SIGNAL_CLI_UID} signal-api
 groupmod -g ${SIGNAL_CLI_GID} signal-api
 
