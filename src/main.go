@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/getsentry/sentry-go"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -54,6 +55,19 @@ import (
 
 // @BasePath /
 func main() {
+	sentryDsn := utils.GetEnv("SENTRY_DSN", "")
+	if sentryDsn != "" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn: sentryDsn,
+			Debug: utils.GetEnv("SENTRY_DEBUG", "false"),
+		})
+	
+		if err != nil {
+			log.Fatalf("Error initializing Sentry: %v", err)
+		}
+		defer sentry.Flush(2 * time.Second)
+	}
+
 	signalCliConfig := flag.String("signal-cli-config", "/home/.local/share/signal-cli/", "Config directory where signal-cli config is stored")
 	attachmentTmpDir := flag.String("attachment-tmp-dir", "/tmp/", "Attachment tmp directory")
 	avatarTmpDir := flag.String("avatar-tmp-dir", "/tmp/", "Avatar tmp directory")
