@@ -3,20 +3,22 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/bbernhard/signal-cli-rest-api/api"
 	"github.com/bbernhard/signal-cli-rest-api/client"
 	docs "github.com/bbernhard/signal-cli-rest-api/docs"
 	"github.com/bbernhard/signal-cli-rest-api/utils"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"github.com/getsentry/sentry-go"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strconv"
 )
 
 // @title Signal Cli REST API
@@ -59,9 +61,8 @@ func main() {
 	if sentryDsn != "" {
 		err := sentry.Init(sentry.ClientOptions{
 			Dsn: sentryDsn,
-			Debug: utils.GetEnv("SENTRY_DEBUG", "false"),
 		})
-	
+
 		if err != nil {
 			log.Fatalf("Error initializing Sentry: %v", err)
 		}

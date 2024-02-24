@@ -130,8 +130,6 @@ There are a bunch of environmental variables that can be set inside the docker c
 * `PORT`: Defaults to port `8080` unless this env var is set to tell it otherwise. 
 
 * `SENTRY_DSN`: Sentry data source name link
-
-* `SENTRY_DEBUG`: In debug mode, the debug information is printed to stdout to help you understand what Sentry is doing.
   
 ## Clients & Libraries
 
