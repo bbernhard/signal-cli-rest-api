@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net"
 	"time"
+	"sync"
 
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	uuid "github.com/gofrs/uuid"
@@ -37,6 +38,7 @@ type JsonRpc2Client struct {
 	lastTimeErrorMessageSent time.Time
 	signalCliApiConfig       *utils.SignalCliApiConfig
 	number                   string
+	receivedMessagesMutex    sync.Mutex
 }
 
 func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string) *JsonRpc2Client {
@@ -139,9 +141,12 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 		}
 		//log.Info("Received data = ", str)
 
+
+
 		var resp1 JsonRpc2ReceivedMessage
 		json.Unmarshal([]byte(str), &resp1)
 		if resp1.Method == "receive" {
+			r.receivedMessagesMutex.Lock()
 			for _, c := range r.receivedMessagesChannels {
 				select {
 				case c <- resp1:
@@ -151,6 +156,7 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 				}
 				continue
 			}
+			r.receivedMessagesMutex.Unlock()
 		}
 
 		var resp2 JsonRpc2MessageResponse
@@ -175,11 +181,15 @@ func (r *JsonRpc2Client) GetReceiveChannel() (chan JsonRpc2ReceivedMessage, stri
 		return c, "", err
 	}
 
+	r.receivedMessagesMutex.Lock()
+	defer r.receivedMessagesMutex.Unlock()
 	r.receivedMessagesChannels[channelUuid.String()] = c
 
 	return c, channelUuid.String(), nil
 }
 
 func (r *JsonRpc2Client) RemoveReceiveChannel(channelUuid string) {
+	r.receivedMessagesMutex.Lock()
+	defer r.receivedMessagesMutex.Unlock()
 	delete(r.receivedMessagesChannels, channelUuid)
 }
