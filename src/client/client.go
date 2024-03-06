@@ -177,6 +177,11 @@ type SearchResultEntry struct {
 	Registered bool   `json:"registered"`
 }
 
+type SetUsernameResponse struct {
+	Username string `json:"username"`
+	UsernameLink string `json:"username_link"`
+}
+
 func cleanupTmpFiles(paths []string) {
 	for _, path := range paths {
 		os.Remove(path)
@@ -1821,6 +1826,91 @@ func (s *SignalClient) SubmitRateLimitChallenge(number string, challengeToken st
 		return err
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-a", number, "submitRateLimitChallenge", "--challenge", challengeToken, "--captcha", captcha}
+		_, err := s.cliClient.Execute(true, cmd, "")
+		return err
+	}
+}
+
+func (s *SignalClient) SetUsername(number string, username string) (SetUsernameResponse, error) {
+	type SetUsernameSignalCliResponse struct {
+		Username string `json:"username"`
+		UsernameLink string `json:"usernameLink"`
+	}
+	
+	var resp SetUsernameResponse
+	var err error
+	var rawData string
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Username string `json:"username"`
+		}
+		request := Request{Username: username}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return resp, err
+		}
+		rawData, err = jsonRpc2Client.getRaw("updateAccount", &number, request)	
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "updateAccount", "-u", username}
+		rawData, err = s.cliClient.Execute(true, cmd, "")	
+	}
+
+	var signalCliResp SetUsernameSignalCliResponse
+	err = json.Unmarshal([]byte(rawData), &signalCliResp)
+	if err != nil {
+		return resp, errors.New("Couldn't process request - invalid signal-cli response")
+	}
+
+	resp.Username = signalCliResp.Username
+	resp.UsernameLink = signalCliResp.UsernameLink
+
+	return resp, err
+}
+
+func (s *SignalClient) RemoveUsername(number string) error {
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			DeleteUsername bool `json:"delete-username"`
+		}
+		request := Request{DeleteUsername: true}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("updateAccount", &number, request)	
+		return err
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "updateAccount", "--delete-username"}
+		_, err := s.cliClient.Execute(true, cmd, "")
+		return err
+	}
+}
+
+func (s *SignalClient) UpdateAccountSettings(number string, discoverableByNumber *bool, shareNumber *bool) error {
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			ShareNumber *bool `json:"number-sharing"`
+			DiscoverableByNumber *bool `json:"discoverable-by-number"`
+		}
+		request := Request{}
+		request.DiscoverableByNumber = discoverableByNumber	
+		request.ShareNumber = shareNumber
+
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("updateAccount", &number, request)	
+		return err
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateAccount"}
+		if discoverableByNumber != nil {
+			cmd = append(cmd, []string{"--discoverable-by-number", strconv.FormatBool(*discoverableByNumber)}...)
+		}
+
+		if shareNumber != nil {
+			cmd = append(cmd, []string{"--number-sharing", strconv.FormatBool(*shareNumber)}...)
+		}
 		_, err := s.cliClient.Execute(true, cmd, "")
 		return err
 	}

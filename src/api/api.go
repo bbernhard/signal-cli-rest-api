@@ -168,6 +168,15 @@ type RateLimitChallengeRequest struct {
 	Captcha string `json:"captcha" example:"signalcaptcha://{captcha value}"`
 }
 
+type UpdateAccountSettingsRequest struct {
+	DiscoverableByNumber *bool `json:"discoverable_by_number"`
+	ShareNumber          *bool `json:"share_number"`
+}
+
+type SetUsernameRequest struct {
+	Username string `json:username" example:"test"`
+}
+
 type Api struct {
 	signalClient *client.SignalClient
 }
@@ -1717,6 +1726,96 @@ func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
 	}
 
 	err = a.signalClient.SubmitRateLimitChallenge(number, req.ChallengeToken, req.Captcha)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Update the account settings.
+// @Tags Accounts
+// @Description Update the account attributes on the signal server.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Param data body UpdateAccountSettingsRequest true "Request"
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/accounts/{number}/settings [put]
+func (a *Api) UpdateAccountSettings(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req UpdateAccountSettingsRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	err = a.signalClient.UpdateAccountSettings(number, req.DiscoverableByNumber, req.ShareNumber)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(201)
+}
+
+// @Summary Set a username.
+// @Tags Accounts
+// @Description Allows to set the username that should be used for this account. This can either be just the nickname (e.g. test) or the complete username with discriminator (e.g. test.123). Returns the new username with discriminator and the username link.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Param data body SetUsernameRequest true "Request"
+// @Success 201 {object} client.SetUsernameResponse
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/accounts/{number}/username [post]
+func (a *Api) SetUsername(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req SetUsernameRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	resp, err := a.signalClient.SetUsername(number, req.Username)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.JSON(201, resp)
+}
+
+// @Summary Remove a username.
+// @Tags Accounts
+// @Description Delete the username associated with this account.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/accounts/{number}/username [delete]
+func (a *Api) RemoveUsername(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	err := a.signalClient.RemoveUsername(number)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return

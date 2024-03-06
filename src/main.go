@@ -205,6 +205,9 @@ func main() {
 		{
 			accounts.GET("", api.GetAccounts)
 			accounts.POST(":number/rate-limit-challenge", api.SubmitRateLimitChallenge)
+			accounts.PUT(":number/settings", api.UpdateAccountSettings)
+			accounts.POST(":number/username", api.SetUsername)
+			accounts.DELETE(":number/username", api.RemoveUsername)
 		}
 
 		devices := v1.Group("devices")

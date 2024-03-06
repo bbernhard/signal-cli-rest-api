@@ -168,6 +168,11 @@ definitions:
         - styled
         type: string
     type: object
+  api.SetUsernameRequest:
+    properties:
+      username:
+        type: string
+    type: object
   api.TrustIdentityRequest:
     properties:
       trust_all_known_keys:
@@ -198,6 +203,13 @@ definitions:
         type: boolean
       delete_local_data:
         example: false
+        type: boolean
+    type: object
+  api.UpdateAccountSettingsRequest:
+    properties:
+      discoverable_by_number:
+        type: boolean
+      share_number:
         type: boolean
     type: object
   api.UpdateContactRequest:
@@ -300,6 +312,13 @@ definitions:
       start:
         type: integer
     type: object
+  client.SetUsernameResponse:
+    properties:
+      username:
+        type: string
+      username_link:
+        type: string
+    type: object
 info:
   contact: {}
   description: This is the Signal Cli REST API documentation.
@@ -365,6 +384,87 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: Lift rate limit restrictions by solving a captcha.
+      tags:
+      - Accounts
+  /v1/accounts/{number}/settings:
+    put:
+      consumes:
+      - application/json
+      description: Update the account attributes on the signal server.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateAccountSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Update the account settings.
+      tags:
+      - Accounts
+  /v1/accounts/{number}/username:
+    delete:
+      consumes:
+      - application/json
+      description: Delete the username associated with this account.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Remove a username.
+      tags:
+      - Accounts
+    post:
+      consumes:
+      - application/json
+      description: Allows to set the username that should be used for this account. This can either be just the nickname (e.g. test) or the complete username with discriminator (e.g. test.123). Returns the new username with discriminator and the username link.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.SetUsernameRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/client.SetUsernameResponse'
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Set a username.
       tags:
       - Accounts
   /v1/attachments:
