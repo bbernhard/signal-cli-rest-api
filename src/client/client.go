@@ -343,7 +343,8 @@ func (s *MessageMention) toString() string {
 
 func (s *SignalClient) send(number string, message string,
 	recipients []string, base64Attachments []string, isGroup bool, sticker string, mentions []MessageMention,
-	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string) (*SendResponse, error) {
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string,
+	editTimestamp *int64) (*SendResponse, error) {
 
 	var resp SendResponse
 
@@ -400,6 +401,7 @@ func (s *SignalClient) send(number string, message string,
 			QuoteMessage   *string  `json:"quote-message,omitempty"`
 			QuoteMentions  []string `json:"quote-mentions,omitempty"`
 			TextStyles     []string `json:"text-style,omitempty"`
+			EditTimestamp  *int64   `json:"edit-timestamp,omitempty"`
 		}
 
 		request := Request{Message: message}
@@ -432,6 +434,7 @@ func (s *SignalClient) send(number string, message string,
 		} else {
 			request.QuoteMentions = nil
 		}
+		request.EditTimestamp = editTimestamp
 
 		if len(signalCliTextFormatStrings) > 0 {
 			request.TextStyles = signalCliTextFormatStrings
@@ -498,6 +501,11 @@ func (s *SignalClient) send(number string, message string,
 		for _, mention := range quoteMentions {
 			cmd = append(cmd, "--quote-mention")
 			cmd = append(cmd, mention.toString())
+		}
+
+		if editTimestamp != nil {
+			cmd = append(cmd, "--edit-timestamp")
+			cmd = append(cmd, strconv.FormatInt(*editTimestamp, 10))
 		}
 
 		rawData, err := s.cliClient.Execute(true, cmd, message)
@@ -627,7 +635,7 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 }
 
 func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (*SendResponse, error) {
-	timestamp, err := s.send(number, message, recipients, base64Attachments, isGroup, "", nil, nil, nil, nil, nil, nil)
+	timestamp, err := s.send(number, message, recipients, base64Attachments, isGroup, "", nil, nil, nil, nil, nil, nil, nil)
 	return timestamp, err
 }
 
@@ -647,7 +655,7 @@ func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 }
 
 func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, sticker string, mentions []MessageMention,
-	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string) (*[]SendResponse, error) {
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string, editTimestamp *int64) (*[]SendResponse, error) {
 	if len(recps) == 0 {
 		return nil, errors.New("Please provide at least one recipient")
 	}
@@ -677,7 +685,8 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 
 	timestamps := []SendResponse{}
 	for _, group := range groups {
-		timestamp, err := s.send(number, message, []string{group}, base64Attachments, true, sticker, mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode)
+		timestamp, err := s.send(number, message, []string{group}, base64Attachments, true, sticker,
+									mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode, editTimestamp)
 		if err != nil {
 			return nil, err
 		}
@@ -685,7 +694,8 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	}
 
 	if len(recipients) > 0 {
-		timestamp, err := s.send(number, message, recipients, base64Attachments, false, sticker, mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode)
+		timestamp, err := s.send(number, message, recipients, base64Attachments, false, sticker, mentions,
+									quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode, editTimestamp)
 		if err != nil {
 			return nil, err
 		}

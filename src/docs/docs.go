@@ -2040,6 +2040,9 @@ var doc = `{
                         "data:\u003cMIME-TYPE\u003e;filename=\u003cFILENAME\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e"
                     ]
                 },
+                "edit_timestamp": {
+                    "type": "integer"
+                },
                 "mentions": {
                     "type": "array",
                     "items": {

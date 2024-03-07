@@ -138,6 +138,8 @@ definitions:
         items:
           type: string
         type: array
+      edit_timestamp:
+        type: integer
       mentions:
         items:
           $ref: '#/definitions/client.MessageMention'
