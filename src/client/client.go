@@ -182,6 +182,14 @@ type SetUsernameResponse struct {
 	UsernameLink string `json:"username_link"`
 }
 
+type ListInstalledStickerPacksResponse struct {
+	PackId    string `json:"pack_id"`
+	Url       string `json:"url"`
+	Installed bool   `json:"installed"`
+	Title     string `json:"title"`
+	Author    string `json:"author"`
+}
+
 func cleanupTmpFiles(paths []string) {
 	for _, path := range paths {
 		os.Remove(path)
@@ -1923,5 +1931,71 @@ func (s *SignalClient) UpdateAccountSettings(number string, discoverableByNumber
 		}
 		_, err := s.cliClient.Execute(true, cmd, "")
 		return err
+	}
+}
+
+func (s *SignalClient) ListInstalledStickerPacks(number string) ([]ListInstalledStickerPacksResponse, error) {
+	type ListInstalledStickerPacksSignalCliResponse struct {
+		PackId    string `json:"packId"`
+		Url       string `json:"url"`
+		Installed bool   `json:"installed"`
+		Title     string `json:"title"`
+		Author    string `json:"author"`
+	}
+
+	resp := []ListInstalledStickerPacksResponse{}
+
+	var err error
+	var rawData string
+	if s.signalCliMode == JsonRpc {
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return resp, err
+		}
+		rawData, err = jsonRpc2Client.getRaw("listStickerPacks", &number, nil)	
+		if err != nil {
+			return resp, err
+		}
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "listStickerPacks"}
+		rawData, err = s.cliClient.Execute(true, cmd, "")
+		if err != nil {
+			return resp, err
+		}
+	}
+
+	var signalCliResp []ListInstalledStickerPacksSignalCliResponse
+	err = json.Unmarshal([]byte(rawData), &signalCliResp)
+	if err != nil {
+		return resp, errors.New("Couldn't process request - invalid signal-cli response")
+	}
+
+	for _, value := range signalCliResp {
+		resp = append(resp, ListInstalledStickerPacksResponse{PackId: value.PackId, Url: value.Url,
+									Installed: value.Installed, Title: value.Title, Author: value.Author})
+	}
+
+	return resp, nil
+}
+
+func (s *SignalClient) AddStickerPack(number string, packId string, packKey string) error {
+	
+	stickerPackUri := fmt.Sprintf(`https://signal.art/addstickers/#pack_id=%s&pack_key=%s`, packId, packKey)
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Uri string `json:"uri"`
+		}
+		request := Request{Uri: stickerPackUri}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("addStickerPack", &number, request)	
+		return err	
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "addStickerPack", "--uri", stickerPackUri}
+		_, err := s.cliClient.Execute(true, cmd, "")
+		return err	
 	}
 }

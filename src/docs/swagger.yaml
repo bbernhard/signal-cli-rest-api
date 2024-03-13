@@ -5,6 +5,15 @@ definitions:
       uri:
         type: string
     type: object
+  api.AddStickerPackRequest:
+    properties:
+      pack_id:
+        example: 9a32eda01a7a28574f2eb48668ae0dc4
+        type: string
+      pack_key:
+        example: 19546e18eba0ff69dea78eb591465289d39e16f35e58389ae779d4f9455aff3a
+        type: string
+    type: object
   api.ChangeGroupAdminsRequest:
     properties:
       admins:
@@ -173,6 +182,7 @@ definitions:
   api.SetUsernameRequest:
     properties:
       username:
+        example: test
         type: string
     type: object
   api.TrustIdentityRequest:
@@ -303,6 +313,19 @@ definitions:
       safety_number:
         type: string
       status:
+        type: string
+    type: object
+  client.ListInstalledStickerPacksResponse:
+    properties:
+      author:
+        type: string
+      installed:
+        type: boolean
+      pack_id:
+        type: string
+      title:
+        type: string
+      url:
         type: string
     type: object
   client.MessageMention:
@@ -1410,6 +1433,61 @@ paths:
       summary: Send a signal message.
       tags:
       - Messages
+  /v1/sticker-packs/{number}:
+    get:
+      consumes:
+      - application/json
+      description: List Installed Sticker Packs.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/client.ListInstalledStickerPacksResponse'
+            type: array
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: List Installed Sticker Packs.
+      tags:
+      - Sticker Packs
+    post:
+      consumes:
+      - application/json
+      description: 'In order to add a sticker pack, browse to https://signalstickers.org/ and select the sticker pack you want to add. Then, press the "Add to Signal" button. If you look at the address bar in your browser you should see an URL in this format: https://signal.art/addstickers/#pack_id=XXX&pack_key=YYY, where XXX is the pack_id and YYY is the pack_key.'
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.AddStickerPackRequest'
+      produces:
+      - application/json
+      responses:
+        "204": {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Add Sticker Pack.
+      tags:
+      - Sticker Packs
   /v1/typing-indicator/{number}:
     delete:
       consumes:
@@ -1546,3 +1624,5 @@ tags:
   name: Reactions
 - description: Search the Signal Service.
   name: Search
+- description: List and Install Sticker Packs
+  name: Sticker Packs

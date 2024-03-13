@@ -175,7 +175,12 @@ type UpdateAccountSettingsRequest struct {
 }
 
 type SetUsernameRequest struct {
-	Username string `json:username" example:"test"`
+	Username string `json:"username" example:"test"`
+}
+
+type AddStickerPackRequest struct {
+	PackId string `json:"pack_id" example:"9a32eda01a7a28574f2eb48668ae0dc4"`
+	PackKey string `json:"pack_key" example:"19546e18eba0ff69dea78eb591465289d39e16f35e58389ae779d4f9455aff3a"`
 }
 
 type Api struct {
@@ -1822,4 +1827,64 @@ func (a *Api) RemoveUsername(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// @Summary List Installed Sticker Packs.
+// @Tags Sticker Packs
+// @Description List Installed Sticker Packs.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Failure 400 {object} Error
+// @Success 200 {object} []client.ListInstalledStickerPacksResponse
+// @Router /v1/sticker-packs/{number} [get]
+func (a *Api) ListInstalledStickerPacks(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	installedStickerPacks, err := a.signalClient.ListInstalledStickerPacks(number)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.JSON(200, installedStickerPacks)
+}
+
+// @Summary Add Sticker Pack.
+// @Tags Sticker Packs
+// @Description In order to add a sticker pack, browse to https://signalstickers.org/ and select the sticker pack you want to add. Then, press the "Add to Signal" button. If you look at the address bar in your browser you should see an URL in this format: https://signal.art/addstickers/#pack_id=XXX&pack_key=YYY, where XXX is the pack_id and YYY is the pack_key. 
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Failure 400 {object} Error
+// @Param data body AddStickerPackRequest true "Request"
+// @Router /v1/sticker-packs/{number} [post]
+func (a *Api) AddStickerPack(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req AddStickerPackRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+
+	err = a.signalClient.AddStickerPack(number, req.PackId, req.PackKey)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(201)
 }

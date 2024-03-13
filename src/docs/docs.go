@@ -1656,6 +1656,88 @@ var doc = `{
                 }
             }
         },
+        "/v1/sticker-packs/{number}": {
+            "get": {
+                "description": "List Installed Sticker Packs.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sticker Packs"
+                ],
+                "summary": "List Installed Sticker Packs.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/client.ListInstalledStickerPacksResponse"
+                            }
+                        }
+                    },
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "In order to add a sticker pack, browse to https://signalstickers.org/ and select the sticker pack you want to add. Then, press the \"Add to Signal\" button. If you look at the address bar in your browser you should see an URL in this format: https://signal.art/addstickers/#pack_id=XXX\u0026pack_key=YYY, where XXX is the pack_id and YYY is the pack_key.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sticker Packs"
+                ],
+                "summary": "Add Sticker Pack.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.AddStickerPackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/typing-indicator/{number}": {
             "put": {
                 "description": "Show Typing Indicator.",
@@ -1836,6 +1918,19 @@ var doc = `{
             "properties": {
                 "uri": {
                     "type": "string"
+                }
+            }
+        },
+        "api.AddStickerPackRequest": {
+            "type": "object",
+            "properties": {
+                "pack_id": {
+                    "type": "string",
+                    "example": "9a32eda01a7a28574f2eb48668ae0dc4"
+                },
+                "pack_key": {
+                    "type": "string",
+                    "example": "19546e18eba0ff69dea78eb591465289d39e16f35e58389ae779d4f9455aff3a"
                 }
             }
         },
@@ -2092,7 +2187,8 @@ var doc = `{
             "type": "object",
             "properties": {
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "test"
                 }
             }
         },
@@ -2296,6 +2392,26 @@ var doc = `{
                 }
             }
         },
+        "client.ListInstalledStickerPacksResponse": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "installed": {
+                    "type": "boolean"
+                },
+                "pack_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "client.MessageMention": {
             "type": "object",
             "properties": {
@@ -2362,6 +2478,10 @@ var doc = `{
         {
             "description": "Search the Signal Service.",
             "name": "Search"
+        },
+        {
+            "description": "List and Install Sticker Packs",
+            "name": "Sticker Packs"
         }
     ]
 }`

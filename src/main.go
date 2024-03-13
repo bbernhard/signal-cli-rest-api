@@ -52,6 +52,9 @@ import (
 // @tag.name Search
 // @tag.description Search the Signal Service.
 
+// @tag.name Sticker Packs
+// @tag.description List and Install Sticker Packs
+
 // @BasePath /
 func main() {
 	signalCliConfig := flag.String("signal-cli-config", "/home/.local/share/signal-cli/", "Config directory where signal-cli config is stored")
@@ -220,6 +223,12 @@ func main() {
 			attachments.GET("", api.GetAttachments)
 			attachments.DELETE(":attachment", api.RemoveAttachment)
 			attachments.GET(":attachment", api.ServeAttachment)
+		}
+
+		stickerPacks := v1.Group("sticker-packs")
+		{
+			stickerPacks.GET(":number", api.ListInstalledStickerPacks)
+			stickerPacks.POST(":number", api.AddStickerPack)
 		}
 
 		profiles := v1.Group("profiles")
