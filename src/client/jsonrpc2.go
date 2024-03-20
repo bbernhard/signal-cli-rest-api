@@ -107,7 +107,7 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 		}
 	}
 
-	log.Debug("full command: ", string(fullCommandBytes))
+	log.Debug("json-rpc command: ", string(fullCommandBytes))
 
 	_, err = r.conn.Write([]byte(string(fullCommandBytes) + "\n"))
 	if err != nil {
@@ -118,12 +118,16 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 	r.receivedResponsesById[u.String()] = responseChan
 
 	var resp JsonRpc2MessageResponse
-  resp = <-responseChan
-  delete(r.receivedResponsesById, u.String())
+	resp = <-responseChan
+	delete(r.receivedResponsesById, u.String())
 
 	if resp.Err.Code != 0 {
 		return "", errors.New(resp.Err.Message)
 	}
+
+	log.Debug("json-rpc command response message: ", string(resp.Result))
+	log.Debug("json-rpc response error: ", string(resp.Err.Message))
+
 	return string(resp.Result), nil
 }
 
