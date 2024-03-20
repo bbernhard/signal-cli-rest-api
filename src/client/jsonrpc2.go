@@ -121,12 +121,12 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 	resp = <-responseChan
 	delete(r.receivedResponsesById, u.String())
 
+	log.Debug("json-rpc command response message: ", string(resp.Result))
+	log.Debug("json-rpc response error: ", string(resp.Err.Message))
+
 	if resp.Err.Code != 0 {
 		return "", errors.New(resp.Err.Message)
 	}
-
-	log.Debug("json-rpc command response message: ", string(resp.Result))
-	log.Debug("json-rpc response error: ", string(resp.Err.Message))
 
 	return string(resp.Result), nil
 }
