@@ -143,7 +143,7 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 			}
 			continue
 		}
-		//log.Info("Received data = ", str)
+		log.Debug("json-rpc received data: ", str)
 
 
 
