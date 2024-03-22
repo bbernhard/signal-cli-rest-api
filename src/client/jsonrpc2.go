@@ -7,6 +7,7 @@ import (
 	"net"
 	"time"
 	"sync"
+	"strings"
 
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	uuid "github.com/gofrs/uuid"
@@ -15,8 +16,9 @@ import (
 )
 
 type Error struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Code    int             `json:"code"`
+	Message string          `json:"message"`
+	Data    json.RawMessage `json:"data"`
 }
 
 type JsonRpc2MessageResponse struct {
@@ -29,6 +31,18 @@ type JsonRpc2ReceivedMessage struct {
 	Method string          `json:"method"`
 	Params json.RawMessage `json:"params"`
 	Err    Error           `json:"error"`
+}
+
+type RateLimitMessage struct {
+	Response RateLimitResponse `json:"response"`
+}
+
+type RateLimitResponse struct {
+	Results []RateLimitResult `json:"results"`
+}
+
+type RateLimitResult struct {
+	Token string `json:"token"`
 }
 
 type JsonRpc2Client struct {
@@ -125,6 +139,20 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 	log.Debug("json-rpc response error: ", string(resp.Err.Message))
 
 	if resp.Err.Code != 0 {
+		log.Debug("json-rpc command error code: ", resp.Err.Code)
+		if resp.Err.Code == -5 {
+			var rateLimitMessage RateLimitMessage
+			err = json.Unmarshal(resp.Err.Data, &rateLimitMessage)
+			if err != nil {
+				return "", errors.New(resp.Err.Message + " (Couldn't parse JSON for more details")
+			}
+			challengeTokens := []string{}
+			for _, rateLimitResult := range rateLimitMessage.Response.Results {
+				challengeTokens = append(challengeTokens, rateLimitResult.Token)
+			}
+
+			return "", errors.New(resp.Err.Message + " Challenge Tokens: " + strings.Join(challengeTokens, ","))
+		}
 		return "", errors.New(resp.Err.Message)
 	}
 
