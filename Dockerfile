@@ -1,19 +1,17 @@
-ARG SIGNAL_CLI_VERSION=0.12.8
-ARG LIBSIGNAL_CLIENT_VERSION=0.36.1
-ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.12.8+1
+ARG SIGNAL_CLI_VERSION=0.13.2
+ARG LIBSIGNAL_CLIENT_VERSION=0.39.2
+ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.13.2+2
 
 ARG SWAG_VERSION=1.6.7
-ARG GRAALVM_JAVA_VERSION=17
-ARG GRAALVM_VERSION=22.3.3
+ARG GRAALVM_VERSION=21.0.0
 
 ARG BUILD_VERSION_ARG=unset
 
-FROM golang:1.21-bullseye AS buildcontainer
+FROM golang:1.22-bookworm AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
 ARG LIBSIGNAL_CLIENT_VERSION
 ARG SWAG_VERSION
-ARG GRAALVM_JAVA_VERSION
 ARG GRAALVM_VERSION
 ARG BUILD_VERSION_ARG
 ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION
@@ -33,7 +31,7 @@ RUN arch="$(uname -m)"; \
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get -qq update \
 	&& apt-get -qqy install --no-install-recommends \
-		wget openjdk-17-jre software-properties-common git locales zip unzip \
+		wget software-properties-common git locales zip unzip \
 		file build-essential libz-dev zlib1g-dev < /dev/null > /dev/null \
 	&& rm -rf /var/lib/apt/lists/* 
 
@@ -61,9 +59,9 @@ RUN cd /tmp/ \
 
 RUN arch="$(uname -m)"; \
         case "$arch" in \
-            aarch64) wget -nv https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-aarch64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \
+            aarch64) wget -nv https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${GRAALVM_VERSION}/graalvm-community-jdk-${GRAALVM_VERSION}_linux-aarch64_bin.tar.gz -O /tmp/gvm.tar.gz ;; \
             armv7l) echo "GRAALVM doesn't support 32bit" ;; \
-            x86_64) wget -nv https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java${GRAALVM_JAVA_VERSION}-linux-amd64-${GRAALVM_VERSION}.tar.gz -O /tmp/gvm.tar.gz ;; \
+            x86_64) wget -nv https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${GRAALVM_VERSION}/graalvm-community-jdk-${GRAALVM_VERSION}_linux-x64_bin.tar.gz -O /tmp/gvm.tar.gz ;; \
 			*) echo "Invalid architecture" ;; \
         esac;
 
@@ -84,9 +82,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& cp signal-cli-${SIGNAL_CLI_VERSION}-source/build/install/signal-cli/lib/libsignal-client-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal-client.jar \
 		&& zip -qu libsignal-client.jar libsignal_jni.so \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
-		&& /tmp/graalvm/bin/gu install native-image \
 		&& git apply /tmp/signal-cli-native.patch \
-		&& chmod +x /tmp/graalvm/bin/gu \
 		&& ./gradlew -q nativeCompile; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
 		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64 - many thanks to @morph027" \
@@ -145,7 +141,12 @@ RUN cd /tmp/signal-cli-rest-api-src && swag init && go test ./client -v && go bu
 RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper 
 
 # Start a fresh container for release container
-FROM eclipse-temurin:17-jre-focal
+
+# eclipse-temurin doesn't provide a OpenJDK 21 image for armv7 (see https://github.com/adoptium/containers/issues/502). Until this
+# is fixed we use the standard ubuntu image
+#FROM eclipse-temurin:21-jre-jammy
+
+FROM ubuntu:jammy
 
 ENV GIN_MODE=release
 
@@ -158,7 +159,7 @@ ENV BUILD_VERSION=$BUILD_VERSION_ARG
 
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get -qq update \
-	&& apt-get -qq install -y --no-install-recommends util-linux supervisor netcat < /dev/null > /dev/null \
+	&& apt-get -qq install -y --no-install-recommends util-linux supervisor netcat openjdk-21-jre curl < /dev/null > /dev/null \
 	&& rm -rf /var/lib/apt/lists/* 
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api

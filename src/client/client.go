@@ -162,7 +162,8 @@ type SignalCliIdentityEntry struct {
 }
 
 type SendResponse struct {
-	Timestamp int64 `json:"timestamp"`
+	Timestamp       int64    `json:"timestamp"`
+	ChallengeTokens []string `json:"challenge_tokens"`
 }
 
 type About struct {
@@ -176,6 +177,19 @@ type About struct {
 type SearchResultEntry struct {
 	Number     string `json:"number"`
 	Registered bool   `json:"registered"`
+}
+
+type SetUsernameResponse struct {
+	Username string `json:"username"`
+	UsernameLink string `json:"username_link"`
+}
+
+type ListInstalledStickerPacksResponse struct {
+	PackId    string `json:"pack_id"`
+	Url       string `json:"url"`
+	Installed bool   `json:"installed"`
+	Title     string `json:"title"`
+	Author    string `json:"author"`
 }
 
 func cleanupTmpFiles(paths []string) {
@@ -339,7 +353,8 @@ func (s *MessageMention) toString() string {
 
 func (s *SignalClient) send(number string, message string,
 	recipients []string, base64Attachments []string, isGroup bool, sticker string, mentions []MessageMention,
-	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string) (*SendResponse, error) {
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string,
+	editTimestamp *int64) (*SendResponse, error) {
 
 	var resp SendResponse
 
@@ -396,6 +411,7 @@ func (s *SignalClient) send(number string, message string,
 			QuoteMessage   *string  `json:"quote-message,omitempty"`
 			QuoteMentions  []string `json:"quote-mentions,omitempty"`
 			TextStyles     []string `json:"text-style,omitempty"`
+			EditTimestamp  *int64   `json:"edit-timestamp,omitempty"`
 		}
 
 		request := Request{Message: message}
@@ -428,6 +444,7 @@ func (s *SignalClient) send(number string, message string,
 		} else {
 			request.QuoteMentions = nil
 		}
+		request.EditTimestamp = editTimestamp
 
 		if len(signalCliTextFormatStrings) > 0 {
 			request.TextStyles = signalCliTextFormatStrings
@@ -443,6 +460,15 @@ func (s *SignalClient) send(number string, message string,
 		if err != nil {
 			if strings.Contains(err.Error(), signalCliV2GroupError) {
 				return nil, errors.New("Cannot send message to group - please first update your profile.")
+			}
+
+			switch errorType := err.(type) {
+			case *RateLimitErrorType:
+				rateLimitError := errors.New(err.Error() + ". Use the attached challenge tokens to lift the rate limit restrictions via the '/v1/accounts/{number}/rate-limit-challenge' endpoint.")
+				resp.ChallengeTokens = errorType.ChallengeTokens
+				return &resp, rateLimitError
+			default:
+				return nil, err
 			}
 			return nil, err
 		}
@@ -494,6 +520,11 @@ func (s *SignalClient) send(number string, message string,
 		for _, mention := range quoteMentions {
 			cmd = append(cmd, "--quote-mention")
 			cmd = append(cmd, mention.toString())
+		}
+
+		if editTimestamp != nil {
+			cmd = append(cmd, "--edit-timestamp")
+			cmd = append(cmd, strconv.FormatInt(*editTimestamp, 10))
 		}
 
 		rawData, err := s.cliClient.Execute(true, cmd, message)
@@ -623,7 +654,7 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 }
 
 func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (*SendResponse, error) {
-	timestamp, err := s.send(number, message, recipients, base64Attachments, isGroup, "", nil, nil, nil, nil, nil, nil)
+	timestamp, err := s.send(number, message, recipients, base64Attachments, isGroup, "", nil, nil, nil, nil, nil, nil, nil)
 	return timestamp, err
 }
 
@@ -643,7 +674,7 @@ func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 }
 
 func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, sticker string, mentions []MessageMention,
-	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string) (*[]SendResponse, error) {
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string, editTimestamp *int64) (*[]SendResponse, error) {
 	if len(recps) == 0 {
 		return nil, errors.New("Please provide at least one recipient")
 	}
@@ -673,7 +704,8 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 
 	timestamps := []SendResponse{}
 	for _, group := range groups {
-		timestamp, err := s.send(number, message, []string{group}, base64Attachments, true, sticker, mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode)
+		timestamp, err := s.send(number, message, []string{group}, base64Attachments, true, sticker,
+									mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode, editTimestamp)
 		if err != nil {
 			return nil, err
 		}
@@ -681,7 +713,8 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	}
 
 	if len(recipients) > 0 {
-		timestamp, err := s.send(number, message, recipients, base64Attachments, false, sticker, mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode)
+		timestamp, err := s.send(number, message, recipients, base64Attachments, false, sticker, mentions,
+									quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode, editTimestamp)
 		if err != nil {
 			return nil, err
 		}
@@ -1823,5 +1856,156 @@ func (s *SignalClient) SubmitRateLimitChallenge(number string, challengeToken st
 		cmd := []string{"--config", s.signalCliConfig, "-a", number, "submitRateLimitChallenge", "--challenge", challengeToken, "--captcha", captcha}
 		_, err := s.cliClient.Execute(true, cmd, "")
 		return err
+	}
+}
+
+func (s *SignalClient) SetUsername(number string, username string) (SetUsernameResponse, error) {
+	type SetUsernameSignalCliResponse struct {
+		Username string `json:"username"`
+		UsernameLink string `json:"usernameLink"`
+	}
+	
+	var resp SetUsernameResponse
+	var err error
+	var rawData string
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Username string `json:"username"`
+		}
+		request := Request{Username: username}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return resp, err
+		}
+		rawData, err = jsonRpc2Client.getRaw("updateAccount", &number, request)	
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "updateAccount", "-u", username}
+		rawData, err = s.cliClient.Execute(true, cmd, "")	
+	}
+
+	var signalCliResp SetUsernameSignalCliResponse
+	err = json.Unmarshal([]byte(rawData), &signalCliResp)
+	if err != nil {
+		return resp, errors.New("Couldn't process request - invalid signal-cli response")
+	}
+
+	resp.Username = signalCliResp.Username
+	resp.UsernameLink = signalCliResp.UsernameLink
+
+	return resp, err
+}
+
+func (s *SignalClient) RemoveUsername(number string) error {
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			DeleteUsername bool `json:"delete-username"`
+		}
+		request := Request{DeleteUsername: true}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("updateAccount", &number, request)	
+		return err
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "updateAccount", "--delete-username"}
+		_, err := s.cliClient.Execute(true, cmd, "")
+		return err
+	}
+}
+
+func (s *SignalClient) UpdateAccountSettings(number string, discoverableByNumber *bool, shareNumber *bool) error {
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			ShareNumber *bool `json:"number-sharing"`
+			DiscoverableByNumber *bool `json:"discoverable-by-number"`
+		}
+		request := Request{}
+		request.DiscoverableByNumber = discoverableByNumber	
+		request.ShareNumber = shareNumber
+
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("updateAccount", &number, request)	
+		return err
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateAccount"}
+		if discoverableByNumber != nil {
+			cmd = append(cmd, []string{"--discoverable-by-number", strconv.FormatBool(*discoverableByNumber)}...)
+		}
+
+		if shareNumber != nil {
+			cmd = append(cmd, []string{"--number-sharing", strconv.FormatBool(*shareNumber)}...)
+		}
+		_, err := s.cliClient.Execute(true, cmd, "")
+		return err
+	}
+}
+
+func (s *SignalClient) ListInstalledStickerPacks(number string) ([]ListInstalledStickerPacksResponse, error) {
+	type ListInstalledStickerPacksSignalCliResponse struct {
+		PackId    string `json:"packId"`
+		Url       string `json:"url"`
+		Installed bool   `json:"installed"`
+		Title     string `json:"title"`
+		Author    string `json:"author"`
+	}
+
+	resp := []ListInstalledStickerPacksResponse{}
+
+	var err error
+	var rawData string
+	if s.signalCliMode == JsonRpc {
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return resp, err
+		}
+		rawData, err = jsonRpc2Client.getRaw("listStickerPacks", &number, nil)	
+		if err != nil {
+			return resp, err
+		}
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "listStickerPacks"}
+		rawData, err = s.cliClient.Execute(true, cmd, "")
+		if err != nil {
+			return resp, err
+		}
+	}
+
+	var signalCliResp []ListInstalledStickerPacksSignalCliResponse
+	err = json.Unmarshal([]byte(rawData), &signalCliResp)
+	if err != nil {
+		return resp, errors.New("Couldn't process request - invalid signal-cli response")
+	}
+
+	for _, value := range signalCliResp {
+		resp = append(resp, ListInstalledStickerPacksResponse{PackId: value.PackId, Url: value.Url,
+									Installed: value.Installed, Title: value.Title, Author: value.Author})
+	}
+
+	return resp, nil
+}
+
+func (s *SignalClient) AddStickerPack(number string, packId string, packKey string) error {
+	
+	stickerPackUri := fmt.Sprintf(`https://signal.art/addstickers/#pack_id=%s&pack_key=%s`, packId, packKey)
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Uri string `json:"uri"`
+		}
+		request := Request{Uri: stickerPackUri}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("addStickerPack", &number, request)	
+		return err	
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "addStickerPack", "--uri", stickerPackUri}
+		_, err := s.cliClient.Execute(true, cmd, "")
+		return err	
 	}
 }

@@ -102,6 +102,7 @@ type SendMessageV1 struct {
 type SendMessageV2 struct {
 	Number            string                  `json:"number"`
 	Recipients        []string                `json:"recipients"`
+	Recipient         string                  `json:"recipient" swaggerignore:"true"` //some REST API consumers (like the Synology NAS) do not support an array as recipients, so we provide this string parameter here as backup. In order to not confuse anyone, the parameter won't be exposed in the Swagger UI (most users are fine with the recipients parameter).
 	Message           string                  `json:"message"`
 	Base64Attachments []string                `json:"base64_attachments" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
 	Sticker           string                  `json:"sticker"`
@@ -111,6 +112,7 @@ type SendMessageV2 struct {
 	QuoteMessage      *string                 `json:"quote_message"`
 	QuoteMentions     []client.MessageMention `json:"quote_mentions"`
 	TextMode          *string                 `json:"text_mode" enums:"normal,styled"`
+	EditTimestamp     *int64                  `json:"edit_timestamp"`
 }
 
 type TypingIndicatorRequest struct {
@@ -119,6 +121,11 @@ type TypingIndicatorRequest struct {
 
 type Error struct {
 	Msg string `json:"error"`
+}
+
+type SendMessageError struct {
+	Msg string `json:"error"`
+	ChallengeTokens []string `json:"challenge_tokens,omitempty"`
 }
 
 type CreateGroupResponse struct {
@@ -136,7 +143,7 @@ type TrustIdentityRequest struct {
 }
 
 type SendMessageResponse struct {
-	Timestamp string `json:"timestamp"`
+	Timestamp       string   `json:"timestamp"`
 }
 
 type TrustModeRequest struct {
@@ -165,6 +172,20 @@ type AddDeviceRequest struct {
 type RateLimitChallengeRequest struct {
 	ChallengeToken string `json:"challenge_token" example:"<challenge token>"`
 	Captcha        string `json:"captcha" example:"signalcaptcha://{captcha value}"`
+}
+
+type UpdateAccountSettingsRequest struct {
+	DiscoverableByNumber *bool `json:"discoverable_by_number"`
+	ShareNumber          *bool `json:"share_number"`
+}
+
+type SetUsernameRequest struct {
+	Username string `json:"username" example:"test"`
+}
+
+type AddStickerPackRequest struct {
+	PackId string `json:"pack_id" example:"9a32eda01a7a28574f2eb48668ae0dc4"`
+	PackKey string `json:"pack_key" example:"19546e18eba0ff69dea78eb591465289d39e16f35e58389ae779d4f9455aff3a"`
 }
 
 type Api struct {
@@ -351,7 +372,7 @@ func (a *Api) Send(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Success 201 {object} SendMessageResponse
-// @Failure 400 {object} Error
+// @Failure 400 {object} SendMessageError
 // @Param data body SendMessageV2 true "Input Data"
 // @Router /v2/send [post]
 func (a *Api) SendV2(c *gin.Context) {
@@ -361,6 +382,13 @@ func (a *Api) SendV2(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Couldn't process request - invalid request"})
 		log.Error(err.Error())
 		return
+	}
+
+	//some REST API consumers (like the Synology NAS) do not allow to use an array for the recipients.
+	//so, in order to also support those platforms, a fallback parameter (recipient) is provided.
+	//this parameter is hidden in the swagger ui in order to not confuse users (most of them are fine with the recipients parameter).
+	if req.Recipient != "" {
+		req.Recipients = append(req.Recipients, req.Recipient)
 	}
 
 	if len(req.Recipients) == 0 {
@@ -378,15 +406,19 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
-	timestamps, err := a.signalClient.SendV2(
+	data, err := a.signalClient.SendV2(
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
-		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions, req.TextMode)
+		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions, req.TextMode, req.EditTimestamp)
 	if err != nil {
+		if data != nil {
+			c.JSON(400, SendMessageError{Msg: err.Error(), ChallengeTokens: (*data)[0].ChallengeTokens})
+			return
+		}
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
-	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt((*timestamps)[0].Timestamp, 10)})
+	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt((*data)[0].Timestamp, 10)})
 }
 
 func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan struct{}) {
@@ -1714,4 +1746,154 @@ func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// @Summary Update the account settings.
+// @Tags Accounts
+// @Description Update the account attributes on the signal server.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Param data body UpdateAccountSettingsRequest true "Request"
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/accounts/{number}/settings [put]
+func (a *Api) UpdateAccountSettings(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req UpdateAccountSettingsRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	err = a.signalClient.UpdateAccountSettings(number, req.DiscoverableByNumber, req.ShareNumber)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(201)
+}
+
+// @Summary Set a username.
+// @Tags Accounts
+// @Description Allows to set the username that should be used for this account. This can either be just the nickname (e.g. test) or the complete username with discriminator (e.g. test.123). Returns the new username with discriminator and the username link.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Param data body SetUsernameRequest true "Request"
+// @Success 201 {object} client.SetUsernameResponse
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/accounts/{number}/username [post]
+func (a *Api) SetUsername(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req SetUsernameRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	resp, err := a.signalClient.SetUsername(number, req.Username)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.JSON(201, resp)
+}
+
+// @Summary Remove a username.
+// @Tags Accounts
+// @Description Delete the username associated with this account.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/accounts/{number}/username [delete]
+func (a *Api) RemoveUsername(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	err := a.signalClient.RemoveUsername(number)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary List Installed Sticker Packs.
+// @Tags Sticker Packs
+// @Description List Installed Sticker Packs.
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Failure 400 {object} Error
+// @Success 200 {object} []client.ListInstalledStickerPacksResponse
+// @Router /v1/sticker-packs/{number} [get]
+func (a *Api) ListInstalledStickerPacks(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	installedStickerPacks, err := a.signalClient.ListInstalledStickerPacks(number)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.JSON(200, installedStickerPacks)
+}
+
+// @Summary Add Sticker Pack.
+// @Tags Sticker Packs
+// @Description In order to add a sticker pack, browse to https://signalstickers.org/ and select the sticker pack you want to add. Then, press the "Add to Signal" button. If you look at the address bar in your browser you should see an URL in this format: https://signal.art/addstickers/#pack_id=XXX&pack_key=YYY, where XXX is the pack_id and YYY is the pack_key. 
+// @Accept  json
+// @Produce  json
+// @Param number path string true "Registered Phone Number"
+// @Success 204
+// @Failure 400 {object} Error
+// @Param data body AddStickerPackRequest true "Request"
+// @Router /v1/sticker-packs/{number} [post]
+func (a *Api) AddStickerPack(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req AddStickerPackRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+
+	err = a.signalClient.AddStickerPack(number, req.PackId, req.PackKey)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(201)
 }

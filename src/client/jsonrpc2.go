@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net"
 	"time"
+	"sync"
 
 	uuid "github.com/gofrs/uuid"
 	"github.com/paprickar/signal-cli-rest-api/utils"
@@ -14,8 +15,9 @@ import (
 )
 
 type Error struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Code    int             `json:"code"`
+	Message string          `json:"message"`
+	Data    json.RawMessage `json:"data"`
 }
 
 type JsonRpc2MessageResponse struct {
@@ -30,6 +32,27 @@ type JsonRpc2ReceivedMessage struct {
 	Err    Error           `json:"error"`
 }
 
+type RateLimitMessage struct {
+	Response RateLimitResponse `json:"response"`
+}
+
+type RateLimitResponse struct {
+	Results []RateLimitResult `json:"results"`
+}
+
+type RateLimitResult struct {
+	Token string `json:"token"`
+}
+
+type RateLimitErrorType struct {
+	ChallengeTokens []string
+	Err             error
+}
+
+func (r *RateLimitErrorType) Error() string {
+	return r.Err.Error()
+}
+
 type JsonRpc2Client struct {
 	conn                     net.Conn
 	receivedResponsesById    map[string]chan JsonRpc2MessageResponse
@@ -37,6 +60,7 @@ type JsonRpc2Client struct {
 	lastTimeErrorMessageSent time.Time
 	signalCliApiConfig       *utils.SignalCliApiConfig
 	number                   string
+	receivedMessagesMutex    sync.Mutex
 }
 
 func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string) *JsonRpc2Client {
@@ -105,7 +129,7 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 		}
 	}
 
-	log.Debug("full command: ", string(fullCommandBytes))
+	log.Debug("json-rpc command: ", string(fullCommandBytes))
 
 	_, err = r.conn.Write([]byte(string(fullCommandBytes) + "\n"))
 	if err != nil {
@@ -120,8 +144,26 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 	delete(r.receivedResponsesById, u.String())
 
 	if resp.Err.Code != 0 {
+		log.Debug("json-rpc command error code: ", resp.Err.Code)
+		if resp.Err.Code == -5 {
+			var rateLimitMessage RateLimitMessage
+			err = json.Unmarshal(resp.Err.Data, &rateLimitMessage)
+			if err != nil {
+				return "", errors.New(resp.Err.Message + " (Couldn't parse JSON for more details")
+			}
+			challengeTokens := []string{}
+			for _, rateLimitResult := range rateLimitMessage.Response.Results {
+				challengeTokens = append(challengeTokens, rateLimitResult.Token)
+			}
+
+			return "", &RateLimitErrorType{
+							ChallengeTokens: challengeTokens,
+							Err : errors.New(resp.Err.Message),
+						}
+		}
 		return "", errors.New(resp.Err.Message)
 	}
+
 	return string(resp.Result), nil
 }
 
@@ -137,11 +179,14 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 			}
 			continue
 		}
-		//log.Info("Received data = ", str)
+		log.Debug("json-rpc received data: ", str)
+
+
 
 		var resp1 JsonRpc2ReceivedMessage
 		json.Unmarshal([]byte(str), &resp1)
 		if resp1.Method == "receive" {
+			r.receivedMessagesMutex.Lock()
 			for _, c := range r.receivedMessagesChannels {
 				select {
 				case c <- resp1:
@@ -151,6 +196,7 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 				}
 				continue
 			}
+			r.receivedMessagesMutex.Unlock()
 		}
 
 		var resp2 JsonRpc2MessageResponse
@@ -175,11 +221,15 @@ func (r *JsonRpc2Client) GetReceiveChannel() (chan JsonRpc2ReceivedMessage, stri
 		return c, "", err
 	}
 
+	r.receivedMessagesMutex.Lock()
+	defer r.receivedMessagesMutex.Unlock()
 	r.receivedMessagesChannels[channelUuid.String()] = c
 
 	return c, channelUuid.String(), nil
 }
 
 func (r *JsonRpc2Client) RemoveReceiveChannel(channelUuid string) {
+	r.receivedMessagesMutex.Lock()
+	defer r.receivedMessagesMutex.Unlock()
 	delete(r.receivedMessagesChannels, channelUuid)
 }

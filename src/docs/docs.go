@@ -116,6 +116,127 @@ var doc = `{
                 }
             }
         },
+        "/v1/accounts/{number}/settings": {
+            "put": {
+                "description": "Update the account attributes on the signal server.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Update the account settings.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateAccountSettingsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/accounts/{number}/username": {
+            "post": {
+                "description": "Allows to set the username that should be used for this account. This can either be just the nickname (e.g. test) or the complete username with discriminator (e.g. test.123). Returns the new username with discriminator and the username link.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Set a username.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SetUsernameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/client.SetUsernameResponse"
+                        }
+                    },
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete the username associated with this account.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Remove a username.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/attachments": {
             "get": {
                 "description": "List all downloaded attachments",
@@ -1535,6 +1656,88 @@ var doc = `{
                 }
             }
         },
+        "/v1/sticker-packs/{number}": {
+            "get": {
+                "description": "List Installed Sticker Packs.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sticker Packs"
+                ],
+                "summary": "List Installed Sticker Packs.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/client.ListInstalledStickerPacksResponse"
+                            }
+                        }
+                    },
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "In order to add a sticker pack, browse to https://signalstickers.org/ and select the sticker pack you want to add. Then, press the \"Add to Signal\" button. If you look at the address bar in your browser you should see an URL in this format: https://signal.art/addstickers/#pack_id=XXX\u0026pack_key=YYY, where XXX is the pack_id and YYY is the pack_key.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sticker Packs"
+                ],
+                "summary": "Add Sticker Pack.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.AddStickerPackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {},
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/typing-indicator/{number}": {
             "put": {
                 "description": "Show Typing Indicator.",
@@ -1702,7 +1905,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/api.SendMessageError"
                         }
                     }
                 }
@@ -1715,6 +1918,19 @@ var doc = `{
             "properties": {
                 "uri": {
                     "type": "string"
+                }
+            }
+        },
+        "api.AddStickerPackRequest": {
+            "type": "object",
+            "properties": {
+                "pack_id": {
+                    "type": "string",
+                    "example": "9a32eda01a7a28574f2eb48668ae0dc4"
+                },
+                "pack_key": {
+                    "type": "string",
+                    "example": "19546e18eba0ff69dea78eb591465289d39e16f35e58389ae779d4f9455aff3a"
                 }
             }
         },
@@ -1873,6 +2089,20 @@ var doc = `{
                 }
             }
         },
+        "api.SendMessageError": {
+            "type": "object",
+            "properties": {
+                "challenge_tokens": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
         "api.SendMessageResponse": {
             "type": "object",
             "properties": {
@@ -1919,6 +2149,9 @@ var doc = `{
                         "data:\u003cMIME-TYPE\u003e;filename=\u003cFILENAME\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e"
                     ]
                 },
+                "edit_timestamp": {
+                    "type": "integer"
+                },
                 "mentions": {
                     "type": "array",
                     "items": {
@@ -1961,6 +2194,15 @@ var doc = `{
                         "normal",
                         "styled"
                     ]
+                }
+            }
+        },
+        "api.SetUsernameRequest": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "example": "test"
                 }
             }
         },
@@ -2010,6 +2252,17 @@ var doc = `{
                 "delete_local_data": {
                     "type": "boolean",
                     "example": false
+                }
+            }
+        },
+        "api.UpdateAccountSettingsRequest": {
+            "type": "object",
+            "properties": {
+                "discoverable_by_number": {
+                    "type": "boolean"
+                },
+                "share_number": {
+                    "type": "boolean"
                 }
             }
         },
@@ -2153,6 +2406,26 @@ var doc = `{
                 }
             }
         },
+        "client.ListInstalledStickerPacksResponse": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "installed": {
+                    "type": "boolean"
+                },
+                "pack_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "client.MessageMention": {
             "type": "object",
             "properties": {
@@ -2164,6 +2437,17 @@ var doc = `{
                 },
                 "start": {
                     "type": "integer"
+                }
+            }
+        },
+        "client.SetUsernameResponse": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "type": "string"
+                },
+                "username_link": {
+                    "type": "string"
                 }
             }
         }
@@ -2208,6 +2492,10 @@ var doc = `{
         {
             "description": "Search the Signal Service.",
             "name": "Search"
+        },
+        {
+            "description": "List and Install Sticker Packs",
+            "name": "Sticker Packs"
         }
     ]
 }`
