@@ -116,6 +116,15 @@ definitions:
       registered:
         type: boolean
     type: object
+  api.SendMessageError:
+    properties:
+      challenge_tokens:
+        items:
+          type: string
+        type: array
+      error:
+        type: string
+    type: object
   api.SendMessageResponse:
     properties:
       timestamp:
@@ -1598,7 +1607,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/api.Error'
+            $ref: '#/definitions/api.SendMessageError'
       summary: Send a signal message.
       tags:
       - Messages

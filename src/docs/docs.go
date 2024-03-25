@@ -1905,7 +1905,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/api.SendMessageError"
                         }
                     }
                 }
@@ -2086,6 +2086,20 @@ var doc = `{
                 },
                 "registered": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api.SendMessageError": {
+            "type": "object",
+            "properties": {
+                "challenge_tokens": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "error": {
+                    "type": "string"
                 }
             }
         },

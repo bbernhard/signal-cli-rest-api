@@ -123,6 +123,11 @@ type Error struct {
 	Msg string `json:"error"`
 }
 
+type SendMessageError struct {
+	Msg string `json:"error"`
+	ChallengeTokens []string `json:"challenge_tokens,omitempty"`
+}
+
 type CreateGroupResponse struct {
 	Id string `json:"id"`
 }
@@ -138,7 +143,7 @@ type TrustIdentityRequest struct {
 }
 
 type SendMessageResponse struct {
-	Timestamp string `json:"timestamp"`
+	Timestamp       string   `json:"timestamp"`
 }
 
 type TrustModeRequest struct {
@@ -367,7 +372,7 @@ func (a *Api) Send(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Success 201 {object} SendMessageResponse
-// @Failure 400 {object} Error
+// @Failure 400 {object} SendMessageError
 // @Param data body SendMessageV2 true "Input Data"
 // @Router /v2/send [post]
 func (a *Api) SendV2(c *gin.Context) {
@@ -401,15 +406,19 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
-	timestamps, err := a.signalClient.SendV2(
+	data, err := a.signalClient.SendV2(
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
 		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions, req.TextMode, req.EditTimestamp)
 	if err != nil {
+		if data != nil {
+			c.JSON(400, SendMessageError{Msg: err.Error(), ChallengeTokens: (*data)[0].ChallengeTokens})
+			return
+		}
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
-	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt((*timestamps)[0].Timestamp, 10)})
+	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt((*data)[0].Timestamp, 10)})
 }
 
 func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan struct{}) {

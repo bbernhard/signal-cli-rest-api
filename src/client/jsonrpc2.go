@@ -7,7 +7,6 @@ import (
 	"net"
 	"time"
 	"sync"
-	"strings"
 
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	uuid "github.com/gofrs/uuid"
@@ -43,6 +42,15 @@ type RateLimitResponse struct {
 
 type RateLimitResult struct {
 	Token string `json:"token"`
+}
+
+type RateLimitErrorType struct {
+	ChallengeTokens []string
+	Err             error
+}
+
+func (r *RateLimitErrorType) Error() string {
+	return r.Err.Error()
 }
 
 type JsonRpc2Client struct {
@@ -151,7 +159,10 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 				challengeTokens = append(challengeTokens, rateLimitResult.Token)
 			}
 
-			return "", errors.New(resp.Err.Message + " Challenge Tokens: " + strings.Join(challengeTokens, ","))
+			return "", &RateLimitErrorType{
+							ChallengeTokens: challengeTokens,
+							Err : errors.New(resp.Err.Message),
+						}
 		}
 		return "", errors.New(resp.Err.Message)
 	}

@@ -161,7 +161,8 @@ type SignalCliIdentityEntry struct {
 }
 
 type SendResponse struct {
-	Timestamp int64 `json:"timestamp"`
+	Timestamp       int64    `json:"timestamp"`
+	ChallengeTokens []string `json:"challenge_tokens"`
 }
 
 type About struct {
@@ -458,6 +459,15 @@ func (s *SignalClient) send(number string, message string,
 		if err != nil {
 			if strings.Contains(err.Error(), signalCliV2GroupError) {
 				return nil, errors.New("Cannot send message to group - please first update your profile.")
+			}
+
+			switch errorType := err.(type) {
+			case *RateLimitErrorType:
+				rateLimitError := errors.New(err.Error() + ". Use the attached challenge tokens to lift the rate limit restrictions via the '/v1/accounts/{number}/rate-limit-challenge' endpoint.")
+				resp.ChallengeTokens = errorType.ChallengeTokens
+				return &resp, rateLimitError
+			default:
+				return nil, err
 			}
 			return nil, err
 		}
