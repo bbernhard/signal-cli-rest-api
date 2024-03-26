@@ -452,14 +452,6 @@ func (s *SignalClient) send(number string, message string,
 		rawData, err := jsonRpc2Client.getRaw("send", &number, request)
 		if err != nil {
 			cleanupAttachmentEntries(attachmentEntries)
-			return nil, err
-		}
-
-		err = json.Unmarshal([]byte(rawData), &resp)
-		if err != nil {
-			if strings.Contains(err.Error(), signalCliV2GroupError) {
-				return nil, errors.New("Cannot send message to group - please first update your profile.")
-			}
 
 			switch errorType := err.(type) {
 			case *RateLimitErrorType:
@@ -468,6 +460,16 @@ func (s *SignalClient) send(number string, message string,
 				return &resp, rateLimitError
 			default:
 				return nil, err
+			}
+			return nil, err
+		}
+
+		err = json.Unmarshal([]byte(rawData), &resp)
+		if err != nil {
+			cleanupAttachmentEntries(attachmentEntries)
+
+			if strings.Contains(err.Error(), signalCliV2GroupError) {
+				return nil, errors.New("Cannot send message to group - please first update your profile.")
 			}
 			return nil, err
 		}
