@@ -410,8 +410,18 @@ func (a *Api) SendV2(c *gin.Context) {
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
 		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions, req.TextMode, req.EditTimestamp)
 	if err != nil {
-		if data != nil {
-			c.JSON(400, SendMessageError{Msg: err.Error(), ChallengeTokens: (*data)[0].ChallengeTokens})
+		switch err.(type) {
+		case *client.RateLimitErrorType:
+			if rateLimitError, ok := err.(*client.RateLimitErrorType); ok {
+				extendedError := errors.New(err.Error() + ". Use the attached challenge tokens to lift the rate limit restrictions via the '/v1/accounts/{number}/rate-limit-challenge' endpoint.")
+				c.JSON(400, SendMessageError{Msg: extendedError.Error(), ChallengeTokens: rateLimitError.ChallengeTokens})
+				return
+			} else {
+				c.JSON(400, Error{Msg: err.Error()})
+				return
+			}
+		default:
+			c.JSON(400, Error{Msg: err.Error()})
 			return
 		}
 		c.JSON(400, Error{Msg: err.Error()})

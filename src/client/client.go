@@ -162,7 +162,6 @@ type SignalCliIdentityEntry struct {
 
 type SendResponse struct {
 	Timestamp       int64    `json:"timestamp"`
-	ChallengeTokens []string `json:"challenge_tokens"`
 }
 
 type About struct {
@@ -452,15 +451,6 @@ func (s *SignalClient) send(number string, message string,
 		rawData, err := jsonRpc2Client.getRaw("send", &number, request)
 		if err != nil {
 			cleanupAttachmentEntries(attachmentEntries)
-
-			switch errorType := err.(type) {
-			case *RateLimitErrorType:
-				rateLimitError := errors.New(err.Error() + ". Use the attached challenge tokens to lift the rate limit restrictions via the '/v1/accounts/{number}/rate-limit-challenge' endpoint.")
-				resp.ChallengeTokens = errorType.ChallengeTokens
-				return &resp, rateLimitError
-			default:
-				return nil, err
-			}
 			return nil, err
 		}
 
