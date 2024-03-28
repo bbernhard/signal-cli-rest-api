@@ -149,7 +149,6 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 	if resp.Err.Code != 0 {
 		log.Debug("json-rpc command error code: ", resp.Err.Code)
 		if resp.Err.Code == -5 {
-			log.Debug("json-rpc-client: Rate Limit Error received")
 			var rateLimitMessage RateLimitMessage
 			err = json.Unmarshal(resp.Err.Data, &rateLimitMessage)
 			if err != nil {
@@ -158,7 +157,6 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 			challengeTokens := []string{}
 			for _, rateLimitResult := range rateLimitMessage.Response.Results {
 				challengeTokens = append(challengeTokens, rateLimitResult.Token)
-				log.Debug("json-rpc-client: Received Token: ", rateLimitResult.Token)
 			}
 
 			return "", &RateLimitErrorType{

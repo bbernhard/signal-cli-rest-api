@@ -410,27 +410,20 @@ func (a *Api) SendV2(c *gin.Context) {
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
 		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions, req.TextMode, req.EditTimestamp)
 	if err != nil {
-		log.Debug("API: got an error")
 		switch err.(type) {
 		case *client.RateLimitErrorType:
-			log.Debug("Received a rate limit error")
 			if rateLimitError, ok := err.(*client.RateLimitErrorType); ok {
-				log.Debug("Converted rate limit error to error type")
-				log.Debug("num of challenge tokens = ", len(rateLimitError.ChallengeTokens))
 				extendedError := errors.New(err.Error() + ". Use the attached challenge tokens to lift the rate limit restrictions via the '/v1/accounts/{number}/rate-limit-challenge' endpoint.")
 				c.JSON(400, SendMessageError{Msg: extendedError.Error(), ChallengeTokens: rateLimitError.ChallengeTokens})
 				return
 			} else {
-				log.Debug("Couldn't convert error to rate limit error")
 				c.JSON(400, Error{Msg: err.Error()})
 				return
 			}
 		default:
-			log.Debug("Default errror")
 			c.JSON(400, Error{Msg: err.Error()})
 			return
 		}
-		log.Debug("shouldn't end up here")
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
