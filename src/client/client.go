@@ -410,6 +410,7 @@ func (s *SignalClient) send(number string, message string,
 			QuoteMentions  []string `json:"quote-mentions,omitempty"`
 			TextStyles     []string `json:"text-style,omitempty"`
 			EditTimestamp  *int64   `json:"edit-timestamp,omitempty"`
+			NotifySelf     bool     `json:"notify-self,omitempty"`
 		}
 
 		request := Request{Message: message}
@@ -421,6 +422,8 @@ func (s *SignalClient) send(number string, message string,
 		for _, attachmentEntry := range attachmentEntries {
 			request.Attachments = append(request.Attachments, attachmentEntry.toDataForSignal())
 		}
+
+		request.NotifySelf = true
 
 		request.Sticker = sticker
 		if mentions != nil {
@@ -517,6 +520,8 @@ func (s *SignalClient) send(number string, message string,
 			cmd = append(cmd, "--edit-timestamp")
 			cmd = append(cmd, strconv.FormatInt(*editTimestamp, 10))
 		}
+
+		cmd = append(cmd, "--notify-self")
 
 		rawData, err := s.cliClient.Execute(true, cmd, message)
 		if err != nil {
