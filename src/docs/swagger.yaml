@@ -1303,6 +1303,10 @@ paths:
         in: query
         name: max_messages
         type: string
+      - description: Specify whether read receipts should be sent when receiving messages
+        in: query
+        name: send_read_receipts
+        type: string
       produces:
       - application/json
       responses:

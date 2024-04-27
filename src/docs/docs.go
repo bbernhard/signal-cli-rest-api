@@ -1449,6 +1449,12 @@ var doc = `{
                         "description": "Specify the maximum number of messages to receive (default: unlimited)",
                         "name": "max_messages",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Specify whether read receipts should be sent when receiving messages",
+                        "name": "send_read_receipts",
+                        "in": "query"
                     }
                 ],
                 "responses": {
