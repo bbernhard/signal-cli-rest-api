@@ -720,7 +720,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	return &timestamps, nil
 }
 
-func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments bool, ignoreStories bool, maxMessages int64) (string, error) {
+func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments bool, ignoreStories bool, maxMessages int64, sendReadReceipts bool) (string, error) {
 	if s.signalCliMode == JsonRpc {
 		return "", errors.New("Not implemented")
 	} else {
@@ -737,6 +737,10 @@ func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments b
 		if maxMessages > 0 {
 			command = append(command, "--max-messages")
 			command = append(command, strconv.FormatInt(maxMessages, 10))
+		}
+
+		if sendReadReceipts {
+			command = append(command, "--send-read-receipts")
 		}
 
 		out, err := s.cliClient.Execute(true, command, "")
