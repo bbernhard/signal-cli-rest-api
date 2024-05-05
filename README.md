@@ -22,7 +22,7 @@ and [many more](https://bbernhard.github.io/signal-cli-rest-api/)
 This allows you to update `signal-cli-rest-api` by just deleting and recreating the container without the need to re-register your signal number
 
 ```bash
-$ mkdir $HOME/.local/share/signal-cli
+$ mkdir $HOME/.local/share/signal-api
 ```
 
 
@@ -30,7 +30,7 @@ $ mkdir $HOME/.local/share/signal-cli
 
 ```bash
 $ sudo docker run -d --name signal-api --restart=always -p 8080:8080 \
-      -v $HOME/.local/share/signal-cli:/home/.local/share/signal-cli \
+      -v $HOME/.local/share/signal-api:/home/.local/share/signal-cli \
       -e 'MODE=native' bbernhard/signal-cli-rest-api
 ```
 
