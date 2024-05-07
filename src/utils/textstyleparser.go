@@ -5,29 +5,29 @@ import (
 )
 
 const (
-	Normal string = "NORMAL"
-	Bold          = "BOLD"
-	Italic        = "ITALIC"
-	Monospace     = "MONOSPACE"
-	Strikethrough = "STRIKETHROUGH"
-	Spoiler       = "SPOILER"
+	Normal        string = "NORMAL"
+	Bold                 = "BOLD"
+	Italic               = "ITALIC"
+	Monospace            = "MONOSPACE"
+	Strikethrough        = "STRIKETHROUGH"
+	Spoiler              = "SPOILER"
 )
 
 const (
-	None        int    = 0
-	ItalicBegin        = 1
-	ItalicEnd          = 2
-	BoldBegin          = 3
-	BoldEnd1           = 4
-	BoldEnd2           = 5
-	MonoSpaceBegin     = 6
-	MonoSpaceEnd       = 7
-	StrikethroughBegin = 8
-	StrikethroughEnd   = 9
-	SpoilerBegin1      = 10
-	SpoilerBegin       = 11
-	SpoilerEnd1        = 12
-	SpoilerEnd2        = 13
+	None               int = 0
+	ItalicBegin            = 1
+	ItalicEnd              = 2
+	BoldBegin              = 3
+	BoldEnd1               = 4
+	BoldEnd2               = 5
+	MonoSpaceBegin         = 6
+	MonoSpaceEnd           = 7
+	StrikethroughBegin     = 8
+	StrikethroughEnd       = 9
+	SpoilerBegin1          = 10
+	SpoilerBegin           = 11
+	SpoilerEnd1            = 12
+	SpoilerEnd2            = 13
 )
 
 func getUtf16CharacterCount(s string) int {
@@ -35,7 +35,7 @@ func getUtf16CharacterCount(s string) int {
 	if stringLength == 1 {
 		return 1
 	}
-	return stringLength/2
+	return stringLength / 2
 }
 
 func getAdditionalCharacterCount(characterCount int) int {
@@ -123,7 +123,7 @@ func ParseMarkdownMessage(message string) (string, []string) {
 		lastChar = string(v)
 
 		if state == ItalicEnd || state == BoldEnd2 || state == MonoSpaceEnd || state == StrikethroughEnd || state == SpoilerEnd2 {
-			signalCliFormatStrings = append(signalCliFormatStrings, strconv.Itoa(textFormatBegin)+":"+strconv.Itoa(textFormatLength + additionalCharacterCount)+":"+textFormat)
+			signalCliFormatStrings = append(signalCliFormatStrings, strconv.Itoa(textFormatBegin)+":"+strconv.Itoa(textFormatLength+additionalCharacterCount)+":"+textFormat)
 			state = None
 			textFormatBegin = 0
 			textFormatLength = 0

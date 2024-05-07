@@ -1,23 +1,23 @@
 package utils
 
 import (
-	"io/ioutil"
-	"gopkg.in/yaml.v2"
 	"errors"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"os"
 )
 
 type SignalCliTrustMode int
 
 const (
-        OnFirstUseTrust SignalCliTrustMode = iota
-        AlwaysTrust
-        NeverTrust
+	OnFirstUseTrust SignalCliTrustMode = iota
+	AlwaysTrust
+	NeverTrust
 )
 
 func TrustModeToString(trustMode SignalCliTrustMode) (string, error) {
 	if trustMode == OnFirstUseTrust {
-		return "on-first-use", nil 
+		return "on-first-use", nil
 	} else if trustMode == AlwaysTrust {
 		return "always", nil
 	} else if trustMode == NeverTrust {
@@ -28,7 +28,7 @@ func TrustModeToString(trustMode SignalCliTrustMode) (string, error) {
 
 func StringToTrustMode(trustMode string) (SignalCliTrustMode, error) {
 	if trustMode == "on-first-use" {
-		return OnFirstUseTrust, nil 
+		return OnFirstUseTrust, nil
 	} else if trustMode == "always" {
 		return AlwaysTrust, nil
 	} else if trustMode == "never" {
@@ -38,7 +38,7 @@ func StringToTrustMode(trustMode string) (SignalCliTrustMode, error) {
 }
 
 type SignalCliApiConfigEntry struct {
-	TrustMode      SignalCliTrustMode  `yaml:"trust_mode"`
+	TrustMode SignalCliTrustMode `yaml:"trust_mode"`
 }
 
 type SignalCliApiConfigEntries struct {
@@ -47,7 +47,7 @@ type SignalCliApiConfigEntries struct {
 
 type SignalCliApiConfig struct {
 	config SignalCliApiConfigEntries
-	path string
+	path   string
 }
 
 func NewSignalCliApiConfig() *SignalCliApiConfig {
