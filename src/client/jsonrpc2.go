@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	uuid "github.com/gofrs/uuid"
@@ -160,9 +160,9 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 			}
 
 			return "", &RateLimitErrorType{
-							ChallengeTokens: challengeTokens,
-							Err : errors.New(resp.Err.Message),
-						}
+				ChallengeTokens: challengeTokens,
+				Err:             errors.New(resp.Err.Message),
+			}
 		}
 		return "", errors.New(resp.Err.Message)
 	}
@@ -183,8 +183,6 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 			continue
 		}
 		log.Debug("json-rpc received data: ", str)
-
-
 
 		var resp1 JsonRpc2ReceivedMessage
 		json.Unmarshal([]byte(str), &resp1)
