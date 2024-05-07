@@ -190,6 +190,22 @@ type ListInstalledStickerPacksResponse struct {
 	Author    string `json:"author"`
 }
 
+type SignalCliSendRequest struct {
+	Number				string
+	Message				string
+	Recipients			[]string 
+	Base64Attachments	[]string
+	IsGroup				bool
+	Sticker				string
+	Mentions			[]MessageMention
+	QuoteTimestamp		*int64
+	QuoteAuthor			*string
+	QuoteMessage		*string
+	QuoteMentions		[]MessageMention
+	TextMode			*string
+	EditTimestamp		*int64
+}
+
 func cleanupTmpFiles(paths []string) {
 	for _, path := range paths {
 		os.Remove(path)
@@ -349,29 +365,25 @@ func (s *MessageMention) toString() string {
 	return fmt.Sprintf("%d:%d:%s", s.Start, s.Length, s.Author)
 }
 
-func (s *SignalClient) send(number string, message string,
-	recipients []string, base64Attachments []string, isGroup bool, sticker string, mentions []MessageMention,
-	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string,
-	editTimestamp *int64) (*SendResponse, error) {
-
+func(s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendResponse, error) {
 	var resp SendResponse
 
-	if len(recipients) == 0 {
+	if len(signalCliSendRequest.Recipients) == 0 {
 		return nil, errors.New("Please specify at least one recipient")
 	}
 
 	signalCliTextFormatStrings := []string{}
-	if textMode != nil && *textMode == "styled" {
-		message, signalCliTextFormatStrings = utils.ParseMarkdownMessage(message)
+	if signalCliSendRequest.TextMode != nil && *signalCliSendRequest.TextMode == "styled" {
+		signalCliSendRequest.Message, signalCliTextFormatStrings = utils.ParseMarkdownMessage(signalCliSendRequest.Message)
 	}
 
 	var groupId string = ""
-	if isGroup {
-		if len(recipients) > 1 {
+	if signalCliSendRequest.IsGroup {
+		if len(signalCliSendRequest.Recipients) > 1 {
 			return nil, errors.New("More than one recipient is currently not allowed")
 		}
 
-		grpId, err := base64.StdEncoding.DecodeString(recipients[0])
+		grpId, err := base64.StdEncoding.DecodeString(signalCliSendRequest.Recipients[0])
 		if err != nil {
 			return nil, errors.New("Invalid group id")
 		}
@@ -379,7 +391,7 @@ func (s *SignalClient) send(number string, message string,
 	}
 
 	attachmentEntries := []AttachmentEntry{}
-	for _, base64Attachment := range base64Attachments {
+	for _, base64Attachment := range signalCliSendRequest.Base64Attachments {
 		attachmentEntry := NewAttachmentEntry(base64Attachment, s.attachmentTmpDir)
 
 		err := attachmentEntry.storeBase64AsTemporaryFile()
@@ -413,11 +425,11 @@ func (s *SignalClient) send(number string, message string,
 			NotifySelf     bool     `json:"notify-self,omitempty"`
 		}
 
-		request := Request{Message: message}
-		if isGroup {
+		request := Request{Message: signalCliSendRequest.Message}
+		if signalCliSendRequest.IsGroup {
 			request.GroupId = groupId
 		} else {
-			request.Recipients = recipients
+			request.Recipients = signalCliSendRequest.Recipients
 		}
 		for _, attachmentEntry := range attachmentEntries {
 			request.Attachments = append(request.Attachments, attachmentEntry.toDataForSignal())
@@ -425,33 +437,33 @@ func (s *SignalClient) send(number string, message string,
 
 		request.NotifySelf = true
 
-		request.Sticker = sticker
-		if mentions != nil {
-			request.Mentions = make([]string, len(mentions))
-			for i, mention := range mentions {
+		request.Sticker = signalCliSendRequest.Sticker
+		if signalCliSendRequest.Mentions != nil {
+			request.Mentions = make([]string, len(signalCliSendRequest.Mentions))
+			for i, mention := range signalCliSendRequest.Mentions {
 				request.Mentions[i] = mention.toString()
 			}
 		} else {
 			request.Mentions = nil
 		}
-		request.QuoteTimestamp = quoteTimestamp
-		request.QuoteAuthor = quoteAuthor
-		request.QuoteMessage = quoteMessage
-		if quoteMentions != nil {
-			request.QuoteMentions = make([]string, len(quoteMentions))
-			for i, mention := range quoteMentions {
+		request.QuoteTimestamp = signalCliSendRequest.QuoteTimestamp
+		request.QuoteAuthor = signalCliSendRequest.QuoteAuthor
+		request.QuoteMessage = signalCliSendRequest.QuoteMessage
+		if signalCliSendRequest.QuoteMentions != nil {
+			request.QuoteMentions = make([]string, len(signalCliSendRequest.QuoteMentions))
+			for i, mention := range signalCliSendRequest.QuoteMentions {
 				request.QuoteMentions[i] = mention.toString()
 			}
 		} else {
 			request.QuoteMentions = nil
 		}
-		request.EditTimestamp = editTimestamp
+		request.EditTimestamp = signalCliSendRequest.EditTimestamp
 
 		if len(signalCliTextFormatStrings) > 0 {
 			request.TextStyles = signalCliTextFormatStrings
 		}
 
-		rawData, err := jsonRpc2Client.getRaw("send", &number, request)
+		rawData, err := jsonRpc2Client.getRaw("send", &signalCliSendRequest.Number, request)
 		if err != nil {
 			cleanupAttachmentEntries(attachmentEntries)
 			return nil, err
@@ -467,9 +479,9 @@ func (s *SignalClient) send(number string, message string,
 			return nil, err
 		}
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "send", "--message-from-stdin"}
-		if !isGroup {
-			cmd = append(cmd, recipients...)
+		cmd := []string{"--config", s.signalCliConfig, "-a", signalCliSendRequest.Number, "send", "--message-from-stdin"}
+		if !signalCliSendRequest.IsGroup {
+			cmd = append(cmd, signalCliSendRequest.Recipients...)
 		} else {
 			cmd = append(cmd, []string{"-g", groupId}...)
 		}
@@ -486,44 +498,44 @@ func (s *SignalClient) send(number string, message string,
 			}
 		}
 
-		for _, mention := range mentions {
+		for _, mention := range signalCliSendRequest.Mentions {
 			cmd = append(cmd, "--mention")
 			cmd = append(cmd, mention.toString())
 		}
 
-		if sticker != "" {
+		if signalCliSendRequest.Sticker != "" {
 			cmd = append(cmd, "--sticker")
-			cmd = append(cmd, sticker)
+			cmd = append(cmd, signalCliSendRequest.Sticker)
 		}
 
-		if quoteTimestamp != nil {
+		if signalCliSendRequest.QuoteTimestamp != nil {
 			cmd = append(cmd, "--quote-timestamp")
-			cmd = append(cmd, strconv.FormatInt(*quoteTimestamp, 10))
+			cmd = append(cmd, strconv.FormatInt(*signalCliSendRequest.QuoteTimestamp, 10))
 		}
 
-		if quoteAuthor != nil {
+		if signalCliSendRequest.QuoteAuthor != nil {
 			cmd = append(cmd, "--quote-author")
-			cmd = append(cmd, *quoteAuthor)
+			cmd = append(cmd, *signalCliSendRequest.QuoteAuthor)
 		}
 
-		if quoteMessage != nil {
+		if signalCliSendRequest.QuoteMessage != nil {
 			cmd = append(cmd, "--quote-message")
-			cmd = append(cmd, *quoteMessage)
+			cmd = append(cmd, *signalCliSendRequest.QuoteMessage)
 		}
 
-		for _, mention := range quoteMentions {
+		for _, mention := range signalCliSendRequest.QuoteMentions {
 			cmd = append(cmd, "--quote-mention")
 			cmd = append(cmd, mention.toString())
 		}
 
-		if editTimestamp != nil {
+		if signalCliSendRequest.EditTimestamp != nil {
 			cmd = append(cmd, "--edit-timestamp")
-			cmd = append(cmd, strconv.FormatInt(*editTimestamp, 10))
+			cmd = append(cmd, strconv.FormatInt(*signalCliSendRequest.EditTimestamp, 10))
 		}
 
 		cmd = append(cmd, "--notify-self")
 
-		rawData, err := s.cliClient.Execute(true, cmd, message)
+		rawData, err := s.cliClient.Execute(true, cmd, signalCliSendRequest.Message)
 		if err != nil {
 			cleanupAttachmentEntries(attachmentEntries)
 			if strings.Contains(err.Error(), signalCliV2GroupError) {
@@ -650,7 +662,10 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 }
 
 func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (*SendResponse, error) {
-	timestamp, err := s.send(number, message, recipients, base64Attachments, isGroup, "", nil, nil, nil, nil, nil, nil, nil)
+	signalCliSendRequest := SignalCliSendRequest{Number: number, Message: message, Recipients: recipients, Base64Attachments: base64Attachments,
+												 IsGroup: isGroup, Sticker: "", Mentions: nil, QuoteTimestamp: nil, QuoteAuthor: nil, QuoteMessage: nil,
+												 QuoteMentions: nil, TextMode: nil, EditTimestamp: nil}
+	timestamp, err := s.send(signalCliSendRequest)
 	return timestamp, err
 }
 
@@ -700,8 +715,11 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 
 	timestamps := []SendResponse{}
 	for _, group := range groups {
-		timestamp, err := s.send(number, message, []string{group}, base64Attachments, true, sticker,
-									mentions, quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode, editTimestamp)
+		signalCliSendRequest := SignalCliSendRequest{Number: number, Message: message, Recipients: []string{group}, Base64Attachments: base64Attachments, 
+													 IsGroup: true, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
+													 QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
+													 TextMode: textMode, EditTimestamp: editTimestamp}
+		timestamp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
 		}
@@ -709,8 +727,11 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	}
 
 	if len(recipients) > 0 {
-		timestamp, err := s.send(number, message, recipients, base64Attachments, false, sticker, mentions,
-									quoteTimestamp, quoteAuthor, quoteMessage, quoteMentions, textMode, editTimestamp)
+		signalCliSendRequest := SignalCliSendRequest{Number: number, Message: message, Recipients: recipients, Base64Attachments: base64Attachments, 
+													 IsGroup: false, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
+													 QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
+													 TextMode: textMode, EditTimestamp: editTimestamp}
+		timestamp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
 		}
