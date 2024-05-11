@@ -102,6 +102,18 @@ definitions:
       timestamp:
         type: integer
     type: object
+  api.Receipt:
+    properties:
+      receipt_type:
+        enum:
+        - read
+        - viewed
+        type: string
+      recipient:
+        type: string
+      timestamp:
+        type: integer
+    type: object
   api.RegisterNumberRequest:
     properties:
       captcha:
@@ -1276,6 +1288,32 @@ paths:
       summary: Send a reaction.
       tags:
       - Reactions
+  /v1/receipts/{number}:
+    post:
+      consumes:
+      - application/json
+      description: Send a read or viewed receipt
+      parameters:
+      - description: Receipt
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.Receipt'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Send a receipt.
+      tags:
+      - Receipts
   /v1/receive/{number}:
     get:
       consumes:
@@ -1635,6 +1673,8 @@ tags:
   name: Identities
 - description: React to messages.
   name: Reactions
+- description: Send receipts for messages.
+  name: Receipts
 - description: Search the Signal Service.
   name: Search
 - description: List and Install Sticker Packs

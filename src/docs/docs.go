@@ -1405,6 +1405,46 @@ var doc = `{
                 }
             }
         },
+        "/v1/receipts/{number}": {
+            "post": {
+                "description": "Send a read or viewed receipt",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Receipts"
+                ],
+                "summary": "Send a receipt.",
+                "parameters": [
+                    {
+                        "description": "Receipt",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.Receipt"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/receive/{number}": {
             "get": {
                 "description": "Receives Signal Messages from the Signal Network. If you are running the docker container in normal/native mode, this is a GET endpoint. In json-rpc mode this is a websocket endpoint.",
@@ -2073,6 +2113,24 @@ var doc = `{
                 }
             }
         },
+        "api.Receipt": {
+            "type": "object",
+            "properties": {
+                "receipt_type": {
+                    "type": "string",
+                    "enum": [
+                        "read",
+                        "viewed"
+                    ]
+                },
+                "recipient": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.RegisterNumberRequest": {
             "type": "object",
             "properties": {
@@ -2494,6 +2552,10 @@ var doc = `{
         {
             "description": "React to messages.",
             "name": "Reactions"
+        },
+        {
+            "description": "Send receipts for messages.",
+            "name": "Receipts"
         },
         {
             "description": "Search the Signal Service.",
