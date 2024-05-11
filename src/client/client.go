@@ -1637,6 +1637,44 @@ func (s *SignalClient) SendReaction(number string, recipient string, emoji strin
 	return err
 }
 
+
+func (s *SignalClient) SendReceipt(number string, recipient string, receipt_type string, timestamp int64) error {
+	// see https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc#sendreceipt
+	var err error
+	recp := recipient
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Recipient    string `json:"recipient,omitempty"`
+			ReceiptType  string `json:"receipt-type"`
+			Timestamp    int64  `json:"target-timestamp"`
+		}
+		request := Request{}
+		request.Recipient = recp
+		request.ReceiptType = receipt_type
+		request.Timestamp = timestamp
+
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("sendReceipt", &number, request)
+		return err
+	}
+
+	cmd := []string{
+		"--config", s.signalCliConfig,
+		"-a", number,
+		"sendReceipt",
+		recp,
+	}
+
+	cmd = append(cmd, []string{"-t", strconv.FormatInt(timestamp, 10)}...)
+
+	_, err = s.cliClient.Execute(true, cmd, "")
+	return err
+}
+
 func (s *SignalClient) SendStartTyping(number string, recipient string) error {
 	var err error
 	recp := recipient

@@ -91,6 +91,12 @@ type Reaction struct {
 	Timestamp    int64  `json:"timestamp"`
 }
 
+type Receipt struct {
+	Recipient   string `json:"recipient"`
+	ReceiptType string `json:"receipt_type" enums:"read,viewed"`
+	Timestamp   int64  `json:"timestamp"`
+}
+
 type SendMessageV1 struct {
 	Number           string   `json:"number"`
 	Recipients       []string `json:"recipients"`
@@ -1472,6 +1478,51 @@ func (a *Api) RemoveReaction(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+
+// @Summary Send a receipt.
+// @Tags Receipts
+// @Description Send a read or viewed receipt
+// @Accept  json
+// @Produce  json
+// @Success 204 {string} OK
+// @Failure 400 {object} Error
+// @Param data body Receipt true "Receipt"
+// @Router /v1/receipts/{number} [post]
+func (a *Api) SendReceipt(c *gin.Context) {
+	var req Receipt
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		log.Error(err.Error())
+		return
+	}
+
+	number := c.Param("number")
+
+	if req.Recipient == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
+		return
+	}
+
+	// if req.ReceiptType != "viewed" && req.ReceiptType != "read" {
+	if !utils.StringInSlice(req.ReceiptType, []string{"read", "viewed"}) {
+		c.JSON(400, Error{Msg: "Couldn't process request - receipt type must be read or viewed"})
+		return
+	}
+
+	if req.Timestamp == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - timestamp missing"})
+		return
+	}
+
+	err = a.signalClient.SendReceipt(number, req.Recipient, req.ReceiptType, req.Timestamp)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 // @Summary Show Typing Indicator.
 // @Tags Messages
 // @Description Show Typing Indicator.
@@ -1883,7 +1934,7 @@ func (a *Api) ListInstalledStickerPacks(c *gin.Context) {
 
 // @Summary Add Sticker Pack.
 // @Tags Sticker Packs
-// @Description In order to add a sticker pack, browse to https://signalstickers.org/ and select the sticker pack you want to add. Then, press the "Add to Signal" button. If you look at the address bar in your browser you should see an URL in this format: https://signal.art/addstickers/#pack_id=XXX&pack_key=YYY, where XXX is the pack_id and YYY is the pack_key. 
+// @Description In order to add a sticker pack, browse to https://signalstickers.org/ and select the sticker pack you want to add. Then, press the "Add to Signal" button. If you look at the address bar in your browser you should see an URL in this format: https://signal.art/addstickers/#pack_id=XXX&pack_key=YYY, where XXX is the pack_id and YYY is the pack_key.
 // @Accept  json
 // @Produce  json
 // @Param number path string true "Registered Phone Number"

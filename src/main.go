@@ -49,6 +49,9 @@ import (
 // @tag.name Reactions
 // @tag.description React to messages.
 
+// @tag.name Receipts
+// @tag.description Send receipts for messages.
+
 // @tag.name Search
 // @tag.description Search the Signal Service.
 
@@ -252,6 +255,11 @@ func main() {
 		{
 			reactions.POST(":number", api.SendReaction)
 			reactions.DELETE(":number", api.RemoveReaction)
+		}
+
+		receipts := v1.Group("/receipts")
+		{
+			receipts.POST(":number", api.SendReceipt)
 		}
 
 		search := v1.Group("/search")
