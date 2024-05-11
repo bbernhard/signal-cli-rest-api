@@ -1499,6 +1499,11 @@ func (a *Api) SendReceipt(c *gin.Context) {
 
 	number := c.Param("number")
 
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
 	if req.Recipient == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
 		return
