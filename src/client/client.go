@@ -190,12 +190,20 @@ type ListInstalledStickerPacksResponse struct {
 	Author    string `json:"author"`
 }
 
+type RecpType int
+
+const (
+	Number    RecpType = iota + 1
+	Username
+	Group
+)
+
 type SignalCliSendRequest struct {
 	Number            string
 	Message           string
 	Recipients        []string
 	Base64Attachments []string
-	IsGroup           bool
+	RecipientType     RecpType
 	Sticker           string
 	Mentions          []MessageMention
 	QuoteTimestamp    *int64
@@ -378,7 +386,7 @@ func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendRes
 	}
 
 	var groupId string = ""
-	if signalCliSendRequest.IsGroup {
+	if signalCliSendRequest.RecipientType == Group {
 		if len(signalCliSendRequest.Recipients) > 1 {
 			return nil, errors.New("More than one recipient is currently not allowed")
 		}
@@ -426,10 +434,12 @@ func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendRes
 		}
 
 		request := Request{Message: signalCliSendRequest.Message}
-		if signalCliSendRequest.IsGroup {
+		if signalCliSendRequest.RecipientType == Group {
 			request.GroupId = groupId
-		} else {
+		} else if signalCliSendRequest.RecipientType == Number {
 			request.Recipients = signalCliSendRequest.Recipients
+		} else if signalCliSendRequest.RecipientType == Username {
+			//TODO: fix for username
 		}
 		for _, attachmentEntry := range attachmentEntries {
 			request.Attachments = append(request.Attachments, attachmentEntry.toDataForSignal())
@@ -480,10 +490,12 @@ func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendRes
 		}
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-a", signalCliSendRequest.Number, "send", "--message-from-stdin"}
-		if !signalCliSendRequest.IsGroup {
+		if signalCliSendRequest.RecipientType == Number {
 			cmd = append(cmd, signalCliSendRequest.Recipients...)
-		} else {
+		} else if signalCliSendRequest.RecipientType == Group {
 			cmd = append(cmd, []string{"-g", groupId}...)
+		} else if signalCliSendRequest.RecipientType == Username {
+			//TODO fix for usernames
 		}
 
 		if len(signalCliTextFormatStrings) > 0 {
@@ -662,8 +674,13 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 }
 
 func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (*SendResponse, error) {
+	recipientType := Number
+	if isGroup {
+		recipientType = Group
+	}
+
 	signalCliSendRequest := SignalCliSendRequest{Number: number, Message: message, Recipients: recipients, Base64Attachments: base64Attachments,
-		IsGroup: isGroup, Sticker: "", Mentions: nil, QuoteTimestamp: nil, QuoteAuthor: nil, QuoteMessage: nil,
+		RecipientType: recipientType, Sticker: "", Mentions: nil, QuoteTimestamp: nil, QuoteAuthor: nil, QuoteMessage: nil,
 		QuoteMentions: nil, TextMode: nil, EditTimestamp: nil}
 	timestamp, err := s.send(signalCliSendRequest)
 	return timestamp, err
@@ -716,7 +733,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	timestamps := []SendResponse{}
 	for _, group := range groups {
 		signalCliSendRequest := SignalCliSendRequest{Number: number, Message: message, Recipients: []string{group}, Base64Attachments: base64Attachments,
-			IsGroup: true, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
+			RecipientType: Group, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
 			TextMode: textMode, EditTimestamp: editTimestamp}
 		timestamp, err := s.send(signalCliSendRequest)
@@ -728,7 +745,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 
 	if len(recipients) > 0 {
 		signalCliSendRequest := SignalCliSendRequest{Number: number, Message: message, Recipients: recipients, Base64Attachments: base64Attachments,
-			IsGroup: false, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
+			RecipientType: Number, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
 			TextMode: textMode, EditTimestamp: editTimestamp}
 		timestamp, err := s.send(signalCliSendRequest)
