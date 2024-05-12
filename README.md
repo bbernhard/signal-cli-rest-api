@@ -22,7 +22,7 @@ and [many more](https://bbernhard.github.io/signal-cli-rest-api/)
 This allows you to update `signal-cli-rest-api` by just deleting and recreating the container without the need to re-register your signal number
 
 ```bash
-$ mkdir $HOME/.local/share/signal-api
+$ mkdir -p $HOME/.local/share/signal-api
 ```
 
 
