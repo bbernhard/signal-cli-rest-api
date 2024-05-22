@@ -18,6 +18,7 @@ import (
 	uuid "github.com/gofrs/uuid"
 	qrcode "github.com/skip2/go-qrcode"
 
+	ds "github.com/bbernhard/signal-cli-rest-api/datastructs"
 	utils "github.com/bbernhard/signal-cli-rest-api/utils"
 )
 
@@ -102,12 +103,6 @@ func (g GroupLinkState) FromString(input string) GroupLinkState {
 	return DefaultGroupLinkState
 }
 
-type MessageMention struct {
-	Start  int64  `json:"start"`
-	Length int64  `json:"length"`
-	Author string `json:"author"`
-}
-
 type GroupEntry struct {
 	Name            string   `json:"name"`
 	Id              string   `json:"id"`
@@ -188,30 +183,6 @@ type ListInstalledStickerPacksResponse struct {
 	Installed bool   `json:"installed"`
 	Title     string `json:"title"`
 	Author    string `json:"author"`
-}
-
-type RecpType int
-
-const (
-	Number    RecpType = iota + 1
-	Username
-	Group
-)
-
-type SignalCliSendRequest struct {
-	Number            string
-	Message           string
-	Recipients        []string
-	Base64Attachments []string
-	RecipientType     RecpType
-	Sticker           string
-	Mentions          []MessageMention
-	QuoteTimestamp    *int64
-	QuoteAuthor       *string
-	QuoteMessage      *string
-	QuoteMentions     []MessageMention
-	TextMode          *string
-	EditTimestamp     *int64
 }
 
 func cleanupTmpFiles(paths []string) {
@@ -308,6 +279,35 @@ func getSignalCliModeString(signalCliMode SignalCliMode) string {
 	return "unknown"
 }
 
+func getRecipientType(s string) (ds.RecpType, error) {
+	// check if the provided recipient is of type 'group'
+	if strings.HasPrefix(s, groupPrefix) { // if the recipient starts with 'group.' it is either a group or a username that starts with 'group.'
+		// in order to find out whether it is a Signal group or a username that starts with 'group.',
+		// we remove the prefix and attempt to base64 decode the group name twice (in case it is a Signal group, the group name was base64 encoded
+		// twice - once in the REST API wrapper and once in signal-cli). If the decoded Signal Group is 32 in length, we know that it is a Signal Group.
+		// A Signal Group is exactly 32 elements long (see https://github.com/signalapp/libsignal/blob/1086531d798fb4bde25dfaba51ecb59500e0715f/rust/zkgroup/src/api/groups/group_params.rs#L69), whereas the Signal Username Discriminator can be at most 10 digits long (see https://signal.miraheze.org/wiki/Usernames#Discriminator).
+		// So in case the group name is 32 elements long we know for sure that it is a Signal Group.
+		s1 := strings.TrimPrefix(s, groupPrefix)
+		signalCliBase64EncodedGroupId, err := base64.StdEncoding.DecodeString(s1)
+		if err == nil {
+			signalCliGroupId, err := base64.StdEncoding.DecodeString(string(signalCliBase64EncodedGroupId))
+			if err == nil {
+				if len(signalCliGroupId) == 32 {
+					return ds.Group, nil
+				} else {
+					return ds.Group, errors.New("Invalid Signal group size (" + strconv.Itoa(len(signalCliGroupId)))
+				}
+			}
+		} else if len(s1) <= 10 {
+			return ds.Username, nil
+		}
+		return ds.Group, errors.New("Invalid identifier " + s)
+	} else if utils.IsPhoneNumber(s) {
+		return ds.Number, nil
+	}
+	return ds.Username, nil
+}
+
 type SignalClient struct {
 	signalCliConfig          string
 	attachmentTmpDir         string
@@ -369,11 +369,7 @@ func (s *SignalClient) Init() error {
 	return nil
 }
 
-func (s *MessageMention) toString() string {
-	return fmt.Sprintf("%d:%d:%s", s.Start, s.Length, s.Author)
-}
-
-func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendResponse, error) {
+func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*SendResponse, error) {
 	var resp SendResponse
 
 	if len(signalCliSendRequest.Recipients) == 0 {
@@ -386,7 +382,7 @@ func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendRes
 	}
 
 	var groupId string = ""
-	if signalCliSendRequest.RecipientType == Group {
+	if signalCliSendRequest.RecipientType == ds.Group {
 		if len(signalCliSendRequest.Recipients) > 1 {
 			return nil, errors.New("More than one recipient is currently not allowed")
 		}
@@ -419,6 +415,7 @@ func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendRes
 
 		type Request struct {
 			Recipients     []string `json:"recipient,omitempty"`
+			Usernames      []string `json:"username,omitempty"`
 			Message        string   `json:"message"`
 			GroupId        string   `json:"group-id,omitempty"`
 			Attachments    []string `json:"attachment,omitempty"`
@@ -434,12 +431,12 @@ func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendRes
 		}
 
 		request := Request{Message: signalCliSendRequest.Message}
-		if signalCliSendRequest.RecipientType == Group {
+		if signalCliSendRequest.RecipientType == ds.Group {
 			request.GroupId = groupId
-		} else if signalCliSendRequest.RecipientType == Number {
+		} else if signalCliSendRequest.RecipientType == ds.Number {
 			request.Recipients = signalCliSendRequest.Recipients
-		} else if signalCliSendRequest.RecipientType == Username {
-			//TODO: fix for username
+		} else if signalCliSendRequest.RecipientType == ds.Username {
+			request.Usernames = signalCliSendRequest.Recipients
 		}
 		for _, attachmentEntry := range attachmentEntries {
 			request.Attachments = append(request.Attachments, attachmentEntry.toDataForSignal())
@@ -451,7 +448,7 @@ func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendRes
 		if signalCliSendRequest.Mentions != nil {
 			request.Mentions = make([]string, len(signalCliSendRequest.Mentions))
 			for i, mention := range signalCliSendRequest.Mentions {
-				request.Mentions[i] = mention.toString()
+				request.Mentions[i] = mention.ToString()
 			}
 		} else {
 			request.Mentions = nil
@@ -462,7 +459,7 @@ func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendRes
 		if signalCliSendRequest.QuoteMentions != nil {
 			request.QuoteMentions = make([]string, len(signalCliSendRequest.QuoteMentions))
 			for i, mention := range signalCliSendRequest.QuoteMentions {
-				request.QuoteMentions[i] = mention.toString()
+				request.QuoteMentions[i] = mention.ToString()
 			}
 		} else {
 			request.QuoteMentions = nil
@@ -490,12 +487,13 @@ func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendRes
 		}
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-a", signalCliSendRequest.Number, "send", "--message-from-stdin"}
-		if signalCliSendRequest.RecipientType == Number {
+		if signalCliSendRequest.RecipientType == ds.Number {
 			cmd = append(cmd, signalCliSendRequest.Recipients...)
-		} else if signalCliSendRequest.RecipientType == Group {
+		} else if signalCliSendRequest.RecipientType == ds.Group {
 			cmd = append(cmd, []string{"-g", groupId}...)
-		} else if signalCliSendRequest.RecipientType == Username {
-			//TODO fix for usernames
+		} else if signalCliSendRequest.RecipientType == ds.Username {
+			cmd = append(cmd, "-u")
+			cmd = append(cmd, signalCliSendRequest.Recipients...)
 		}
 
 		if len(signalCliTextFormatStrings) > 0 {
@@ -512,7 +510,7 @@ func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendRes
 
 		for _, mention := range signalCliSendRequest.Mentions {
 			cmd = append(cmd, "--mention")
-			cmd = append(cmd, mention.toString())
+			cmd = append(cmd, mention.ToString())
 		}
 
 		if signalCliSendRequest.Sticker != "" {
@@ -537,7 +535,7 @@ func (s *SignalClient) send(signalCliSendRequest SignalCliSendRequest) (*SendRes
 
 		for _, mention := range signalCliSendRequest.QuoteMentions {
 			cmd = append(cmd, "--quote-mention")
-			cmd = append(cmd, mention.toString())
+			cmd = append(cmd, mention.ToString())
 		}
 
 		if signalCliSendRequest.EditTimestamp != nil {
@@ -674,12 +672,12 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 }
 
 func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (*SendResponse, error) {
-	recipientType := Number
+	recipientType := ds.Number
 	if isGroup {
-		recipientType = Group
+		recipientType = ds.Group
 	}
 
-	signalCliSendRequest := SignalCliSendRequest{Number: number, Message: message, Recipients: recipients, Base64Attachments: base64Attachments,
+	signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: recipients, Base64Attachments: base64Attachments,
 		RecipientType: recipientType, Sticker: "", Mentions: nil, QuoteTimestamp: nil, QuoteAuthor: nil, QuoteMessage: nil,
 		QuoteMentions: nil, TextMode: nil, EditTimestamp: nil}
 	timestamp, err := s.send(signalCliSendRequest)
@@ -701,8 +699,8 @@ func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 	return jsonRpc2Clients
 }
 
-func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, sticker string, mentions []MessageMention,
-	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []MessageMention, textMode *string, editTimestamp *int64) (*[]SendResponse, error) {
+func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, sticker string, mentions []ds.MessageMention,
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []ds.MessageMention, textMode *string, editTimestamp *int64) (*[]SendResponse, error) {
 	if len(recps) == 0 {
 		return nil, errors.New("Please provide at least one recipient")
 	}
@@ -712,18 +710,36 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 	}
 
 	groups := []string{}
-	recipients := []string{}
+	numbers := []string{}
+	usernames := []string{}
 
 	for _, recipient := range recps {
-		if strings.HasPrefix(recipient, groupPrefix) {
+		recipientType, err := getRecipientType(recipient)
+		if err != nil {
+			return nil, err
+		}
+
+		if recipientType == ds.Group {
 			groups = append(groups, strings.TrimPrefix(recipient, groupPrefix))
+		} else if recipientType == ds.Number {
+			numbers = append(numbers, recipient)
+		} else if recipientType == ds.Username {
+			usernames = append(usernames, recipient)
 		} else {
-			recipients = append(recipients, recipient)
+			return nil, errors.New("Invalid recipient type")
 		}
 	}
 
-	if len(recipients) > 0 && len(groups) > 0 {
+	if len(numbers) > 0 && len(groups) > 0 {
 		return nil, errors.New("Signal Messenger Groups and phone numbers cannot be specified together in one request! Please split them up into multiple REST API calls.")
+	}
+
+	if len(usernames) > 0 && len(groups) > 0 {
+		return nil, errors.New("Signal Messenger Groups and usernames cannot be specified together in one request! Please split them up into multiple REST API calls.")
+	}
+
+	if len(numbers) > 0 && len(usernames) > 0 {
+		return nil, errors.New("Signal Messenger phone numbers and usernames cannot be specified together in one request! Please split them up into multiple REST API calls.")
 	}
 
 	if len(groups) > 1 {
@@ -732,8 +748,8 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 
 	timestamps := []SendResponse{}
 	for _, group := range groups {
-		signalCliSendRequest := SignalCliSendRequest{Number: number, Message: message, Recipients: []string{group}, Base64Attachments: base64Attachments,
-			RecipientType: Group, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
+		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: []string{group}, Base64Attachments: base64Attachments,
+			RecipientType: ds.Group, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
 			TextMode: textMode, EditTimestamp: editTimestamp}
 		timestamp, err := s.send(signalCliSendRequest)
@@ -743,9 +759,21 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		timestamps = append(timestamps, *timestamp)
 	}
 
-	if len(recipients) > 0 {
-		signalCliSendRequest := SignalCliSendRequest{Number: number, Message: message, Recipients: recipients, Base64Attachments: base64Attachments,
-			RecipientType: Number, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
+	if len(numbers) > 0 {
+		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: numbers, Base64Attachments: base64Attachments,
+			RecipientType: ds.Number, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
+			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
+			TextMode: textMode, EditTimestamp: editTimestamp}
+		timestamp, err := s.send(signalCliSendRequest)
+		if err != nil {
+			return nil, err
+		}
+		timestamps = append(timestamps, *timestamp)
+	}
+
+	if len(usernames) > 0 {
+		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: usernames, Base64Attachments: base64Attachments,
+			RecipientType: ds.Username, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
 			TextMode: textMode, EditTimestamp: editTimestamp}
 		timestamp, err := s.send(signalCliSendRequest)
@@ -1654,7 +1682,6 @@ func (s *SignalClient) SendReaction(number string, recipient string, emoji strin
 	return err
 }
 
-
 func (s *SignalClient) SendReceipt(number string, recipient string, receipt_type string, timestamp int64) error {
 	// see https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc#sendreceipt
 	var err error
@@ -1662,9 +1689,9 @@ func (s *SignalClient) SendReceipt(number string, recipient string, receipt_type
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Recipient    string `json:"recipient,omitempty"`
-			ReceiptType  string `json:"receipt-type"`
-			Timestamp    int64  `json:"target-timestamp"`
+			Recipient   string `json:"recipient,omitempty"`
+			ReceiptType string `json:"receipt-type"`
+			Timestamp   int64  `json:"target-timestamp"`
 		}
 		request := Request{}
 		request.Recipient = recp

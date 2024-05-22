@@ -171,9 +171,7 @@ definitions:
       edit_timestamp:
         type: integer
       mentions:
-        items:
-          $ref: '#/definitions/client.MessageMention'
-        type: array
+        type: string
       message:
         type: string
       number:
@@ -181,9 +179,7 @@ definitions:
       quote_author:
         type: string
       quote_mentions:
-        items:
-          $ref: '#/definitions/client.MessageMention'
-        type: array
+        type: string
       quote_message:
         type: string
       quote_timestamp:
@@ -348,15 +344,6 @@ definitions:
         type: string
       url:
         type: string
-    type: object
-  client.MessageMention:
-    properties:
-      author:
-        type: string
-      length:
-        type: integer
-      start:
-        type: integer
     type: object
   client.SetUsernameResponse:
     properties:

@@ -130,6 +130,7 @@ RUN cd /tmp/ \
 
 COPY src/api /tmp/signal-cli-rest-api-src/api
 COPY src/client /tmp/signal-cli-rest-api-src/client
+COPY src/datastructs /tmp/signal-cli-rest-api-src/datastructs
 COPY src/utils /tmp/signal-cli-rest-api-src/utils
 COPY src/scripts /tmp/signal-cli-rest-api-src/scripts
 COPY src/main.go /tmp/signal-cli-rest-api-src/

@@ -2217,10 +2217,7 @@ var doc = `{
                     "type": "integer"
                 },
                 "mentions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/client.MessageMention"
-                    }
+                    "type": "string"
                 },
                 "message": {
                     "type": "string"
@@ -2232,10 +2229,7 @@ var doc = `{
                     "type": "string"
                 },
                 "quote_mentions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/client.MessageMention"
-                    }
+                    "type": "string"
                 },
                 "quote_message": {
                     "type": "string"
@@ -2487,20 +2481,6 @@ var doc = `{
                 },
                 "url": {
                     "type": "string"
-                }
-            }
-        },
-        "client.MessageMention": {
-            "type": "object",
-            "properties": {
-                "author": {
-                    "type": "string"
-                },
-                "length": {
-                    "type": "integer"
-                },
-                "start": {
-                    "type": "integer"
                 }
             }
         },
