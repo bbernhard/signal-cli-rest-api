@@ -104,20 +104,26 @@ services:
       - "./signal-cli-config:/home/.local/share/signal-cli" #map "signal-cli-config" folder on host system into docker container. the folder contains the password and cryptographic keys when a new number is registered
 ```
 
-## Documentation
+## Documentation & Usage
 
 ### API Reference
 
 The Swagger API documentation can be found [here](https://bbernhard.github.io/signal-cli-rest-api/). If you prefer a simple text file based API documentation have a look [here](https://github.com/bbernhard/signal-cli-rest-api/blob/master/doc/EXAMPLES.md).
 
-### Utilities
-
-- [signal-cli-to-file](https://github.com/jneidel/signal-cli-to-file): save incoming signal messages as files
-
 ### Blog Posts
 
 - [Running Signal Messenger REST API in Azure Web App for Containers](https://stefanstranger.github.io/2021/06/01/RunningSignalRESTAPIinAppService/) by [@stefanstranger](https://github.com/stefanstranger)
 - [Sending Signal Messages](https://blog.aawadia.dev/2023/04/24/signal-api/) by [@asad-awadia](https://github.com/asad-awadia)
+
+### Clients, Libraries and Scripts
+
+|     Name    | Type | Language | Description |Maintainer |
+| ------------- |:------:|:-----:|---|:-----:|
+| [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/) | Library | Python | Small python library | [@bbernhard](https://github.com/bbernhard)
+| [signalbot](https://pypi.org/project/signalbot/) | Library | Python | Framework to build Signal bots | [@filipre](https://github.com/filipre)
+| [signal-cli-to-file](https://github.com/jneidel/signal-cli-to-file) | Script | JavaScript | Save incoming signal messages as files | [@jneidel](https://github.com/jneidel) |
+
+In case you need more functionality, please **file a ticket** or **create a PR**.
 
 ## Advanced Settings
 There are a bunch of environmental variables that can be set inside the docker container in order to change some technical details. This settings are meant for developers and advanced users. Usually you do *not* need to change anything here - the default values are perfectly fine!
@@ -131,12 +137,3 @@ There are a bunch of environmental variables that can be set inside the docker c
 * `SWAGGER_IP`: The IP that's used in the Swagger UI for the interactive examples. Defaults to the container ip.
 
 * `PORT`: Defaults to port `8080` unless this env var is set to tell it otherwise.
-
-## Clients & Libraries
-
-|     Name    | Client           | Library  | Language | Maintainer |
-| ------------- |:-------------:| :-----:|:-----:|:-----:|
-| [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/)      | | X | Python | [@bbernhard](https://github.com/bbernhard)
-| [signalbot](https://pypi.org/project/signalbot/) | | X | Python | [@filipre](https://github.com/filipre)
-
-In case you need more functionality, please **file a ticket** or **create a PR**.
