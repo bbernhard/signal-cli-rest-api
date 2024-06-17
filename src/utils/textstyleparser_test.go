@@ -60,7 +60,7 @@ func TestMulticharacterEmoji(t *testing.T) {
 func TestMulticharacterEmojiWithBoldText(t *testing.T) {
 	message, signalCliFormatStrings := ParseMarkdownMessage("👋**abcdefg**")
 	expectMessageEqual(t, message, "👋abcdefg")
-	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"2:8:BOLD"})
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"2:7:BOLD"})
 }
 
 func TestMultipleMulticharacterEmoji(t *testing.T) {
@@ -72,7 +72,13 @@ func TestMultipleMulticharacterEmoji(t *testing.T) {
 func TestMultipleMulticharacterEmojiWithBoldText(t *testing.T) {
 	message, signalCliFormatStrings := ParseMarkdownMessage("👋🏾**abcdefg**")
 	expectMessageEqual(t, message, "👋🏾abcdefg")
-	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"4:9:BOLD"})
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"4:7:BOLD"})
+}
+
+func TestMulticharacterEmojiWithBoldText2(t *testing.T) {
+	message, signalCliFormatStrings := ParseMarkdownMessage("Test 👦🏿 via **signal** API")
+	expectMessageEqual(t, message, "Test 👦🏿 via signal API")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"14:6:BOLD"})
 }
 
 func TestSpoiler(t *testing.T) {

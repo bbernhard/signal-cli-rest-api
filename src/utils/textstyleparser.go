@@ -67,6 +67,7 @@ func ParseMarkdownMessage(message string) (string, []string) {
 					textFormat = Bold
 					textFormatBegin = i - numOfControlChars + additionalCharacterCount
 					textFormatLength = 0
+					additionalCharacterCount = 0
 				} else {
 					state = ItalicEnd
 				}
