@@ -185,6 +185,17 @@ type ListInstalledStickerPacksResponse struct {
 	Author    string `json:"author"`
 }
 
+type ListContactsResponse struct {
+	Number     				string `json:"number"`
+	Uuid		 		 			string `json:"uuid"`
+	Name   		 				string `json:"name"`
+	ProfileName 			string `json:"profile_name"`
+	Username 					string `json:"username"`
+	Color 						string `json:"color"`
+	Blocked						bool `json:"blocked"`
+	MessageExpiration string `json:"message_expiration"`
+}
+
 func cleanupTmpFiles(paths []string) {
 	for _, path := range paths {
 		os.Remove(path)
@@ -2111,4 +2122,60 @@ func (s *SignalClient) AddStickerPack(number string, packId string, packKey stri
 		_, err := s.cliClient.Execute(true, cmd, "")
 		return err
 	}
+}
+
+func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, error) {
+	type ListContactsSignlCliResponse struct {
+		Number     				string `json:"number"`
+		Uuid		 		 			string `json:"uuid"`
+		Name   		 				string `json:"name"`
+		ProfileName 			string `json:"profileName"`
+		Username 					string `json:"username"`
+		Color 						string `json:"color"`
+		Blocked						bool `json:"blocked"`
+		MessageExpiration string `json:"messageExpiration"`
+	}
+
+	resp := []ListContactsResponse{}
+
+	var err error
+	var rawData string
+
+	if s.signalCliMode == JsonRpc {
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return nil, err
+		}
+		rawData, err = jsonRpc2Client.getRaw("listContacts", &number, nil)
+		if err != nil {
+			return resp, err
+		}
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "listContacts"}
+		rawData, err = s.cliClient.Execute(true, cmd, "")
+		if err != nil {
+			return resp, err
+		}
+	}
+
+	var signalCliResp []ListContactsSignlCliResponse
+	err = json.Unmarshal([]byte(rawData), &signalCliResp)
+	if err != nil {
+		return resp, errors.New("Couldn't process request - invalid signal-cli response")
+	}
+
+	for _, value := range signalCliResp {
+		resp = append(resp, ListContactsResponse{
+			Number: value.Number,
+			Uuid:   value.Uuid,
+			Name: value.Name,
+			ProfileName: value.ProfileName,
+			Username: value.Username,
+			Color: value.Color,
+			Blocked: value.Blocked,
+			MessageExpiration: value.MessageExpiration,
+		})
+	}
+
+	return resp, nil
 }
