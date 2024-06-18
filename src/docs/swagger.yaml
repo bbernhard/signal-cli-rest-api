@@ -332,6 +332,25 @@ definitions:
       status:
         type: string
     type: object
+  client.ListContactsResponse:
+    properties:
+      blocked:
+        type: boolean
+      color:
+        type: string
+      message_expiration:
+        type: string
+      name:
+        type: string
+      number:
+        type: string
+      profile_name:
+        type: string
+      username:
+        type: string
+      uuid:
+        type: string
+    type: object
   client.ListInstalledStickerPacksResponse:
     properties:
       author:
@@ -664,6 +683,26 @@ paths:
       tags:
       - General
   /v1/contacts/{number}:
+    get:
+      description: List all contacts for the given number.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/client.ListContactsResponse'
+            type: array
+      summary: List Contacts
+      tags:
+      - Contacts
     put:
       consumes:
       - application/json

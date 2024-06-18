@@ -484,6 +484,36 @@ var doc = `{
             }
         },
         "/v1/contacts/{number}": {
+            "get": {
+                "description": "List all contacts for the given number.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "List Contacts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/client.ListContactsResponse"
+                            }
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Updates the info associated to a number on the contact list.",
                 "consumes": [
@@ -2460,6 +2490,35 @@ var doc = `{
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "client.ListContactsResponse": {
+            "type": "object",
+            "properties": {
+                "blocked": {
+                    "type": "boolean"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "message_expiration": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "profile_name": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "uuid": {
                     "type": "string"
                 }
             }
