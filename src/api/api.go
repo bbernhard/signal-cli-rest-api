@@ -1971,3 +1971,28 @@ func (a *Api) AddStickerPack(c *gin.Context) {
 
 	c.Status(201)
 }
+
+// @Summary List Contacts
+// @Tags Contacts
+// @Description List all contacts for the given number.
+// @Produce  json
+// @Success 200 {object} []client.ListContactsResponse
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/contacts/{number} [get]
+func (a *Api) ListContacts(c *gin.Context) {
+	number := c.Param("number")
+
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	contacts, err := a.signalClient.ListContacts(number)
+
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.JSON(200, contacts)
+}
