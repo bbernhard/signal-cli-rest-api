@@ -15,8 +15,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/bbernhard/signal-cli-rest-api/client"
-	utils "github.com/bbernhard/signal-cli-rest-api/utils"
 	ds "github.com/bbernhard/signal-cli-rest-api/datastructs"
+	utils "github.com/bbernhard/signal-cli-rest-api/utils"
 )
 
 const (
@@ -107,19 +107,19 @@ type SendMessageV1 struct {
 }
 
 type SendMessageV2 struct {
-	Number            string                  `json:"number"`
-	Recipients        []string                `json:"recipients"`
-	Recipient         string                  `json:"recipient" swaggerignore:"true"` //some REST API consumers (like the Synology NAS) do not support an array as recipients, so we provide this string parameter here as backup. In order to not confuse anyone, the parameter won't be exposed in the Swagger UI (most users are fine with the recipients parameter).
-	Message           string                  `json:"message"`
-	Base64Attachments []string                `json:"base64_attachments" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
-	Sticker           string                  `json:"sticker"`
-	Mentions          []ds.MessageMention     `json:"mentions"`
-	QuoteTimestamp    *int64                  `json:"quote_timestamp"`
-	QuoteAuthor       *string                 `json:"quote_author"`
-	QuoteMessage      *string                 `json:"quote_message"`
-	QuoteMentions     []ds.MessageMention     `json:"quote_mentions"`
-	TextMode          *string                 `json:"text_mode" enums:"normal,styled"`
-	EditTimestamp     *int64                  `json:"edit_timestamp"`
+	Number            string              `json:"number"`
+	Recipients        []string            `json:"recipients"`
+	Recipient         string              `json:"recipient" swaggerignore:"true"` //some REST API consumers (like the Synology NAS) do not support an array as recipients, so we provide this string parameter here as backup. In order to not confuse anyone, the parameter won't be exposed in the Swagger UI (most users are fine with the recipients parameter).
+	Message           string              `json:"message"`
+	Base64Attachments []string            `json:"base64_attachments" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
+	Sticker           string              `json:"sticker"`
+	Mentions          []ds.MessageMention `json:"mentions"`
+	QuoteTimestamp    *int64              `json:"quote_timestamp"`
+	QuoteAuthor       *string             `json:"quote_author"`
+	QuoteMessage      *string             `json:"quote_message"`
+	QuoteMentions     []ds.MessageMention `json:"quote_mentions"`
+	TextMode          *string             `json:"text_mode" enums:"normal,styled"`
+	EditTimestamp     *int64              `json:"edit_timestamp"`
 }
 
 type TypingIndicatorRequest struct {
@@ -131,7 +131,7 @@ type Error struct {
 }
 
 type SendMessageError struct {
-	Msg string `json:"error"`
+	Msg             string   `json:"error"`
 	ChallengeTokens []string `json:"challenge_tokens,omitempty"`
 }
 
@@ -150,7 +150,7 @@ type TrustIdentityRequest struct {
 }
 
 type SendMessageResponse struct {
-	Timestamp       string   `json:"timestamp"`
+	Timestamp string `json:"timestamp"`
 }
 
 type TrustModeRequest struct {
@@ -178,7 +178,7 @@ type AddDeviceRequest struct {
 
 type RateLimitChallengeRequest struct {
 	ChallengeToken string `json:"challenge_token" example:"<challenge token>"`
-	Captcha string `json:"captcha" example:"signalcaptcha://{captcha value}"`
+	Captcha        string `json:"captcha" example:"signalcaptcha://{captcha value}"`
 }
 
 type UpdateAccountSettingsRequest struct {
@@ -191,7 +191,7 @@ type SetUsernameRequest struct {
 }
 
 type AddStickerPackRequest struct {
-	PackId string `json:"pack_id" example:"9a32eda01a7a28574f2eb48668ae0dc4"`
+	PackId  string `json:"pack_id" example:"9a32eda01a7a28574f2eb48668ae0dc4"`
 	PackKey string `json:"pack_key" example:"19546e18eba0ff69dea78eb591465289d39e16f35e58389ae779d4f9455aff3a"`
 }
 
@@ -1479,7 +1479,6 @@ func (a *Api) RemoveReaction(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-
 // @Summary Send a receipt.
 // @Tags Receipts
 // @Description Send a read or viewed receipt
@@ -1961,7 +1960,6 @@ func (a *Api) AddStickerPack(c *gin.Context) {
 		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
 		return
 	}
-
 
 	err = a.signalClient.AddStickerPack(number, req.PackId, req.PackKey)
 	if err != nil {

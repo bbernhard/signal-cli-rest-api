@@ -186,13 +186,13 @@ type ListInstalledStickerPacksResponse struct {
 }
 
 type ListContactsResponse struct {
-	Number     				string `json:"number"`
-	Uuid		 		 			string `json:"uuid"`
-	Name   		 				string `json:"name"`
-	ProfileName 			string `json:"profile_name"`
-	Username 					string `json:"username"`
-	Color 						string `json:"color"`
-	Blocked						bool `json:"blocked"`
+	Number            string `json:"number"`
+	Uuid              string `json:"uuid"`
+	Name              string `json:"name"`
+	ProfileName       string `json:"profile_name"`
+	Username          string `json:"username"`
+	Color             string `json:"color"`
+	Blocked           bool   `json:"blocked"`
 	MessageExpiration string `json:"message_expiration"`
 }
 
@@ -2126,13 +2126,13 @@ func (s *SignalClient) AddStickerPack(number string, packId string, packKey stri
 
 func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, error) {
 	type ListContactsSignlCliResponse struct {
-		Number     				string `json:"number"`
-		Uuid		 		 			string `json:"uuid"`
-		Name   		 				string `json:"name"`
-		ProfileName 			string `json:"profileName"`
-		Username 					string `json:"username"`
-		Color 						string `json:"color"`
-		Blocked						bool `json:"blocked"`
+		Number            string `json:"number"`
+		Uuid              string `json:"uuid"`
+		Name              string `json:"name"`
+		ProfileName       string `json:"profileName"`
+		Username          string `json:"username"`
+		Color             string `json:"color"`
+		Blocked           bool   `json:"blocked"`
 		MessageExpiration string `json:"messageExpiration"`
 	}
 
@@ -2166,13 +2166,13 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 
 	for _, value := range signalCliResp {
 		resp = append(resp, ListContactsResponse{
-			Number: value.Number,
-			Uuid:   value.Uuid,
-			Name: value.Name,
-			ProfileName: value.ProfileName,
-			Username: value.Username,
-			Color: value.Color,
-			Blocked: value.Blocked,
+			Number:            value.Number,
+			Uuid:              value.Uuid,
+			Name:              value.Name,
+			ProfileName:       value.ProfileName,
+			Username:          value.Username,
+			Color:             value.Color,
+			Blocked:           value.Blocked,
 			MessageExpiration: value.MessageExpiration,
 		})
 	}
