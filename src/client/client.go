@@ -315,6 +315,14 @@ func getRecipientType(s string) (ds.RecpType, error) {
 		return ds.Group, errors.New("Invalid identifier " + s)
 	} else if utils.IsPhoneNumber(s) {
 		return ds.Number, nil
+	} else {
+		//last but not least, check if it is a valid uuid.
+		//(although it is not directly exposed in the signal-cli manpage, signal-cli allows
+		//to send messages to the 'sourceUuid' (which is a UUID)
+		_, err := uuid.FromString(s)
+		if err == nil {
+			return ds.Number, nil
+		}
 	}
 	return ds.Username, nil
 }
