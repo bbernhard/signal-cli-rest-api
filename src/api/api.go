@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sync"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
@@ -197,6 +198,7 @@ type AddStickerPackRequest struct {
 
 type Api struct {
 	signalClient *client.SignalClient
+	wsMutex sync.Mutex
 }
 
 func NewApi(signalClient *client.SignalClient) *Api {
@@ -471,6 +473,8 @@ func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan s
 					}
 
 					if response.Account == number {
+						a.wsMutex.Lock()
+						defer a.wsMutex.Unlock()
 						err = ws.WriteMessage(websocket.TextMessage, []byte(data))
 						if err != nil {
 							if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -487,6 +491,8 @@ func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan s
 					log.Error("Couldn't serialize error message: " + err.Error())
 					return
 				}
+				a.wsMutex.Lock()
+				defer a.wsMutex.Unlock()
 				err = ws.WriteMessage(websocket.TextMessage, errorMsgBytes)
 				if err != nil {
 					log.Error("Couldn't write message: " + err.Error())
@@ -513,7 +519,7 @@ func wsPong(ws *websocket.Conn, stop chan struct{}) {
 	}
 }
 
-func wsPing(ws *websocket.Conn, stop chan struct{}) {
+func (a *Api) wsPing(ws *websocket.Conn, stop chan struct{}) {
 	pingTicker := time.NewTicker(pingPeriod)
 	for {
 		select {
@@ -521,6 +527,8 @@ func wsPing(ws *websocket.Conn, stop chan struct{}) {
 			ws.Close()
 			return
 		case <-pingTicker.C:
+			a.wsMutex.Lock()
+			defer a.wsMutex.Unlock()
 			if err := ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 				return
 			}
@@ -561,7 +569,7 @@ func (a *Api) Receive(c *gin.Context) {
 		defer ws.Close()
 		var stop = make(chan struct{})
 		go a.handleSignalReceive(ws, number, stop)
-		go wsPing(ws, stop)
+		go a.wsPing(ws, stop)
 		wsPong(ws, stop)
 	} else {
 		timeout := c.DefaultQuery("timeout", "1")
