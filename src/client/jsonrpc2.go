@@ -61,6 +61,7 @@ type JsonRpc2Client struct {
 	signalCliApiConfig       *utils.SignalCliApiConfig
 	number                   string
 	receivedMessagesMutex    sync.Mutex
+	receivedResponsesMutex   sync.Mutex
 }
 
 func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string) *JsonRpc2Client {
@@ -137,11 +138,16 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 	}
 
 	responseChan := make(chan JsonRpc2MessageResponse)
+	r.receivedResponsesMutex.Lock()
 	r.receivedResponsesById[u.String()] = responseChan
+	r.receivedResponsesMutex.Unlock()
 
 	var resp JsonRpc2MessageResponse
 	resp = <-responseChan
+
+	r.receivedResponsesMutex.Lock()
 	delete(r.receivedResponsesById, u.String())
+	r.receivedResponsesMutex.Unlock()
 
 	log.Debug("json-rpc command response message: ", string(resp.Result))
 	log.Debug("json-rpc response error: ", string(resp.Err.Message))
