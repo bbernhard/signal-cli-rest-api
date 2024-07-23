@@ -134,6 +134,7 @@ type Error struct {
 type SendMessageError struct {
 	Msg             string   `json:"error"`
 	ChallengeTokens []string `json:"challenge_tokens,omitempty"`
+	Account         string   `json:"account"`
 }
 
 type CreateGroupResponse struct {
@@ -423,7 +424,7 @@ func (a *Api) SendV2(c *gin.Context) {
 		case *client.RateLimitErrorType:
 			if rateLimitError, ok := err.(*client.RateLimitErrorType); ok {
 				extendedError := errors.New(err.Error() + ". Use the attached challenge tokens to lift the rate limit restrictions via the '/v1/accounts/{number}/rate-limit-challenge' endpoint.")
-				c.JSON(429, SendMessageError{Msg: extendedError.Error(), ChallengeTokens: rateLimitError.ChallengeTokens})
+				c.JSON(429, SendMessageError{Msg: extendedError.Error(), ChallengeTokens: rateLimitError.ChallengeTokens, Account: req.Number})
 				return
 			} else {
 				c.JSON(400, Error{Msg: err.Error()})
