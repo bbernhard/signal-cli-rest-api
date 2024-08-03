@@ -81,7 +81,8 @@ func main() {
 
 	defaultSwaggerIp := utils.GetEnv("HOST_IP", "127.0.0.1")
 	swaggerIp := utils.GetEnv("SWAGGER_IP", defaultSwaggerIp)
-	docs.SwaggerInfo.Host = swaggerIp + ":" + port
+	swaggerHost := utils.GetEnv("SWAGGER_HOST", swaggerIp+":"+port)
+	docs.SwaggerInfo.Host = swaggerHost
 
 	log.Info("Started Signal Messenger REST API")
 
