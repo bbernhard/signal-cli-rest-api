@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
@@ -121,6 +121,7 @@ type SendMessageV2 struct {
 	QuoteMentions     []ds.MessageMention `json:"quote_mentions"`
 	TextMode          *string             `json:"text_mode" enums:"normal,styled"`
 	EditTimestamp     *int64              `json:"edit_timestamp"`
+	NotifySelf        *bool               `json:"notify_self"`
 }
 
 type TypingIndicatorRequest struct {
@@ -199,7 +200,7 @@ type AddStickerPackRequest struct {
 
 type Api struct {
 	signalClient *client.SignalClient
-	wsMutex sync.Mutex
+	wsMutex      sync.Mutex
 }
 
 func NewApi(signalClient *client.SignalClient) *Api {
@@ -418,7 +419,8 @@ func (a *Api) SendV2(c *gin.Context) {
 
 	data, err := a.signalClient.SendV2(
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
-		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions, req.TextMode, req.EditTimestamp)
+		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions,
+		req.TextMode, req.EditTimestamp, req.NotifySelf)
 	if err != nil {
 		switch err.(type) {
 		case *client.RateLimitErrorType:

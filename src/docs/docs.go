@@ -2282,6 +2282,9 @@ var doc = `{
                         "normal",
                         "styled"
                     ]
+                },
+                "notify_self": {
+                    "type": "boolean"
                 }
             }
         },
