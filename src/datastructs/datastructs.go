@@ -41,4 +41,5 @@ type SignalCliSendRequest struct {
 	QuoteMentions     []MessageMention
 	TextMode          *string
 	EditTimestamp     *int64
+	NotifySelf        *bool
 }

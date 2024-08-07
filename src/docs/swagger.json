@@ -2266,6 +2266,9 @@
                         "normal",
                         "styled"
                     ]
+                },
+                "notify_self": {
+                    "type": "boolean"
                 }
             }
         },
