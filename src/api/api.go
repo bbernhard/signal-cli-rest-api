@@ -475,14 +475,15 @@ func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan s
 
 					if response.Account == number {
 						a.wsMutex.Lock()
-						defer a.wsMutex.Unlock()
 						err = ws.WriteMessage(websocket.TextMessage, []byte(data))
 						if err != nil {
 							if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 								log.Error("Couldn't write message: " + err.Error())
 							}
+							a.wsMutex.Unlock()
 							return
 						}
+						a.wsMutex.Unlock()
 					}
 				}
 			} else {
@@ -493,12 +494,13 @@ func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan s
 					return
 				}
 				a.wsMutex.Lock()
-				defer a.wsMutex.Unlock()
 				err = ws.WriteMessage(websocket.TextMessage, errorMsgBytes)
 				if err != nil {
 					log.Error("Couldn't write message: " + err.Error())
+					a.wsMutex.Unlock()
 					return
 				}
+				a.wsMutex.Unlock()
 			}
 		}
 	}
