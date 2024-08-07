@@ -2036,15 +2036,17 @@ func (s *SignalClient) RemoveUsername(number string) error {
 	}
 }
 
-func (s *SignalClient) UpdateAccountSettings(number string, discoverableByNumber *bool, shareNumber *bool) error {
+func (s *SignalClient) UpdateAccountSettings(number string, discoverableByNumber *bool, shareNumber *bool, unrestrictedUnidentifiedSender *bool) error {
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			ShareNumber          *bool `json:"number-sharing"`
-			DiscoverableByNumber *bool `json:"discoverable-by-number"`
+			ShareNumber          					 *bool `json:"number-sharing"`
+			DiscoverableByNumber 					 *bool `json:"discoverable-by-number"`
+			UnrestrictedUnidentifiedSender *bool `json:"unrestricted-unidentified-sender"`
 		}
 		request := Request{}
 		request.DiscoverableByNumber = discoverableByNumber
 		request.ShareNumber = shareNumber
+		request.UnrestrictedUnidentifiedSender = unrestrictedUnidentifiedSender
 
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
@@ -2060,6 +2062,10 @@ func (s *SignalClient) UpdateAccountSettings(number string, discoverableByNumber
 
 		if shareNumber != nil {
 			cmd = append(cmd, []string{"--number-sharing", strconv.FormatBool(*shareNumber)}...)
+		}
+
+		if unrestrictedUnidentifiedSender != nil {
+			cmd = append(cmd, []string{"--unrestricted-unidentified-sender", strconv.FormatBool(*unrestrictedUnidentifiedSender)}...)
 		}
 		_, err := s.cliClient.Execute(true, cmd, "")
 		return err
