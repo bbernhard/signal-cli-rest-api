@@ -531,10 +531,11 @@ func (a *Api) wsPing(ws *websocket.Conn, stop chan struct{}) {
 			return
 		case <-pingTicker.C:
 			a.wsMutex.Lock()
-			defer a.wsMutex.Unlock()
 			if err := ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+				a.wsMutex.Unlock()
 				return
 			}
+			a.wsMutex.Unlock()
 		}
 	}
 }

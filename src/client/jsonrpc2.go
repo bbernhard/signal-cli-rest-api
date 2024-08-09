@@ -229,14 +229,14 @@ func (r *JsonRpc2Client) GetReceiveChannel() (chan JsonRpc2ReceivedMessage, stri
 	}
 
 	r.receivedMessagesMutex.Lock()
-	defer r.receivedMessagesMutex.Unlock()
 	r.receivedMessagesChannels[channelUuid.String()] = c
+	r.receivedMessagesMutex.Unlock()
 
 	return c, channelUuid.String(), nil
 }
 
 func (r *JsonRpc2Client) RemoveReceiveChannel(channelUuid string) {
 	r.receivedMessagesMutex.Lock()
-	defer r.receivedMessagesMutex.Unlock()
 	delete(r.receivedMessagesChannels, channelUuid)
+	r.receivedMessagesMutex.Unlock()
 }
