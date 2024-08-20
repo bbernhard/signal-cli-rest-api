@@ -2186,6 +2186,9 @@ var doc = `{
         "api.SendMessageError": {
             "type": "object",
             "properties": {
+                "account": {
+                    "type": "string"
+                },
                 "challenge_tokens": {
                     "type": "array",
                     "items": {
@@ -2252,6 +2255,9 @@ var doc = `{
                 "message": {
                     "type": "string"
                 },
+                "notify_self": {
+                    "type": "boolean"
+                },
                 "number": {
                     "type": "string"
                 },
@@ -2282,9 +2288,6 @@ var doc = `{
                         "normal",
                         "styled"
                     ]
-                },
-                "notify_self": {
-                    "type": "boolean"
                 }
             }
         },

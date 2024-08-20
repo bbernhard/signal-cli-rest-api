@@ -130,6 +130,8 @@ definitions:
     type: object
   api.SendMessageError:
     properties:
+      account:
+        type: string
       challenge_tokens:
         items:
           type: string
@@ -174,6 +176,8 @@ definitions:
         type: string
       message:
         type: string
+      notify_self:
+        type: boolean
       number:
         type: string
       quote_author:
@@ -195,8 +199,6 @@ definitions:
         - normal
         - styled
         type: string
-      notify_self:
-        type: boolean
     type: object
   api.SetUsernameRequest:
     properties:
