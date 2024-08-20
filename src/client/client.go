@@ -562,7 +562,10 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 			cmd = append(cmd, strconv.FormatInt(*signalCliSendRequest.EditTimestamp, 10))
 		}
 
-		cmd = append(cmd, "--notify-self")
+		// for backwards compatibility, if nothing is set, use the notify-self flag
+		if signalCliSendRequest.NotifySelf == nil || *signalCliSendRequest.NotifySelf {
+			cmd = append(cmd, "--notify-self")
+		}
 
 		rawData, err := s.cliClient.Execute(true, cmd, signalCliSendRequest.Message)
 		if err != nil {
@@ -719,7 +722,7 @@ func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 }
 
 func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, sticker string, mentions []ds.MessageMention,
-	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []ds.MessageMention, textMode *string, editTimestamp *int64) (*[]SendResponse, error) {
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []ds.MessageMention, textMode *string, editTimestamp *int64, notifySelf *bool) (*[]SendResponse, error) {
 	if len(recps) == 0 {
 		return nil, errors.New("Please provide at least one recipient")
 	}
@@ -770,7 +773,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: []string{group}, Base64Attachments: base64Attachments,
 			RecipientType: ds.Group, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp}
+			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf}
 		timestamp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
