@@ -985,6 +985,11 @@ paths:
         name: number
         required: true
         type: string
+      - description: Group ID
+        in: path
+        name: groupid
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1013,6 +1018,11 @@ paths:
       - description: Registered Phone Number
         in: path
         name: number
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupid
         required: true
         type: string
       produces:
@@ -1106,6 +1116,11 @@ paths:
         name: number
         required: true
         type: string
+      - description: Group ID
+        in: path
+        name: groupid
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1134,6 +1149,11 @@ paths:
       - description: Registered Phone Number
         in: path
         name: number
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupid
         required: true
         type: string
       produces:

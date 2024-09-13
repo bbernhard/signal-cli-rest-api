@@ -686,6 +686,7 @@ func (a *Api) CreateGroup(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupMembersRequest true "Members"
 // @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/members [post]
 func (a *Api) AddMembersToGroup(c *gin.Context) {
 	number := c.Param("number")
@@ -730,6 +731,7 @@ func (a *Api) AddMembersToGroup(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupMembersRequest true "Members"
 // @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/members [delete]
 func (a *Api) RemoveMembersFromGroup(c *gin.Context) {
 	number := c.Param("number")
@@ -774,6 +776,7 @@ func (a *Api) RemoveMembersFromGroup(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupAdminsRequest true "Admins"
 // @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/admins [post]
 func (a *Api) AddAdminsToGroup(c *gin.Context) {
 	number := c.Param("number")
@@ -818,6 +821,7 @@ func (a *Api) AddAdminsToGroup(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupAdminsRequest true "Admins"
 // @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/admins [delete]
 func (a *Api) RemoveAdminsFromGroup(c *gin.Context) {
 	number := c.Param("number")

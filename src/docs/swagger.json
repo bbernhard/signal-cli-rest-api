@@ -886,6 +886,13 @@
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -929,6 +936,13 @@
                         "type": "string",
                         "description": "Registered Phone Number",
                         "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
                         "in": "path",
                         "required": true
                     }
@@ -1068,6 +1082,13 @@
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1111,6 +1132,13 @@
                         "type": "string",
                         "description": "Registered Phone Number",
                         "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
                         "in": "path",
                         "required": true
                     }

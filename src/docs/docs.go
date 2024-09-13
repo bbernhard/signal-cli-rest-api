@@ -893,6 +893,13 @@ const docTemplate = `{
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -936,6 +943,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Registered Phone Number",
                         "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
                         "in": "path",
                         "required": true
                     }
@@ -1075,6 +1089,13 @@ const docTemplate = `{
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1118,6 +1139,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Registered Phone Number",
                         "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
                         "in": "path",
                         "required": true
                     }
