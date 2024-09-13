@@ -32,7 +32,6 @@ definitions:
     properties:
       logging:
         $ref: '#/definitions/api.LoggingConfiguration'
-        type: object
     type: object
   api.CreateGroupRequest:
     properties:
@@ -52,7 +51,6 @@ definitions:
         type: string
       permissions:
         $ref: '#/definitions/api.GroupPermissions'
-        type: object
     type: object
   api.CreateGroupResponse:
     properties:
@@ -147,7 +145,9 @@ definitions:
   api.SendMessageV1:
     properties:
       base64_attachment:
-        example: '''<BASE64 ENCODED DATA>'' OR ''data:<MIME-TYPE>;base64,<BASE64 ENCODED DATA>'' OR ''data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>'''
+        example: '''<BASE64 ENCODED DATA>'' OR ''data:<MIME-TYPE>;base64,<BASE64 ENCODED
+          DATA>'' OR ''data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED
+          DATA>'''
         type: string
       is_group:
         type: boolean
@@ -173,7 +173,9 @@ definitions:
       edit_timestamp:
         type: integer
       mentions:
-        type: string
+        items:
+          $ref: '#/definitions/data.MessageMention'
+        type: array
       message:
         type: string
       notify_self:
@@ -183,7 +185,9 @@ definitions:
       quote_author:
         type: string
       quote_mentions:
-        type: string
+        items:
+          $ref: '#/definitions/data.MessageMention'
+        type: array
       quote_message:
         type: string
       quote_timestamp:
@@ -375,10 +379,18 @@ definitions:
       username_link:
         type: string
     type: object
+  data.MessageMention:
+    properties:
+      author:
+        type: string
+      length:
+        type: integer
+      start:
+        type: integer
+    type: object
 info:
   contact: {}
   description: This is the Signal Cli REST API documentation.
-  license: {}
   title: Signal Cli REST API
   version: "1.0"
 paths:
@@ -418,7 +430,11 @@ paths:
     post:
       consumes:
       - application/json
-      description: 'When running into rate limits, sometimes the limit can be lifted, by solving a CAPTCHA. To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html. The "challenge_token" is the token from the failed send attempt. The "captcha" is the captcha result, starting with signalcaptcha://'
+      description: 'When running into rate limits, sometimes the limit can be lifted,
+        by solving a CAPTCHA. To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html
+        For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html.
+        The "challenge_token" is the token from the failed send attempt. The "captcha"
+        is the captcha result, starting with signalcaptcha://'
       parameters:
       - description: Registered Phone Number
         in: path
@@ -434,7 +450,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -462,7 +479,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -484,7 +502,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -495,7 +514,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: Allows to set the username that should be used for this account. This can either be just the nickname (e.g. test) or the complete username with discriminator (e.g. test.123). Returns the new username with discriminator and the username link.
+      description: Allows to set the username that should be used for this account.
+        This can either be just the nickname (e.g. test) or the complete username
+        with discriminator (e.g. test.123). Returns the new username with discriminator
+        and the username link.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -515,7 +537,8 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/client.SetUsernameResponse'
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -651,7 +674,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200": {}
+        "200":
+          description: OK
         "400":
           description: Bad Request
           schema:
@@ -678,7 +702,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -726,19 +751,23 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/api.Error'
-      summary: Updates the info associated to a number on the contact list. If the contact doesn’t exist yet, it will be added.
+      summary: Updates the info associated to a number on the contact list. If the
+        contact doesn’t exist yet, it will be added.
       tags:
       - Contacts
   /v1/contacts/{number}/sync:
     post:
       consumes:
       - application/json
-      description: Send a synchronization message with the local contacts list to all linked devices. This command should only be used if this is the primary device.
+      description: Send a synchronization message with the local contacts list to
+        all linked devices. This command should only be used if this is the primary
+        device.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -748,19 +777,22 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/api.Error'
-      summary: Send a synchronization message with the local contacts list to all linked devices.
+      summary: Send a synchronization message with the local contacts list to all
+        linked devices.
       tags:
       - Contacts
   /v1/devices/{number}:
     post:
       consumes:
       - application/json
-      description: Links another device to this device. Only works, if this is the master device.
+      description: Links another device to this device. Only works, if this is the
+        master device.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -776,7 +808,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -1183,7 +1216,8 @@ paths:
       - Identities
   /v1/identities/{number}/trust/{numberToTrust}:
     put:
-      description: Trust an identity. When 'trust_all_known_keys' is set to' true', all known keys of this user are trusted. **This is only recommended for testing.**
+      description: Trust an identity. When 'trust_all_known_keys' is set to' true',
+        all known keys of this user are trusted. **This is only recommended for testing.**
       parameters:
       - description: Input Data
         in: body
@@ -1348,7 +1382,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Receives Signal Messages from the Signal Network. If you are running the docker container in normal/native mode, this is a GET endpoint. In json-rpc mode this is a websocket endpoint.
+      description: Receives Signal Messages from the Signal Network. If you are running
+        the docker container in normal/native mode, this is a GET endpoint. In json-rpc
+        mode this is a websocket endpoint.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -1359,7 +1395,8 @@ paths:
         in: query
         name: timeout
         type: string
-      - description: Specify whether the attachments of the received message should be ignored
+      - description: Specify whether the attachments of the received message should
+          be ignored
         in: query
         name: ignore_attachments
         type: string
@@ -1367,7 +1404,8 @@ paths:
         in: query
         name: ignore_stories
         type: string
-      - description: 'Specify the maximum number of messages to receive (default: unlimited)'
+      - description: 'Specify the maximum number of messages to receive (default:
+          unlimited)'
         in: query
         name: max_messages
         type: string
@@ -1410,7 +1448,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201": {}
+        "201":
+          description: Created
         "400":
           description: Bad Request
           schema:
@@ -1457,7 +1496,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Check if one or more phone numbers are registered with the Signal Service.
+      description: Check if one or more phone numbers are registered with the Signal
+        Service.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -1534,7 +1574,8 @@ paths:
             items:
               $ref: '#/definitions/client.ListInstalledStickerPacksResponse'
             type: array
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -1545,7 +1586,11 @@ paths:
     post:
       consumes:
       - application/json
-      description: 'In order to add a sticker pack, browse to https://signalstickers.org/ and select the sticker pack you want to add. Then, press the "Add to Signal" button. If you look at the address bar in your browser you should see an URL in this format: https://signal.art/addstickers/#pack_id=XXX&pack_key=YYY, where XXX is the pack_id and YYY is the pack_key.'
+      description: 'In order to add a sticker pack, browse to https://signalstickers.org/
+        and select the sticker pack you want to add. Then, press the "Add to Signal"
+        button. If you look at the address bar in your browser you should see an URL
+        in this format: https://signal.art/addstickers/#pack_id=XXX&pack_key=YYY,
+        where XXX is the pack_id and YYY is the pack_key.'
       parameters:
       - description: Registered Phone Number
         in: path
@@ -1561,7 +1606,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -1634,7 +1680,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Disables push support for this device. **WARNING:** If *delete_account* is set to *true*, the account will be deleted from the Signal Server. This cannot be undone without loss.
+      description: Disables push support for this device. **WARNING:** If *delete_account*
+        is set to *true*, the account will be deleted from the Signal Server. This
+        cannot be undone without loss.
       parameters:
       - description: Registered Phone Number
         in: path
@@ -1649,7 +1697,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204": {}
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -1661,7 +1710,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: 'Send a signal message. Set the text_mode to ''styled'' in case you want to add formatting to your text message. Styling Options: *italic text*, **bold text**, ~strikethrough text~.'
+      description: 'Send a signal message. Set the text_mode to ''styled'' in case
+        you want to add formatting to your text message. Styling Options: *italic
+        text*, **bold text**, ~strikethrough text~.'
       parameters:
       - description: Input Data
         in: body

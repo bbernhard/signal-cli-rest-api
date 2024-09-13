@@ -4,7 +4,6 @@
         "description": "This is the Signal Cli REST API documentation.",
         "title": "Signal Cli REST API",
         "contact": {},
-        "license": {},
         "version": "1.0"
     },
     "basePath": "/",
@@ -90,7 +89,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -132,7 +133,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -180,7 +183,9 @@
                             "$ref": "#/definitions/client.SetUsernameResponse"
                         }
                     },
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -211,7 +216,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -417,7 +424,9 @@
                     }
                 ],
                 "responses": {
-                    "200": {},
+                    "200": {
+                        "description": "OK"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -457,7 +466,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -529,7 +540,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -562,7 +575,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -604,7 +619,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1561,7 +1578,9 @@
                     }
                 ],
                 "responses": {
-                    "201": {},
+                    "201": {
+                        "description": "Created"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1748,7 +1767,9 @@
                             }
                         }
                     },
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1788,7 +1809,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -1921,7 +1944,9 @@
                     }
                 ],
                 "responses": {
-                    "204": {},
+                    "204": {
+                        "description": "No Content"
+                    },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
@@ -2020,7 +2045,6 @@
             "type": "object",
             "properties": {
                 "logging": {
-                    "type": "object",
                     "$ref": "#/definitions/api.LoggingConfiguration"
                 }
             }
@@ -2049,7 +2073,6 @@
                     "type": "string"
                 },
                 "permissions": {
-                    "type": "object",
                     "$ref": "#/definitions/api.GroupPermissions"
                 }
             }
@@ -2234,7 +2257,10 @@
                     "type": "integer"
                 },
                 "mentions": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.MessageMention"
+                    }
                 },
                 "message": {
                     "type": "string"
@@ -2249,7 +2275,10 @@
                     "type": "string"
                 },
                 "quote_mentions": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.MessageMention"
+                    }
                 },
                 "quote_message": {
                     "type": "string"
@@ -2541,6 +2570,20 @@
                 },
                 "username_link": {
                     "type": "string"
+                }
+            }
+        },
+        "data.MessageMention": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "length": {
+                    "type": "integer"
+                },
+                "start": {
+                    "type": "integer"
                 }
             }
         }
