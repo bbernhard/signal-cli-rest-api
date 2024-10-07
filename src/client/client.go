@@ -868,7 +868,7 @@ func (s *SignalClient) RemoveReceiveChannel(channelUuid string) {
 	jsonRpc2Client.RemoveReceiveChannel(channelUuid)
 }
 
-func (s *SignalClient) CreateGroup(number string, name string, members []string, description string, editGroupPermission GroupPermission, addMembersPermission GroupPermission, groupLinkState GroupLinkState) (string, error) {
+func (s *SignalClient) CreateGroup(number string, name string, members []string, description string, editGroupPermission GroupPermission, addMembersPermission GroupPermission, groupLinkState GroupLinkState, expirationTime *int) (string, error) {
 	var internalGroupId string
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
@@ -878,6 +878,7 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 			Description           string   `json:"description,omitempty"`
 			EditGroupPermissions  string   `json:"setPermissionEditDetails,omitempty"`
 			AddMembersPermissions string   `json:"setPermissionAddMember,omitempty"`
+			Expiration            int      `json:"expiration,omitempty"`
 		}
 		request := Request{Name: name, Members: members}
 
@@ -895,6 +896,10 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 
 		if addMembersPermission != DefaultGroupPermission {
 			request.AddMembersPermissions = addMembersPermission.String()
+		}
+
+		if expirationTime != nil {
+			request.Expiration = *expirationTime
 		}
 
 		jsonRpc2Client, err := s.getJsonRpc2Client()
@@ -934,6 +939,10 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 
 		if description != "" {
 			cmd = append(cmd, []string{"--description", description}...)
+		}
+
+		if expirationTime != nil {
+			cmd = append(cmd, []string{"--expiration", strconv.Itoa(*expirationTime)}...)
 		}
 
 		rawData, err := s.cliClient.Execute(true, cmd, "")

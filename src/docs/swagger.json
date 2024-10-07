@@ -2083,6 +2083,9 @@
                 "description": {
                     "type": "string"
                 },
+                "expiration_time": {
+                    "type": "integer"
+                },
                 "group_link": {
                     "type": "string",
                     "enum": [
@@ -2268,69 +2271,7 @@
             }
         },
         "api.SendMessageV2": {
-            "type": "object",
-            "properties": {
-                "base64_attachments": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "\u003cBASE64 ENCODED DATA\u003e",
-                        "data:\u003cMIME-TYPE\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e",
-                        "data:\u003cMIME-TYPE\u003e;filename=\u003cFILENAME\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e"
-                    ]
-                },
-                "edit_timestamp": {
-                    "type": "integer"
-                },
-                "mentions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/data.MessageMention"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "notify_self": {
-                    "type": "boolean"
-                },
-                "number": {
-                    "type": "string"
-                },
-                "quote_author": {
-                    "type": "string"
-                },
-                "quote_mentions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/data.MessageMention"
-                    }
-                },
-                "quote_message": {
-                    "type": "string"
-                },
-                "quote_timestamp": {
-                    "type": "integer"
-                },
-                "recipients": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sticker": {
-                    "type": "string"
-                },
-                "text_mode": {
-                    "type": "string",
-                    "enum": [
-                        "normal",
-                        "styled"
-                    ]
-                }
-            }
+            "type": "object"
         },
         "api.SetUsernameRequest": {
             "type": "object",
@@ -2598,20 +2539,6 @@
                 },
                 "username_link": {
                     "type": "string"
-                }
-            }
-        },
-        "data.MessageMention": {
-            "type": "object",
-            "properties": {
-                "author": {
-                    "type": "string"
-                },
-                "length": {
-                    "type": "integer"
-                },
-                "start": {
-                    "type": "integer"
                 }
             }
         }

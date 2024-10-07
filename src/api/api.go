@@ -48,6 +48,7 @@ type CreateGroupRequest struct {
 	Description    string           `json:"description"`
 	Permissions    GroupPermissions `json:"permissions"`
 	GroupLinkState string           `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
+	ExpirationTime *int             `json:"expiration_time"`
 }
 
 type UpdateGroupRequest struct {
@@ -668,7 +669,7 @@ func (a *Api) CreateGroup(c *gin.Context) {
 		groupLinkState = groupLinkState.FromString(req.GroupLinkState)
 	}
 
-	groupId, err := a.signalClient.CreateGroup(number, req.Name, req.Members, req.Description, editGroupPermission, addMembersPermission, groupLinkState)
+	groupId, err := a.signalClient.CreateGroup(number, req.Name, req.Members, req.Description, editGroupPermission, addMembersPermission, groupLinkState, req.ExpirationTime)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
