@@ -2346,6 +2346,9 @@ const docTemplate = `{
                 },
                 "share_number": {
                     "type": "boolean"
+                },
+                "unrestricted_unidentified_sender": {
+                    "type": "boolean"
                 }
             }
         },
