@@ -3,7 +3,26 @@
 set -x
 set -e
 
+[ -d /etc/docker ] && echo "$FILE is a directory."
+
 [ -z "${SIGNAL_CLI_CONFIG_DIR}" ] && echo "SIGNAL_CLI_CONFIG_DIR environmental variable needs to be set! Aborting!" && exit 1;
+
+if [ "$(id -u)" -eq "${SIGNAL_CLI_UID}" ] && [ "$(id -g)" -eq "${SIGNAL_CLI_GID}" ]]
+then
+  echo "UID and GID are already correct. Trying to start Signal Api"
+
+  # TODO: check mode
+  if [ "$MODE" = "json-rpc" ]
+  then
+  /usr/bin/jsonrpc2-helper
+  if [ -n "$JAVA_OPTS" ] ; then
+      echo "export JAVA_OPTS='$JAVA_OPTS'" >> /etc/default/supervisor
+  fi
+  service supervisor start
+  supervisorctl start all
+  fi
+  signal-cli-rest-api -signal-cli-config=${SIGNAL_CLI_CONFIG_DIR};
+fi
 
 usermod -u ${SIGNAL_CLI_UID} signal-api
 groupmod -g ${SIGNAL_CLI_GID} signal-api
