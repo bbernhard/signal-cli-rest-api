@@ -34,7 +34,7 @@ RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get -qqy install --no-install-recommends \
 		wget software-properties-common git locales zip unzip \
 		file build-essential libz-dev zlib1g-dev < /dev/null > /dev/null \
-	&& rm -rf /var/lib/apt/lists/* 
+	&& rm -rf /var/lib/apt/lists/*
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
@@ -45,7 +45,7 @@ ENV JAVA_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
 ENV LANG en_US.UTF-8
 
 RUN cd /tmp/ \
-	&& git clone https://github.com/swaggo/swag.git swag-${SWAG_VERSION} \	
+	&& git clone https://github.com/swaggo/swag.git swag-${SWAG_VERSION} \
 	&& cd swag-${SWAG_VERSION} \
 	&& git checkout -q v${SWAG_VERSION} \
 	&& make -s < /dev/null > /dev/null \
@@ -141,7 +141,7 @@ COPY src/go.sum /tmp/signal-cli-rest-api-src/
 RUN cd /tmp/signal-cli-rest-api-src && swag init && go test ./client -v && go build
 
 # build supervisorctl_config_creator
-RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper 
+RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper
 
 # Start a fresh container for release container
 
@@ -163,7 +163,7 @@ ENV BUILD_VERSION=$BUILD_VERSION_ARG
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get -qq update \
 	&& apt-get -qq install -y --no-install-recommends util-linux supervisor netcat openjdk-21-jre curl < /dev/null > /dev/null \
-	&& rm -rf /var/lib/apt/lists/* 
+	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
 COPY --from=buildcontainer /opt/signal-cli-${SIGNAL_CLI_VERSION} /opt/signal-cli-${SIGNAL_CLI_VERSION}
