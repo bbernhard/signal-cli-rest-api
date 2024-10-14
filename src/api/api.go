@@ -1334,6 +1334,33 @@ func (a *Api) JoinGroup(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// @Summary Join a Signal Group by invite link.
+// @Tags Groups
+// @Description Join the specified Signal Group by invite link.
+// @Accept  json
+// @Produce  json
+// @Success 204 {string} OK
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Query invite_link query string true "Invite Link"
+// @Router /v1/groups/{number}/join_by_invite_link [post]
+func (a *Api) JoinGroupByInviteLink(c *gin.Context) {
+	number := c.Param("number")
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	inviteLink := c.Query("invite_link")
+	err := a.signalClient.JoinGroupByInviteLink(number, inviteLink)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 // @Summary Quit a Signal Group.
 // @Tags Groups
 // @Description Quit the specified Signal Group.
