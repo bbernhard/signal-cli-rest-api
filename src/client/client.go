@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/h2non/filetype"
@@ -1545,6 +1546,24 @@ func (s *SignalClient) JoinGroup(number string, groupId string) error {
 		_, err = jsonRpc2Client.getRaw("updateGroup", &number, request)
 	} else {
 		_, err = s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-g", groupId}, "")
+	}
+	return err
+}
+
+func (s *SignalClient) JoinGroupByInviteLink(number string, inviteLink string) error {
+	var err error
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			InviteLink string `json:"uri"`
+		}
+		request := Request{InviteLink: inviteLink}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("joinGroup", &number, request)
+	} else {
+		_, err = s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-a", number, "joinGroup", "--uri", inviteLink}, "")
 	}
 	return err
 }

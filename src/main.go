@@ -3,6 +3,11 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strconv"
+
 	"github.com/bbernhard/signal-cli-rest-api/api"
 	"github.com/bbernhard/signal-cli-rest-api/client"
 	docs "github.com/bbernhard/signal-cli-rest-api/docs"
@@ -12,10 +17,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strconv"
 )
 
 // @title Signal Cli REST API
@@ -191,6 +192,7 @@ func main() {
 		{
 			groups.POST(":number", api.CreateGroup)
 			groups.GET(":number", api.GetGroups)
+			groups.POST(":number/join_by_invite_link", api.JoinGroupByInviteLink)
 			groups.GET(":number/:groupid", api.GetGroup)
 			groups.DELETE(":number/:groupid", api.DeleteGroup)
 			groups.POST(":number/:groupid/block", api.BlockGroup)
