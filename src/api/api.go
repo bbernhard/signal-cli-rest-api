@@ -186,8 +186,9 @@ type RateLimitChallengeRequest struct {
 }
 
 type UpdateAccountSettingsRequest struct {
-	DiscoverableByNumber *bool `json:"discoverable_by_number"`
-	ShareNumber          *bool `json:"share_number"`
+	DiscoverableByNumber 					 *bool `json:"discoverable_by_number"`
+	ShareNumber          					 *bool `json:"share_number"`
+	UnrestrictedUnidentifiedSender *bool `json:"unrestricted_unidentified_sender"`
 }
 
 type SetUsernameRequest struct {
@@ -1864,7 +1865,7 @@ func (a *Api) UpdateAccountSettings(c *gin.Context) {
 		return
 	}
 
-	err = a.signalClient.UpdateAccountSettings(number, req.DiscoverableByNumber, req.ShareNumber)
+	err = a.signalClient.UpdateAccountSettings(number, req.DiscoverableByNumber, req.ShareNumber, req.UnrestrictedUnidentifiedSender)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
