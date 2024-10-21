@@ -1356,7 +1356,7 @@ func (s *SignalClient) GetAttachment(attachment string) ([]byte, error) {
 	return attachmentBytes, nil
 }
 
-func (s *SignalClient) UpdateProfile(number string, profileName string, base64Avatar string) error {
+func (s *SignalClient) UpdateProfile(number string, profileName string, base64Avatar string, about string) error {
 	var err error
 	var avatarTmpPath string
 	if base64Avatar != "" {
@@ -1399,6 +1399,7 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 			Name         string `json:"given-name"`
 			Avatar       string `json:"avatar,omitempty"`
 			RemoveAvatar bool   `json:"remove-avatar"`
+			About        string `json:"about"`
 		}
 		request := Request{Name: profileName}
 		if base64Avatar == "" {
@@ -1413,7 +1414,7 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 		}
 		_, err = jsonRpc2Client.getRaw("updateProfile", &number, request)
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateProfile", "--given-name", profileName}
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateProfile", "--given-name", profileName, "--about", about}
 		if base64Avatar == "" {
 			cmd = append(cmd, "--remove-avatar")
 		} else {
