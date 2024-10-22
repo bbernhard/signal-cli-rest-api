@@ -146,7 +146,7 @@ type CreateGroupResponse struct {
 type UpdateProfileRequest struct {
 	Name         string `json:"name"`
 	Base64Avatar string `json:"base64_avatar"`
-	About 			 string `json:"about"`
+	About 			 *string `json:"about"`
 }
 
 type TrustIdentityRequest struct {
