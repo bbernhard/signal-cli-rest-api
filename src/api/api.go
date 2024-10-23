@@ -146,6 +146,7 @@ type CreateGroupResponse struct {
 type UpdateProfileRequest struct {
 	Name         string `json:"name"`
 	Base64Avatar string `json:"base64_avatar"`
+	About 			 *string `json:"about"`
 }
 
 type TrustIdentityRequest struct {
@@ -1115,7 +1116,7 @@ func (a *Api) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	err = a.signalClient.UpdateProfile(number, req.Name, req.Base64Avatar)
+	err = a.signalClient.UpdateProfile(number, req.Name, req.Base64Avatar, req.About)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
