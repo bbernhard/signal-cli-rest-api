@@ -1401,6 +1401,13 @@
                 "summary": "Send a reaction.",
                 "parameters": [
                     {
+                        "description": "Reaction ID",
+                        "name": "number",
+                        "in": "path",
+                        "required": true,
+                        "type": "number"
+                    },
+                    {
                         "description": "Reaction",
                         "name": "data",
                         "in": "body",
@@ -1438,6 +1445,13 @@
                 ],
                 "summary": "Remove a reaction.",
                 "parameters": [
+                    {
+                        "description": "Reaction ID",
+                        "name": "number",
+                        "in": "path",
+                        "required": true,
+                        "type": "number"
+                    },
                     {
                         "description": "Reaction",
                         "name": "data",
@@ -1478,6 +1492,13 @@
                 ],
                 "summary": "Send a receipt.",
                 "parameters": [
+                    {
+                        "description": "Receipt ID",
+                        "name": "number",
+                        "in": "path",
+                        "required": true,
+                        "type": "number"
+                    },
                     {
                         "description": "Receipt",
                         "name": "data",
@@ -1671,7 +1692,7 @@
                 }
             }
         },
-        "/v1/search": {
+        "/v1/search/{number}": {
             "get": {
                 "description": "Check if one or more phone numbers are registered with the Signal Service.",
                 "consumes": [
@@ -1689,7 +1710,8 @@
                         "type": "string",
                         "description": "Registered Phone Number",
                         "name": "number",
-                        "in": "path"
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "type": "array",

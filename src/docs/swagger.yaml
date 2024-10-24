@@ -1329,6 +1329,11 @@ paths:
       - application/json
       description: Remove a reaction
       parameters:
+      - description: Reaction ID
+        name: number
+        in: path
+        required: true
+        type: number
       - description: Reaction
         in: body
         name: data
@@ -1354,6 +1359,11 @@ paths:
       - application/json
       description: React to a message
       parameters:
+      - description: Reaction ID
+        name: number
+        in: path
+        required: true
+        type: number
       - description: Reaction
         in: body
         name: data
@@ -1380,6 +1390,11 @@ paths:
       - application/json
       description: Send a read or viewed receipt
       parameters:
+      - description: Receipt ID
+        name: number
+        in: path
+        required: true
+        type: number
       - description: Receipt
         in: body
         name: data
@@ -1514,7 +1529,7 @@ paths:
       summary: Verify a registered phone number.
       tags:
       - Devices
-  /v1/search:
+  /v1/search/{number}:
     get:
       consumes:
       - application/json
@@ -1525,6 +1540,7 @@ paths:
         in: path
         name: number
         type: string
+        required: true
       - collectionFormat: multi
         description: Numbers to check
         in: query
