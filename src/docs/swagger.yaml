@@ -1,5 +1,7 @@
 host: localhost:8080
 basePath: /
+schemes:
+  - http
 definitions:
   api.AddDeviceRequest:
     properties:

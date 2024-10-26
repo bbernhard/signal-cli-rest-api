@@ -8,6 +8,7 @@
     },
     "host": "localhost:8080",
     "basePath": "/",
+    "schemes": ["http"],
     "paths": {
         "/v1/about": {
             "get": {
