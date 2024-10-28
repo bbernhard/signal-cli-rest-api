@@ -1287,11 +1287,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/api.Reaction'
-      - description: Reaction Identifier
+      - description: Phone number
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -1317,11 +1317,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/api.Reaction'
-      - description: Reaction Identifier
+      - description: Phone number
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -1348,11 +1348,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/api.Receipt'
-      - description: Receipt Identifier
+      - description: Phone number
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:

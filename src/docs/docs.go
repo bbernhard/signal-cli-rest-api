@@ -1417,8 +1417,8 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "type": "integer",
-                        "description": "Reaction Identifier",
+                        "type": "string",
+                        "description": "Phone number",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1462,8 +1462,8 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "type": "integer",
-                        "description": "Reaction Identifier",
+                        "type": "string",
+                        "description": "Phone number",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1509,8 +1509,8 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "type": "integer",
-                        "description": "Receipt Identifier",
+                        "type": "string",
+                        "description": "Phone number",
                         "name": "id",
                         "in": "path",
                         "required": true
