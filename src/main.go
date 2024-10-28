@@ -58,6 +58,8 @@ import (
 // @tag.name Sticker Packs
 // @tag.description List and Install Sticker Packs
 
+// @host localhost:8080
+// @schemes http
 // @BasePath /
 func main() {
 	signalCliConfig := flag.String("signal-cli-config", "/home/.local/share/signal-cli/", "Config directory where signal-cli config is stored")

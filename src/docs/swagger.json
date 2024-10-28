@@ -1,4 +1,7 @@
 {
+    "schemes": [
+        "http"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "This is the Signal Cli REST API documentation.",
@@ -8,7 +11,6 @@
     },
     "host": "localhost:8080",
     "basePath": "/",
-    "schemes": ["http"],
     "paths": {
         "/v1/about": {
             "get": {
@@ -1403,13 +1405,6 @@
                 "summary": "Send a reaction.",
                 "parameters": [
                     {
-                        "description": "Reaction ID",
-                        "name": "number",
-                        "in": "path",
-                        "required": true,
-                        "type": "number"
-                    },
-                    {
                         "description": "Reaction",
                         "name": "data",
                         "in": "body",
@@ -1417,6 +1412,13 @@
                         "schema": {
                             "$ref": "#/definitions/api.Reaction"
                         }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Reaction Identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1448,13 +1450,6 @@
                 "summary": "Remove a reaction.",
                 "parameters": [
                     {
-                        "description": "Reaction ID",
-                        "name": "number",
-                        "in": "path",
-                        "required": true,
-                        "type": "number"
-                    },
-                    {
                         "description": "Reaction",
                         "name": "data",
                         "in": "body",
@@ -1462,6 +1457,13 @@
                         "schema": {
                             "$ref": "#/definitions/api.Reaction"
                         }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Reaction Identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1495,13 +1497,6 @@
                 "summary": "Send a receipt.",
                 "parameters": [
                     {
-                        "description": "Receipt ID",
-                        "name": "number",
-                        "in": "path",
-                        "required": true,
-                        "type": "number"
-                    },
-                    {
                         "description": "Receipt",
                         "name": "data",
                         "in": "body",
@@ -1509,6 +1504,13 @@
                         "schema": {
                             "$ref": "#/definitions/api.Receipt"
                         }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Receipt Identifier",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1694,7 +1696,7 @@
                 }
             }
         },
-        "/v1/search/{number}": {
+        "/v1/search": {
             "get": {
                 "description": "Check if one or more phone numbers are registered with the Signal Service.",
                 "consumes": [
@@ -1712,8 +1714,7 @@
                         "type": "string",
                         "description": "Registered Phone Number",
                         "name": "number",
-                        "in": "path",
-                        "required": true
+                        "in": "path"
                     },
                     {
                         "type": "array",
@@ -2295,69 +2296,7 @@
             }
         },
         "api.SendMessageV2": {
-            "type": "object",
-            "properties": {
-                "base64_attachments": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "\u003cBASE64 ENCODED DATA\u003e",
-                        "data:\u003cMIME-TYPE\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e",
-                        "data:\u003cMIME-TYPE\u003e;filename=\u003cFILENAME\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e"
-                    ]
-                },
-                "edit_timestamp": {
-                    "type": "integer"
-                },
-                "mentions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/data.MessageMention"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "notify_self": {
-                    "type": "boolean"
-                },
-                "number": {
-                    "type": "string"
-                },
-                "quote_author": {
-                    "type": "string"
-                },
-                "quote_mentions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/data.MessageMention"
-                    }
-                },
-                "quote_message": {
-                    "type": "string"
-                },
-                "quote_timestamp": {
-                    "type": "integer"
-                },
-                "recipients": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sticker": {
-                    "type": "string"
-                },
-                "text_mode": {
-                    "type": "string",
-                    "enum": [
-                        "normal",
-                        "styled"
-                    ]
-                }
-            }
+            "type": "object"
         },
         "api.SetUsernameRequest": {
             "type": "object",
@@ -2459,6 +2398,9 @@
         "api.UpdateProfileRequest": {
             "type": "object",
             "properties": {
+                "about": {
+                    "type": "string"
+                },
                 "base64_avatar": {
                     "type": "string"
                 },
@@ -2625,20 +2567,6 @@
                 },
                 "username_link": {
                     "type": "string"
-                }
-            }
-        },
-        "data.MessageMention": {
-            "type": "object",
-            "properties": {
-                "author": {
-                    "type": "string"
-                },
-                "length": {
-                    "type": "integer"
-                },
-                "start": {
-                    "type": "integer"
                 }
             }
         }

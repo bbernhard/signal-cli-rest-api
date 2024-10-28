@@ -1,7 +1,4 @@
-host: localhost:8080
 basePath: /
-schemes:
-  - http
 definitions:
   api.AddDeviceRequest:
     properties:
@@ -166,48 +163,6 @@ definitions:
         type: array
     type: object
   api.SendMessageV2:
-    properties:
-      base64_attachments:
-        example:
-        - <BASE64 ENCODED DATA>
-        - data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>
-        - data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>
-        items:
-          type: string
-        type: array
-      edit_timestamp:
-        type: integer
-      mentions:
-        items:
-          $ref: '#/definitions/data.MessageMention'
-        type: array
-      message:
-        type: string
-      notify_self:
-        type: boolean
-      number:
-        type: string
-      quote_author:
-        type: string
-      quote_mentions:
-        items:
-          $ref: '#/definitions/data.MessageMention'
-        type: array
-      quote_message:
-        type: string
-      quote_timestamp:
-        type: integer
-      recipients:
-        items:
-          type: string
-        type: array
-      sticker:
-        type: string
-      text_mode:
-        enum:
-        - normal
-        - styled
-        type: string
     type: object
   api.SetUsernameRequest:
     properties:
@@ -274,6 +229,8 @@ definitions:
     type: object
   api.UpdateProfileRequest:
     properties:
+      about:
+        type: string
       base64_avatar:
         type: string
       name:
@@ -384,15 +341,7 @@ definitions:
       username_link:
         type: string
     type: object
-  data.MessageMention:
-    properties:
-      author:
-        type: string
-      length:
-        type: integer
-      start:
-        type: integer
-    type: object
+host: localhost:8080
 info:
   contact: {}
   description: This is the Signal Cli REST API documentation.
@@ -1332,17 +1281,17 @@ paths:
       - application/json
       description: Remove a reaction
       parameters:
-      - description: Reaction ID
-        name: number
-        in: path
-        required: true
-        type: number
       - description: Reaction
         in: body
         name: data
         required: true
         schema:
           $ref: '#/definitions/api.Reaction'
+      - description: Reaction Identifier
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -1362,17 +1311,17 @@ paths:
       - application/json
       description: React to a message
       parameters:
-      - description: Reaction ID
-        name: number
-        in: path
-        required: true
-        type: number
       - description: Reaction
         in: body
         name: data
         required: true
         schema:
           $ref: '#/definitions/api.Reaction'
+      - description: Reaction Identifier
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -1393,17 +1342,17 @@ paths:
       - application/json
       description: Send a read or viewed receipt
       parameters:
-      - description: Receipt ID
-        name: number
-        in: path
-        required: true
-        type: number
       - description: Receipt
         in: body
         name: data
         required: true
         schema:
           $ref: '#/definitions/api.Receipt'
+      - description: Receipt Identifier
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -1532,7 +1481,7 @@ paths:
       summary: Verify a registered phone number.
       tags:
       - Devices
-  /v1/search/{number}:
+  /v1/search:
     get:
       consumes:
       - application/json
@@ -1543,7 +1492,6 @@ paths:
         in: path
         name: number
         type: string
-        required: true
       - collectionFormat: multi
         description: Numbers to check
         in: query
@@ -1775,6 +1723,8 @@ paths:
       summary: Send a signal message.
       tags:
       - Messages
+schemes:
+- http
 swagger: "2.0"
 tags:
 - description: Some general endpoints.
