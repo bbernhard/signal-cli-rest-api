@@ -144,9 +144,9 @@ type CreateGroupResponse struct {
 }
 
 type UpdateProfileRequest struct {
-	Name         string `json:"name"`
-	Base64Avatar string `json:"base64_avatar"`
-	About 			 *string `json:"about"`
+	Name         string  `json:"name"`
+	Base64Avatar string  `json:"base64_avatar"`
+	About        *string `json:"about"`
 }
 
 type TrustIdentityRequest struct {
@@ -232,7 +232,7 @@ func (a *Api) About(c *gin.Context) {
 // @Param data body RegisterNumberRequest false "Additional Settings"
 // @Router /v1/register/{number} [post]
 func (a *Api) RegisterNumber(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	var req RegisterNumberRequest
 
@@ -274,7 +274,7 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 // @Param data body UnregisterNumberRequest false "Additional Settings"
 // @Router /v1/unregister/{number} [post]
 func (a *Api) UnregisterNumber(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	deleteAccount := false
 	deleteLocalData := false
@@ -312,7 +312,7 @@ func (a *Api) UnregisterNumber(c *gin.Context) {
 // @Param token path string true "Verification Code"
 // @Router /v1/register/{number}/verify/{token} [post]
 func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	token := c.Param("token")
 
 	pin := ""
@@ -566,7 +566,7 @@ func StringToBool(input string) bool {
 // @Param send_read_receipts query string false "Specify whether read receipts should be sent when receiving messages" (default: false)"
 // @Router /v1/receive/{number} [get]
 func (a *Api) Receive(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	if a.signalClient.GetSignalCliMode() == client.JsonRpc {
 		ws, err := connectionUpgrader.Upgrade(c.Writer, c.Request, nil)
@@ -633,7 +633,7 @@ func (a *Api) Receive(c *gin.Context) {
 // @Param number path string true "Registered Phone Number"
 // @Router /v1/groups/{number} [post]
 func (a *Api) CreateGroup(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	var req CreateGroupRequest
 	err := c.BindJSON(&req)
@@ -691,7 +691,7 @@ func (a *Api) CreateGroup(c *gin.Context) {
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/members [post]
 func (a *Api) AddMembersToGroup(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -736,7 +736,7 @@ func (a *Api) AddMembersToGroup(c *gin.Context) {
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/members [delete]
 func (a *Api) RemoveMembersFromGroup(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -781,7 +781,7 @@ func (a *Api) RemoveMembersFromGroup(c *gin.Context) {
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/admins [post]
 func (a *Api) AddAdminsToGroup(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -826,7 +826,7 @@ func (a *Api) AddAdminsToGroup(c *gin.Context) {
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/admins [delete]
 func (a *Api) RemoveAdminsFromGroup(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -869,7 +869,8 @@ func (a *Api) RemoveAdminsFromGroup(c *gin.Context) {
 // @Param number path string true "Registered Phone Number"
 // @Router /v1/groups/{number} [get]
 func (a *Api) GetGroups(c *gin.Context) {
-	number := c.Param("number")
+	raw := c.Param("number")
+	number := strings.Replace(raw, "%2B", "+", 1)
 
 	groups, err := a.signalClient.GetGroups(number)
 	if err != nil {
@@ -891,7 +892,7 @@ func (a *Api) GetGroups(c *gin.Context) {
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid} [get]
 func (a *Api) GetGroup(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	groupId := c.Param("groupid")
 
 	groupEntry, err := a.signalClient.GetGroup(number, groupId)
@@ -919,7 +920,7 @@ func (a *Api) GetGroup(c *gin.Context) {
 // @Router /v1/groups/{number}/{groupid} [delete]
 func (a *Api) DeleteGroup(c *gin.Context) {
 	base64EncodedGroupId := c.Param("groupid")
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	if base64EncodedGroupId == "" {
 		c.JSON(400, Error{Msg: "Please specify a group id"})
@@ -1096,7 +1097,7 @@ func (a *Api) ServeAttachment(c *gin.Context) {
 // @Param number path string true "Registered Phone Number"
 // @Router /v1/profiles/{number} [put]
 func (a *Api) UpdateProfile(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
@@ -1143,7 +1144,7 @@ func (a *Api) Health(c *gin.Context) {
 // @Param number path string true "Registered Phone Number"
 // @Router /v1/identities/{number} [get]
 func (a *Api) ListIdentities(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
@@ -1169,7 +1170,7 @@ func (a *Api) ListIdentities(c *gin.Context) {
 // @Param numberToTrust path string true "Number To Trust"
 // @Router /v1/identities/{number}/trust/{numberToTrust} [put]
 func (a *Api) TrustIdentity(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
@@ -1280,7 +1281,7 @@ func (a *Api) GetConfiguration(c *gin.Context) {
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/block [post]
 func (a *Api) BlockGroup(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1313,7 +1314,7 @@ func (a *Api) BlockGroup(c *gin.Context) {
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/join [post]
 func (a *Api) JoinGroup(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1346,7 +1347,7 @@ func (a *Api) JoinGroup(c *gin.Context) {
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/quit [post]
 func (a *Api) QuitGroup(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1379,7 +1380,7 @@ func (a *Api) QuitGroup(c *gin.Context) {
 // @Param data body UpdateGroupRequest true "Input Data"
 // @Router /v1/groups/{number}/{groupid} [put]
 func (a *Api) UpdateGroup(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1426,7 +1427,7 @@ func (a *Api) SendReaction(c *gin.Context) {
 		return
 	}
 
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	if req.Recipient == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
@@ -1474,7 +1475,7 @@ func (a *Api) RemoveReaction(c *gin.Context) {
 		return
 	}
 
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	if req.Recipient == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
@@ -1517,7 +1518,7 @@ func (a *Api) SendReceipt(c *gin.Context) {
 		return
 	}
 
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
@@ -1567,7 +1568,7 @@ func (a *Api) SendStartTyping(c *gin.Context) {
 		return
 	}
 
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1600,7 +1601,7 @@ func (a *Api) SendStopTyping(c *gin.Context) {
 		return
 	}
 
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1631,7 +1632,7 @@ func (a *Api) SearchForNumbers(c *gin.Context) {
 		return
 	}
 
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	searchResults, err := a.signalClient.SearchForNumbers(number, query["numbers"])
 	if err != nil {
@@ -1659,7 +1660,7 @@ func (a *Api) SearchForNumbers(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/contacts/{number} [put]
 func (a *Api) UpdateContact(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1696,7 +1697,7 @@ func (a *Api) UpdateContact(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/devices/{number} [post]
 func (a *Api) AddDevice(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1728,7 +1729,7 @@ func (a *Api) AddDevice(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/configuration/{number}/settings [post]
 func (a *Api) SetTrustMode(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1767,7 +1768,7 @@ func (a *Api) SetTrustMode(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/configuration/{number}/settings [get]
 func (a *Api) GetTrustMode(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1795,7 +1796,7 @@ func (a *Api) GetTrustMode(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/contacts/{number}/sync [post]
 func (a *Api) SendContacts(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1820,7 +1821,7 @@ func (a *Api) SendContacts(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/accounts/{number}/rate-limit-challenge [post]
 func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1852,7 +1853,7 @@ func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/accounts/{number}/settings [put]
 func (a *Api) UpdateAccountSettings(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1886,7 +1887,7 @@ func (a *Api) UpdateAccountSettings(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/accounts/{number}/username [post]
 func (a *Api) SetUsername(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1917,7 +1918,7 @@ func (a *Api) SetUsername(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/accounts/{number}/username [delete]
 func (a *Api) RemoveUsername(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1942,7 +1943,7 @@ func (a *Api) RemoveUsername(c *gin.Context) {
 // @Success 200 {object} []client.ListInstalledStickerPacksResponse
 // @Router /v1/sticker-packs/{number} [get]
 func (a *Api) ListInstalledStickerPacks(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1968,7 +1969,7 @@ func (a *Api) ListInstalledStickerPacks(c *gin.Context) {
 // @Param data body AddStickerPackRequest true "Request"
 // @Router /v1/sticker-packs/{number} [post]
 func (a *Api) AddStickerPack(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
 		return
@@ -1998,7 +1999,7 @@ func (a *Api) AddStickerPack(c *gin.Context) {
 // @Param number path string true "Registered Phone Number"
 // @Router /v1/contacts/{number} [get]
 func (a *Api) ListContacts(c *gin.Context) {
-	number := c.Param("number")
+	number := parseNumber(c)
 
 	if number == "" {
 		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
@@ -2013,4 +2014,10 @@ func (a *Api) ListContacts(c *gin.Context) {
 	}
 
 	c.JSON(200, contacts)
+}
+
+func parseNumber(c *gin.Context) string {
+	raw := c.Param("number")
+	number := strings.Replace(raw, "%2B", "+", 1)
+	return number
 }
