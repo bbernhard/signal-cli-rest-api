@@ -163,48 +163,6 @@ definitions:
         type: array
     type: object
   api.SendMessageV2:
-    properties:
-      base64_attachments:
-        example:
-        - <BASE64 ENCODED DATA>
-        - data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>
-        - data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>
-        items:
-          type: string
-        type: array
-      edit_timestamp:
-        type: integer
-      mentions:
-        items:
-          $ref: '#/definitions/data.MessageMention'
-        type: array
-      message:
-        type: string
-      notify_self:
-        type: boolean
-      number:
-        type: string
-      quote_author:
-        type: string
-      quote_mentions:
-        items:
-          $ref: '#/definitions/data.MessageMention'
-        type: array
-      quote_message:
-        type: string
-      quote_timestamp:
-        type: integer
-      recipients:
-        items:
-          type: string
-        type: array
-      sticker:
-        type: string
-      text_mode:
-        enum:
-        - normal
-        - styled
-        type: string
     type: object
   api.SetUsernameRequest:
     properties:
@@ -271,6 +229,8 @@ definitions:
     type: object
   api.UpdateProfileRequest:
     properties:
+      about:
+        type: string
       base64_avatar:
         type: string
       name:
@@ -381,15 +341,7 @@ definitions:
       username_link:
         type: string
     type: object
-  data.MessageMention:
-    properties:
-      author:
-        type: string
-      length:
-        type: integer
-      start:
-        type: integer
-    type: object
+host: localhost:8080
 info:
   contact: {}
   description: This is the Signal Cli REST API documentation.
@@ -1335,6 +1287,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/api.Reaction'
+      - description: Registered phone number
+        in: path
+        name: number
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1360,6 +1317,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/api.Reaction'
+      - description: Registered phone number
+        in: path
+        name: number
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1386,6 +1348,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/api.Receipt'
+      - description: Registered phone number
+        in: path
+        name: number
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1756,6 +1723,8 @@ paths:
       summary: Send a signal message.
       tags:
       - Messages
+schemes:
+- http
 swagger: "2.0"
 tags:
 - description: Some general endpoints.

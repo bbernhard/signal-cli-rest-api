@@ -1493,6 +1493,7 @@ func (a *Api) UpdateGroup(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body Reaction true "Reaction"
+// @Param number path string true "Registered phone number"
 // @Router /v1/reactions/{number} [post]
 func (a *Api) SendReaction(c *gin.Context) {
 	var req Reaction
@@ -1545,6 +1546,7 @@ func (a *Api) SendReaction(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body Reaction true "Reaction"
+// @Param number path string true "Registered phone number"
 // @Router /v1/reactions/{number} [delete]
 func (a *Api) RemoveReaction(c *gin.Context) {
 	var req Reaction
@@ -1592,6 +1594,7 @@ func (a *Api) RemoveReaction(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body Receipt true "Receipt"
+// @Param number path string true "Registered phone number"
 // @Router /v1/receipts/{number} [post]
 func (a *Api) SendReceipt(c *gin.Context) {
 	var req Receipt

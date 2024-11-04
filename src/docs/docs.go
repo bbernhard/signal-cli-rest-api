@@ -1415,6 +1415,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/api.Reaction"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered phone number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1453,6 +1460,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/api.Reaction"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered phone number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1493,6 +1507,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/api.Receipt"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered phone number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -2278,69 +2299,7 @@ const docTemplate = `{
             }
         },
         "api.SendMessageV2": {
-            "type": "object",
-            "properties": {
-                "base64_attachments": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "\u003cBASE64 ENCODED DATA\u003e",
-                        "data:\u003cMIME-TYPE\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e",
-                        "data:\u003cMIME-TYPE\u003e;filename=\u003cFILENAME\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e"
-                    ]
-                },
-                "edit_timestamp": {
-                    "type": "integer"
-                },
-                "mentions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/data.MessageMention"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "notify_self": {
-                    "type": "boolean"
-                },
-                "number": {
-                    "type": "string"
-                },
-                "quote_author": {
-                    "type": "string"
-                },
-                "quote_mentions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/data.MessageMention"
-                    }
-                },
-                "quote_message": {
-                    "type": "string"
-                },
-                "quote_timestamp": {
-                    "type": "integer"
-                },
-                "recipients": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sticker": {
-                    "type": "string"
-                },
-                "text_mode": {
-                    "type": "string",
-                    "enum": [
-                        "normal",
-                        "styled"
-                    ]
-                }
-            }
+            "type": "object"
         },
         "api.SetUsernameRequest": {
             "type": "object",
@@ -2442,6 +2401,9 @@ const docTemplate = `{
         "api.UpdateProfileRequest": {
             "type": "object",
             "properties": {
+                "about": {
+                    "type": "string"
+                },
                 "base64_avatar": {
                     "type": "string"
                 },
@@ -2610,20 +2572,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "data.MessageMention": {
-            "type": "object",
-            "properties": {
-                "author": {
-                    "type": "string"
-                },
-                "length": {
-                    "type": "integer"
-                },
-                "start": {
-                    "type": "integer"
-                }
-            }
         }
     },
     "tags": [
@@ -2681,9 +2629,9 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "",
+	Host:             "localhost:8080",
 	BasePath:         "/",
-	Schemes:          []string{},
+	Schemes:          []string{"http"},
 	Title:            "Signal Cli REST API",
 	Description:      "This is the Signal Cli REST API documentation.",
 	InfoInstanceName: "swagger",
