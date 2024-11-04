@@ -1418,8 +1418,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Phone number",
-                        "name": "id",
+                        "description": "Registered phone number",
+                        "name": "number",
                         "in": "path",
                         "required": true
                     }
@@ -1463,8 +1463,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Phone number",
-                        "name": "id",
+                        "description": "Registered phone number",
+                        "name": "number",
                         "in": "path",
                         "required": true
                     }
@@ -1510,8 +1510,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Phone number",
-                        "name": "id",
+                        "description": "Registered phone number",
+                        "name": "number",
                         "in": "path",
                         "required": true
                     }

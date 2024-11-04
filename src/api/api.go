@@ -144,9 +144,9 @@ type CreateGroupResponse struct {
 }
 
 type UpdateProfileRequest struct {
-	Name         string `json:"name"`
-	Base64Avatar string `json:"base64_avatar"`
-	About 			 *string `json:"about"`
+	Name         string  `json:"name"`
+	Base64Avatar string  `json:"base64_avatar"`
+	About        *string `json:"about"`
 }
 
 type TrustIdentityRequest struct {
@@ -1416,7 +1416,7 @@ func (a *Api) UpdateGroup(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body Reaction true "Reaction"
-// @Param id path string true "Phone number"
+// @Param number path string true "Registered phone number"
 // @Router /v1/reactions/{number} [post]
 func (a *Api) SendReaction(c *gin.Context) {
 	var req Reaction
@@ -1465,7 +1465,7 @@ func (a *Api) SendReaction(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body Reaction true "Reaction"
-// @Param id path string true "Phone number"
+// @Param number path string true "Registered phone number"
 // @Router /v1/reactions/{number} [delete]
 func (a *Api) RemoveReaction(c *gin.Context) {
 	var req Reaction
@@ -1509,7 +1509,7 @@ func (a *Api) RemoveReaction(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body Receipt true "Receipt"
-// @Param id path string true "Phone number"
+// @Param number path string true "Registered phone number"
 // @Router /v1/receipts/{number} [post]
 func (a *Api) SendReceipt(c *gin.Context) {
 	var req Receipt
