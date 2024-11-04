@@ -163,6 +163,48 @@ definitions:
         type: array
     type: object
   api.SendMessageV2:
+    properties:
+      base64_attachments:
+        example:
+        - <BASE64 ENCODED DATA>
+        - data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>
+        - data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>
+        items:
+          type: string
+        type: array
+      edit_timestamp:
+        type: integer
+      mentions:
+        items:
+          $ref: '#/definitions/data.MessageMention'
+        type: array
+      message:
+        type: string
+      notify_self:
+        type: boolean
+      number:
+        type: string
+      quote_author:
+        type: string
+      quote_mentions:
+        items:
+          $ref: '#/definitions/data.MessageMention'
+        type: array
+      quote_message:
+        type: string
+      quote_timestamp:
+        type: integer
+      recipients:
+        items:
+          type: string
+        type: array
+      sticker:
+        type: string
+      text_mode:
+        enum:
+        - normal
+        - styled
+        type: string
     type: object
   api.SetUsernameRequest:
     properties:
@@ -340,6 +382,15 @@ definitions:
         type: string
       username_link:
         type: string
+    type: object
+  data.MessageMention:
+    properties:
+      author:
+        type: string
+      length:
+        type: integer
+      start:
+        type: integer
     type: object
 host: localhost:8080
 info:
