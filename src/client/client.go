@@ -1578,6 +1578,14 @@ func (s *SignalClient) JoinGroupByInviteLink(number string, inviteLink string) e
 	return err
 }
 
+func (s *SignalClient) GetJoinGroupInfoByInviteLink(number string, inviteLink string) (string, error) {
+	if s.signalCliMode == JsonRpc {
+		return "", errors.New("Not implemented")
+	}
+
+	return s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "--output", "json", "-a", number, "getJoinGroupInfo", "--uri", inviteLink}, "")
+}
+
 func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	var err error
 	if s.signalCliMode == JsonRpc {
