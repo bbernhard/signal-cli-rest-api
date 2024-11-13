@@ -1,4 +1,7 @@
 {
+    "schemes": [
+        "http"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "This is the Signal Cli REST API documentation.",
@@ -6,6 +9,7 @@
         "contact": {},
         "version": "1.0"
     },
+    "host": "localhost:8080",
     "basePath": "/",
     "paths": {
         "/v1/about": {
@@ -1408,6 +1412,13 @@
                         "schema": {
                             "$ref": "#/definitions/api.Reaction"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered phone number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1446,6 +1457,13 @@
                         "schema": {
                             "$ref": "#/definitions/api.Reaction"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered phone number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1486,6 +1504,13 @@
                         "schema": {
                             "$ref": "#/definitions/api.Receipt"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered phone number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -2271,7 +2296,69 @@
             }
         },
         "api.SendMessageV2": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "base64_attachments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "\u003cBASE64 ENCODED DATA\u003e",
+                        "data:\u003cMIME-TYPE\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e",
+                        "data:\u003cMIME-TYPE\u003e;filename=\u003cFILENAME\u003e;base64\u003ccomma\u003e\u003cBASE64 ENCODED DATA\u003e"
+                    ]
+                },
+                "edit_timestamp": {
+                    "type": "integer"
+                },
+                "mentions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.MessageMention"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "notify_self": {
+                    "type": "boolean"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "quote_author": {
+                    "type": "string"
+                },
+                "quote_mentions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.MessageMention"
+                    }
+                },
+                "quote_message": {
+                    "type": "string"
+                },
+                "quote_timestamp": {
+                    "type": "integer"
+                },
+                "recipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sticker": {
+                    "type": "string"
+                },
+                "text_mode": {
+                    "type": "string",
+                    "enum": [
+                        "normal",
+                        "styled"
+                    ]
+                }
+            }
         },
         "api.SetUsernameRequest": {
             "type": "object",
@@ -2373,6 +2460,9 @@
         "api.UpdateProfileRequest": {
             "type": "object",
             "properties": {
+                "about": {
+                    "type": "string"
+                },
                 "base64_avatar": {
                     "type": "string"
                 },
@@ -2539,6 +2629,20 @@
                 },
                 "username_link": {
                     "type": "string"
+                }
+            }
+        },
+        "data.MessageMention": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "length": {
+                    "type": "integer"
+                },
+                "start": {
+                    "type": "integer"
                 }
             }
         }

@@ -462,7 +462,10 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 			request.Attachments = append(request.Attachments, attachmentEntry.toDataForSignal())
 		}
 
-		request.NotifySelf = true
+		// for backwards compatibility, if flag is not set we'll assume that self notification is desired
+		if signalCliSendRequest.NotifySelf == nil || *signalCliSendRequest.NotifySelf {
+			request.NotifySelf = true
+		}
 
 		request.Sticker = signalCliSendRequest.Sticker
 		if signalCliSendRequest.Mentions != nil {
@@ -1357,7 +1360,7 @@ func (s *SignalClient) GetAttachment(attachment string) ([]byte, error) {
 	return attachmentBytes, nil
 }
 
-func (s *SignalClient) UpdateProfile(number string, profileName string, base64Avatar string) error {
+func (s *SignalClient) UpdateProfile(number string, profileName string, base64Avatar string, about *string) error {
 	var err error
 	var avatarTmpPath string
 	if base64Avatar != "" {
@@ -1397,17 +1400,20 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Name         string `json:"given-name"`
-			Avatar       string `json:"avatar,omitempty"`
-			RemoveAvatar bool   `json:"remove-avatar"`
+			Name         string  `json:"given-name"`
+			Avatar       string  `json:"avatar,omitempty"`
+			RemoveAvatar bool    `json:"remove-avatar"`
+			About        *string `json:"about,omitempty"`
 		}
 		request := Request{Name: profileName}
+		request.About = about
 		if base64Avatar == "" {
 			request.RemoveAvatar = true
 		} else {
 			request.Avatar = avatarTmpPath
 			request.RemoveAvatar = false
 		}
+
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
 			return err
@@ -1419,6 +1425,10 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 			cmd = append(cmd, "--remove-avatar")
 		} else {
 			cmd = append(cmd, []string{"--avatar", avatarTmpPath}...)
+		}
+
+		if about != nil {
+			cmd = append(cmd, []string{"--about", *about}...)
 		}
 
 		_, err = s.cliClient.Execute(true, cmd, "")
