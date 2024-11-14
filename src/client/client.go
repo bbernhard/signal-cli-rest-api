@@ -143,6 +143,7 @@ type SignalCliGroupEntry struct {
 	RequestingMembers []SignalCliGroupMember `json:"requestingMembers"`
 	GroupInviteLink   string                 `json:"groupInviteLink"`
 	Admins            []SignalCliGroupAdmin  `json:"admins"`
+	Uuid              string                 `json:"uuid"`
 }
 
 type SignalCliIdentityEntry struct {
@@ -1125,25 +1126,41 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 
 		members := []string{}
 		for _, val := range signalCliGroupEntry.Members {
-			members = append(members, val.Number)
+			identifier := val.Number
+			if identifier == "" {
+				identifier = val.Uuid
+			}
+			members = append(members, identifier)
 		}
 		groupEntry.Members = members
 
 		pendingMembers := []string{}
 		for _, val := range signalCliGroupEntry.PendingMembers {
-			pendingMembers = append(pendingMembers, val.Number)
+			identifier := val.Number
+			if identifier == "" {
+				identifier = val.Uuid
+			}
+			pendingMembers = append(pendingMembers, identifier)
 		}
 		groupEntry.PendingRequests = pendingMembers
 
 		requestingMembers := []string{}
 		for _, val := range signalCliGroupEntry.RequestingMembers {
-			requestingMembers = append(requestingMembers, val.Number)
+			identifier := val.Number
+			if identifier == "" {
+				identifier = val.Uuid
+			}
+			requestingMembers = append(requestingMembers, identifier)
 		}
 		groupEntry.PendingInvites = requestingMembers
 
 		admins := []string{}
 		for _, val := range signalCliGroupEntry.Admins {
-			admins = append(admins, val.Number)
+			identifier := val.Number
+			if identifier == "" {
+				identifier = val.Uuid
+			}
+			admins = append(admins, identifier)
 		}
 		groupEntry.Admins = admins
 
