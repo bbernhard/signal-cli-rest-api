@@ -2455,6 +2455,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "expiration_time": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 }
@@ -2712,8 +2715,6 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "This is the Signal Cli REST API documentation.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
-	LeftDelim:        "{{",
-	RightDelim:       "}}",
 }
 
 func init() {

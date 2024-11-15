@@ -2452,6 +2452,9 @@
                 "description": {
                     "type": "string"
                 },
+                "expiration_time": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 }

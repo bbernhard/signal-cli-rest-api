@@ -53,9 +53,10 @@ type CreateGroupRequest struct {
 }
 
 type UpdateGroupRequest struct {
-	Base64Avatar *string `json:"base64_avatar"`
-	Description  *string `json:"description"`
-	Name         *string `json:"name"`
+	Base64Avatar   *string `json:"base64_avatar"`
+	Description    *string `json:"description"`
+	Name           *string `json:"name"`
+	ExpirationTime *int    `json:"expiration_time"`
 }
 
 type ChangeGroupMembersRequest struct {
@@ -1477,7 +1478,7 @@ func (a *Api) UpdateGroup(c *gin.Context) {
 		return
 	}
 
-	err = a.signalClient.UpdateGroup(number, internalGroupId, req.Base64Avatar, req.Description, req.Name)
+	err = a.signalClient.UpdateGroup(number, internalGroupId, req.Base64Avatar, req.Description, req.Name, req.ExpirationTime)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
