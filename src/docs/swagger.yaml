@@ -1534,7 +1534,7 @@ paths:
       summary: Verify a registered phone number.
       tags:
       - Devices
-  /v1/search:
+  /v1/search/{number}:
     get:
       consumes:
       - application/json

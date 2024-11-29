@@ -1724,7 +1724,7 @@ func (a *Api) SendStopTyping(c *gin.Context) {
 // @Param numbers query []string true "Numbers to check" collectionFormat(multi)
 // @Success 200 {object} []SearchResponse
 // @Failure 400 {object} Error
-// @Router /v1/search [get]
+// @Router /v1/search/{number} [get]
 func (a *Api) SearchForNumbers(c *gin.Context) {
 	query := c.Request.URL.Query()
 	if _, ok := query["numbers"]; !ok {

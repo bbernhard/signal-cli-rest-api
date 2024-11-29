@@ -1699,7 +1699,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/search": {
+        "/v1/search/{number}": {
             "get": {
                 "description": "Check if one or more phone numbers are registered with the Signal Service.",
                 "consumes": [
@@ -2715,6 +2715,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "This is the Signal Cli REST API documentation.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {
