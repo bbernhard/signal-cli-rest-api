@@ -398,7 +398,8 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 
 	signalCliTextFormatStrings := []string{}
 	if signalCliSendRequest.TextMode != nil && *signalCliSendRequest.TextMode == "styled" {
-		signalCliSendRequest.Message, signalCliTextFormatStrings = utils.ParseMarkdownMessage(signalCliSendRequest.Message)
+		textstyleParser := utils.NewTextstyleParser(signalCliSendRequest.Message)
+		signalCliSendRequest.Message, signalCliTextFormatStrings = textstyleParser.Parse()
 	}
 
 	var groupId string = ""
