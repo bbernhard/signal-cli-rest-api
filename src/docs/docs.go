@@ -2014,7 +2014,7 @@ const docTemplate = `{
         },
         "/v2/send": {
             "post": {
-                "description": "Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: *italic text*, **bold text**, ~strikethrough text~. If you want to escape a character, prefix it with two backslashes ('\\\\')",
+                "description": "Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: *italic text*, **bold text**, ~strikethrough text~. If you want to escape a formatting character, prefix it with two backslashes ('\\\\')",
                 "consumes": [
                     "application/json"
                 ],
