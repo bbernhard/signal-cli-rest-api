@@ -119,3 +119,31 @@ func TestBoldTextInsideSpoiler(t *testing.T) {
 	expectMessageEqual(t, message, "this is a bold text inside a spoiler")
 	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"0:36:BOLD", "0:36:SPOILER"})
 }
+
+func TestEscapeAsterisks(t *testing.T) {
+	textstyleParser := NewTextstyleParser("\\*escaped text\\*")
+	message, signalCliFormatStrings := textstyleParser.Parse()
+	expectMessageEqual(t, message, "escaped text")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
+}
+
+func TestEscapeAsterisks1(t *testing.T) {
+	textstyleParser := NewTextstyleParser("\\**escaped text\\**")
+	message, signalCliFormatStrings := textstyleParser.Parse()
+	expectMessageEqual(t, message, "escaped text")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
+}
+
+func TestEscapeBackticks(t *testing.T) {
+	textstyleParser := NewTextstyleParser("\\`escaped text\\`")
+	message, signalCliFormatStrings := textstyleParser.Parse()
+	expectMessageEqual(t, message, "escaped text")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
+}
+
+func TestEscapeTilde(t *testing.T) {
+	textstyleParser := NewTextstyleParser("\\~escaped text\\~")
+	message, signalCliFormatStrings := textstyleParser.Parse()
+	expectMessageEqual(t, message, "escaped text")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
+}

@@ -395,7 +395,7 @@ func (a *Api) Send(c *gin.Context) {
 
 // @Summary Send a signal message.
 // @Tags Messages
-// @Description Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: *italic text*, **bold text**, ~strikethrough text~.
+// @Description Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: *italic text*, **bold text**, ~strikethrough text~. If you want to escape a character, prefix it with two backslashes ('\\')
 // @Accept  json
 // @Produce  json
 // @Success 201 {object} SendMessageResponse

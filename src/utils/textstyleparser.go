@@ -25,6 +25,8 @@ const (
 	SpoilerBegin           = 9
 )
 
+const EscapeCharacter rune = '\\'
+
 func getUtf16StringLength(s string) int {
 	runes := []rune(s) //turn string to slice
 
@@ -74,7 +76,6 @@ type TextstyleParser struct {
 	tokens                 Stack
 	fullString             string
 	signalCliFormatStrings []string
-	//numOfControlTokens int
 }
 
 func NewTextstyleParser(input string) *TextstyleParser {
@@ -93,9 +94,6 @@ func (l *TextstyleParser) next() (rune rune) {
 		l.width = 0
 		return eof
 	}
-	//r := []rune(l.input[l.pos:])[0]
-	//l.width = utf16.RuneLen(r)
-	//l.pos += l.width
 	rune, l.width = utf8.DecodeRuneInString(l.input[l.pos:])
 	l.pos += l.width
 	return rune
@@ -129,6 +127,7 @@ func (l *TextstyleParser) handleToken(tokenType int, signalCliStylingType string
 }
 
 func (l *TextstyleParser) Parse() (string, []string) {
+	var prevChar rune
 	for {
 		c := l.next()
 		if c == eof {
@@ -140,20 +139,45 @@ func (l *TextstyleParser) Parse() (string, []string) {
 		if c == '*' {
 			if nextRune == '*' { //Bold
 				l.next()
+				if prevChar == EscapeCharacter {
+					prevChar = c
+					continue
+				}
 				l.handleToken(BoldBegin, Bold)
 			} else { //Italic
+				if prevChar == EscapeCharacter {
+					prevChar = c
+					continue
+				}
 				l.handleToken(ItalicBegin, Italic)
 			}
 		} else if (c == '|') && (nextRune == '|') {
 			l.next()
+			if prevChar == EscapeCharacter {
+				prevChar = c
+				continue
+			}
 			l.handleToken(SpoilerBegin, Spoiler)
 		} else if c == '~' {
+			if prevChar == EscapeCharacter {
+				prevChar = c
+				continue
+			}
 			l.handleToken(StrikethroughBegin, Strikethrough)
 		} else if c == '`' {
+			if prevChar == EscapeCharacter {
+				prevChar = c
+				continue
+			}
 			l.handleToken(MonoSpaceBegin, Monospace)
+		} else if ((c == EscapeCharacter) && (nextRune == '*')) || ((c == EscapeCharacter) && (nextRune == '`')) || ((c == EscapeCharacter) && (nextRune == '|')) || ((c == EscapeCharacter) && (nextRune == '~')) {
+			prevChar = c
+			continue
 		} else {
 			l.fullString += string(c)
 		}
+
+		prevChar = c
 	}
 
 	return l.fullString, l.signalCliFormatStrings
