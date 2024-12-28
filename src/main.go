@@ -285,6 +285,14 @@ func main() {
 		{
 			sendV2.POST("", api.SendV2)
 		}
+		sendalertmanagerV2 := v2.Group("/sendalertmanager")
+		{
+			sendalertmanagerV2.POST("", api.SendAlertManagerV2)
+		}
+		sendgraylognotificationV2 := v2.Group("/sendgraylognotification")
+		{
+			sendgraylognotificationV2.POST("", api.SendGraylogNotificationV2)
+		}
 	}
 
 	swaggerUrl := ginSwagger.URL("http://" + swaggerIp + ":" + string(port) + "/swagger/doc.json")
