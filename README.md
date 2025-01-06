@@ -138,4 +138,6 @@ There are a bunch of environmental variables that can be set inside the docker c
 
 * `SWAGGER_IP`: The IP that's used in the Swagger UI for the interactive examples. Defaults to the container ip.
 
+* `SWAGGER_USE_HTTPS_AS_PREFERRED_SCHEME`: Use the HTTPS Scheme as preferred scheme in the Swagger UI.
+
 * `PORT`: Defaults to port `8080` unless this env var is set to tell it otherwise.
