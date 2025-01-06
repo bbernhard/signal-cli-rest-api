@@ -61,6 +61,16 @@ import (
 // @host localhost:8080
 // @schemes http
 // @BasePath /
+
+func PluginHandler(api *api.Api, pluginConfig utils.PluginConfig) gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		api.ExecutePlugin(c, pluginConfig)
+	}
+
+	return gin.HandlerFunc(fn)
+}
+
+
 func main() {
 	signalCliConfig := flag.String("signal-cli-config", "/home/.local/share/signal-cli/", "Config directory where signal-cli config is stored")
 	attachmentTmpDir := flag.String("attachment-tmp-dir", "/tmp/", "Attachment tmp directory")
@@ -276,6 +286,29 @@ func main() {
 			contacts.GET(":number", api.ListContacts)
 			contacts.PUT(":number", api.UpdateContact)
 			contacts.POST(":number/sync", api.SendContacts)
+		}
+
+		if utils.GetEnv("ENABLE_PLUGINS", "false") == "true" {
+			plugins := v1.Group("/plugins")
+			{
+				pluginConfigs := utils.NewPluginConfigs()
+				err := pluginConfigs.Load("/plugins")
+				if err != nil {
+					log.Fatal("Couldn't load plugin configs: ", err.Error())
+				}
+
+				for _, pluginConfig := range pluginConfigs.Configs {
+					if pluginConfig.Method == "GET" {
+						plugins.GET(pluginConfig.Endpoint, PluginHandler(api, pluginConfig))
+					} else if pluginConfig.Method == "POST" {
+						plugins.POST(pluginConfig.Endpoint, PluginHandler(api, pluginConfig))
+					} else if pluginConfig.Method == "DELETE" {
+						plugins.DELETE(pluginConfig.Endpoint, PluginHandler(api, pluginConfig))
+					} else if pluginConfig.Method == "PUT" {
+						plugins.PUT(pluginConfig.Endpoint, PluginHandler(api, pluginConfig))
+					}
+				}
+			}
 		}
 	}
 

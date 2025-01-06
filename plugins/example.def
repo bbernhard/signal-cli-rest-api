@@ -1,0 +1,2 @@
+endpoint: my-custom-send-endpoint/:number 
+method: POST

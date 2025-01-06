@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
+	github.com/cjoudrey/gluahttp v0.0.0-20201111170219-25003d9adfa9 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4
 	github.com/gabriel-vasile/mimetype v1.4.2
 	github.com/gin-gonic/gin v1.9.1
@@ -22,6 +23,9 @@ require (
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5
+	github.com/yuin/gopher-lua v1.1.1 // indirect
 	golang.org/x/net v0.33.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
+	layeh.com/gopher-json v0.0.0-20201124131017-552bb3c4c3bf // indirect
+	layeh.com/gopher-luar v1.0.11 // indirect
 )
