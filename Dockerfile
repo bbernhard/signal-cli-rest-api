@@ -162,7 +162,7 @@ ENV BUILD_VERSION=$BUILD_VERSION_ARG
 
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get -qq update \
-	&& apt-get -qq install -y --no-install-recommends util-linux supervisor netcat openjdk-21-jre curl < /dev/null > /dev/null \
+	&& apt-get -qq install -y --no-install-recommends util-linux supervisor netcat openjdk-21-jre curl locales < /dev/null > /dev/null \
 	&& rm -rf /var/lib/apt/lists/* 
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
@@ -184,6 +184,12 @@ RUN arch="$(uname -m)"; \
         case "$arch" in \
             armv7l) echo "GRAALVM doesn't support 32bit" && rm /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native  ;; \
         esac;
+
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    dpkg-reconfigure --frontend=noninteractive locales && \
+    update-locale LANG=en_US.UTF-8
+
+ENV LANG en_US.UTF-8
 
 EXPOSE ${PORT}
 
