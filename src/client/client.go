@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"net/http"
+	"bytes"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/h2non/filetype"
@@ -1212,7 +1214,7 @@ func (s *SignalClient) DeleteGroup(number string, groupId string) error {
 	}
 }
 
-func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int) ([]byte, error) {
+func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int, callbackUrl string) ([]byte, error) {
 	if s.signalCliMode == JsonRpc {
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
@@ -1264,6 +1266,13 @@ func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int) ([]by
 			}
 			log.Debug("Linking device result: ", result)
 			s.signalCliApiConfig.Load(s.signalCliApiConfigPath)
+
+			if callbackUrl != "" {
+				_, err = http.Post(callbackUrl, "application/json", bytes.NewBuffer([]byte(result)))
+				if err != nil {
+					log.Error(err)
+				}
+			}
 		})()
 
 		return png, nil

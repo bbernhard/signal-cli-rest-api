@@ -1007,6 +1007,11 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 func (a *Api) GetQrCodeLink(c *gin.Context) {
 	deviceName := c.Query("device_name")
 	qrCodeVersion := c.Query("qrcode_version")
+	callbackUrl, err := url.PathUnescape(c.Query("callback_url"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid callback"})
+		return
+	}
 
 	if deviceName == "" {
 		c.JSON(400, Error{Msg: "Please provide a name for the device"})
@@ -1023,7 +1028,7 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 		}
 	}
 
-	png, err := a.signalClient.GetQrCodeLink(deviceName, qrCodeVersionInt)
+	png, err := a.signalClient.GetQrCodeLink(deviceName, qrCodeVersionInt, callbackUrl)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
