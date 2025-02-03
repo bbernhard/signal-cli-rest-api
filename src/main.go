@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"plugin"
 )
 
 // @title Signal Cli REST API
@@ -61,15 +62,6 @@ import (
 // @host localhost:8080
 // @schemes http
 // @BasePath /
-
-func PluginHandler(api *api.Api, pluginConfig utils.PluginConfig) gin.HandlerFunc {
-	fn := func(c *gin.Context) {
-		api.ExecutePlugin(c, pluginConfig)
-	}
-
-	return gin.HandlerFunc(fn)
-}
-
 
 func main() {
 	signalCliConfig := flag.String("signal-cli-config", "/home/.local/share/signal-cli/", "Config directory where signal-cli config is stored")
@@ -293,6 +285,22 @@ func main() {
 		}
 
 		if utils.GetEnv("ENABLE_PLUGINS", "false") == "true" {
+			signalCliRestApiPluginSharedObjDir := utils.GetEnv("SIGNAL_CLI_REST_API_PLUGIN_SHARED_OBJ_DIR", "")
+			sharedObj, err := plugin.Open(signalCliRestApiPluginSharedObjDir + "signal-cli-rest-api_plugin_loader.so")
+			if err != nil {
+				log.Fatal("Couldn't load shared object: ", err)
+			}
+
+			pluginHandlerSymbol, err := sharedObj.Lookup("PluginHandler")
+			if err != nil {
+				log.Fatal("Couldn't get PluginHandler: ", err)
+			}
+
+			pluginHandler, ok := pluginHandlerSymbol.(utils.PluginHandler)
+			if !ok {
+				log.Fatal("Couldn't cast PluginHandler")
+			}
+
 			plugins := v1.Group("/plugins")
 			{
 				pluginConfigs := utils.NewPluginConfigs()
@@ -303,13 +311,13 @@ func main() {
 
 				for _, pluginConfig := range pluginConfigs.Configs {
 					if pluginConfig.Method == "GET" {
-						plugins.GET(pluginConfig.Endpoint, PluginHandler(api, pluginConfig))
+						plugins.GET(pluginConfig.Endpoint, pluginHandler.ExecutePlugin(pluginConfig))
 					} else if pluginConfig.Method == "POST" {
-						plugins.POST(pluginConfig.Endpoint, PluginHandler(api, pluginConfig))
+						plugins.POST(pluginConfig.Endpoint, pluginHandler.ExecutePlugin(pluginConfig))
 					} else if pluginConfig.Method == "DELETE" {
-						plugins.DELETE(pluginConfig.Endpoint, PluginHandler(api, pluginConfig))
+						plugins.DELETE(pluginConfig.Endpoint, pluginHandler.ExecutePlugin(pluginConfig))
 					} else if pluginConfig.Method == "PUT" {
-						plugins.PUT(pluginConfig.Endpoint, PluginHandler(api, pluginConfig))
+						plugins.PUT(pluginConfig.Endpoint, pluginHandler.ExecutePlugin(pluginConfig))
 					}
 				}
 			}

@@ -136,12 +136,16 @@ COPY src/scripts /tmp/signal-cli-rest-api-src/scripts
 COPY src/main.go /tmp/signal-cli-rest-api-src/
 COPY src/go.mod /tmp/signal-cli-rest-api-src/
 COPY src/go.sum /tmp/signal-cli-rest-api-src/
+COPY src/plugin_loader.go /tmp/signal-cli-rest-api-src/
 
 # build signal-cli-rest-api
-RUN cd /tmp/signal-cli-rest-api-src && swag init && go test ./client -v && go build
+RUN cd /tmp/signal-cli-rest-api-src && swag init && go test ./client -v && go build -o signal-cli-rest-api main.go
 
 # build supervisorctl_config_creator
 RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper 
+
+# build plugin_loader
+RUN cd /tmp/signal-cli-rest-api-src && go build -buildmode=plugin -o signal-cli-rest-api_plugin_loader.so plugin_loader.go
 
 # Start a fresh container for release container
 
@@ -159,6 +163,7 @@ ARG SIGNAL_CLI_VERSION
 ARG BUILD_VERSION_ARG
 
 ENV BUILD_VERSION=$BUILD_VERSION_ARG
+ENV SIGNAL_CLI_REST_API_PLUGIN_SHARED_OBJ_DIR=/usr/bin/
 
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get -qq update \
@@ -169,6 +174,7 @@ COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr
 COPY --from=buildcontainer /opt/signal-cli-${SIGNAL_CLI_VERSION} /opt/signal-cli-${SIGNAL_CLI_VERSION}
 COPY --from=buildcontainer /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile/signal-cli /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/scripts/jsonrpc2-helper /usr/bin/jsonrpc2-helper
+COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api_plugin_loader.so /usr/bin/signal-cli-rest-api_plugin_loader.so
 COPY entrypoint.sh /entrypoint.sh
 
 
