@@ -2,7 +2,7 @@ ARG SIGNAL_CLI_VERSION=0.13.12
 ARG LIBSIGNAL_CLIENT_VERSION=0.65.2
 ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.13.12+morph027+1
 
-ARG SWAG_VERSION=1.6.7
+ARG SWAG_VERSION=1.7.1
 ARG GRAALVM_VERSION=21.0.0
 
 ARG BUILD_VERSION_ARG=unset
@@ -139,7 +139,10 @@ COPY src/go.sum /tmp/signal-cli-rest-api-src/
 COPY src/plugin_loader.go /tmp/signal-cli-rest-api-src/
 
 # build signal-cli-rest-api
-RUN cd /tmp/signal-cli-rest-api-src && swag init && go test ./client -v && go build -o signal-cli-rest-api main.go
+RUN ls -la /tmp/signal-cli-rest-api-src
+RUN cd /tmp/signal-cli-rest-api-src && swag init
+RUN cd /tmp/signal-cli-rest-api-src && go build -o signal-cli-rest-api main.go
+RUN cd /tmp/signal-cli-rest-api-src && go test ./client -v
 
 # build supervisorctl_config_creator
 RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper 
