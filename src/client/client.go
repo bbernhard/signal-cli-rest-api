@@ -790,7 +790,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: numbers, Base64Attachments: base64Attachments,
 			RecipientType: ds.Number, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp}
+			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf}
 		timestamp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
@@ -802,7 +802,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: usernames, Base64Attachments: base64Attachments,
 			RecipientType: ds.Username, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp}
+			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf}
 		timestamp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
