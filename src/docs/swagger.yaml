@@ -1753,9 +1753,9 @@ paths:
       consumes:
       - application/json
       description: 'Send a signal message. Set the text_mode to ''styled'' in case
-        you want to add formatting to your text message. Styling Options: *italic
-        text*, **bold text**, ~strikethrough text~. If you want to escape a formatting
-        character, prefix it with two backslashes (''\\'')'
+        you want to add formatting to your text message. Styling Options: \*italic
+        text\*, \*\*bold text\*\*, ~strikethrough text~, ||spoiler||, \`monospace\`.
+        If you want to escape a formatting character, prefix it with two backslashes.'
       parameters:
       - description: Input Data
         in: body
