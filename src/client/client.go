@@ -105,6 +105,7 @@ func (g GroupLinkState) FromString(input string) GroupLinkState {
 
 type GroupEntry struct {
 	Name            string   `json:"name"`
+	Description     string   `json:"description"`
 	Id              string   `json:"id"`
 	InternalId      string   `json:"internal_id"`
 	Members         []string `json:"members"`
@@ -135,6 +136,7 @@ type SignalCliGroupAdmin struct {
 
 type SignalCliGroupEntry struct {
 	Name              string                 `json:"name"`
+	Description       string                 `json:"description"`
 	Id                string                 `json:"id"`
 	IsMember          bool                   `json:"isMember"`
 	IsBlocked         bool                   `json:"isBlocked"`
@@ -1124,6 +1126,7 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 		groupEntry.Name = signalCliGroupEntry.Name
 		groupEntry.Id = convertInternalGroupIdToGroupId(signalCliGroupEntry.Id)
 		groupEntry.Blocked = signalCliGroupEntry.IsBlocked
+		groupEntry.Description = signalCliGroupEntry.Description
 
 		members := []string{}
 		for _, val := range signalCliGroupEntry.Members {
