@@ -1720,7 +1720,7 @@ func (a *Api) SendStopTyping(c *gin.Context) {
 // @Description Check if one or more phone numbers are registered with the Signal Service.
 // @Accept  json
 // @Produce  json
-// @Param number path string false "Registered Phone Number"
+// @Param number path string true "Registered Phone Number"
 // @Param numbers query []string true "Numbers to check" collectionFormat(multi)
 // @Success 200 {object} []SearchResponse
 // @Failure 400 {object} Error
