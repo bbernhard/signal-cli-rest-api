@@ -2239,3 +2239,49 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 
 	return resp, nil
 }
+
+func (s *SignalClient) SetPin(number string, registrationLockPin string) (error) {
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			RegistrationLockPin string `json:"pin"`
+		}
+		req := Request{RegistrationLockPin: registrationLockPin}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("setPin", &number, req)
+		if err != nil {
+			return err
+		}
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "setPin", registrationLockPin}
+		rawData, err := s.cliClient.Execute(true, cmd, "")
+		if err != nil {
+			return err
+		}
+		log.Info(string(rawData))
+	}
+	return nil
+}
+
+
+func (s *SignalClient) RemovePin(number string) (error) {
+	if s.signalCliMode == JsonRpc {
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("removePin", &number, nil)
+		if err != nil {
+			return err
+		}
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "removePin"}
+		_, err := s.cliClient.Execute(true, cmd, "")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

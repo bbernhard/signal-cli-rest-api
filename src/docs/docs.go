@@ -64,6 +64,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/accounts/{number}/pin": {
+            "get": {
+                "description": "Sets a new Signal Pin",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Set Pin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Removes a Signal Pin",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Remove Pin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/accounts/{number}/rate-limit-challenge": {
             "post": {
                 "description": "When running into rate limits, sometimes the limit can be lifted, by solving a CAPTCHA. To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html. The \"challenge_token\" is the token from the failed send attempt. The \"captcha\" is the captcha result, starting with signalcaptcha://",
@@ -1717,7 +1779,8 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Registered Phone Number",
                         "name": "number",
-                        "in": "path"
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "type": "array",
@@ -2525,6 +2588,9 @@ const docTemplate = `{
                 },
                 "blocked": {
                     "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"

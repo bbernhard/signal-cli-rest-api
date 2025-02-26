@@ -312,6 +312,8 @@ definitions:
         type: array
       blocked:
         type: boolean
+      description:
+        type: string
       id:
         type: string
       internal_id:
@@ -431,6 +433,47 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: List all accounts
+      tags:
+      - Accounts
+  /v1/accounts/{number}/pin:
+    delete:
+      description: Removes a Signal Pin
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Remove Pin
+      tags:
+      - Accounts
+    get:
+      description: Sets a new Signal Pin
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Set Pin
       tags:
       - Accounts
   /v1/accounts/{number}/rate-limit-challenge:
@@ -1544,6 +1587,7 @@ paths:
       - description: Registered Phone Number
         in: path
         name: number
+        required: true
         type: string
       - collectionFormat: multi
         description: Numbers to check

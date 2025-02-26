@@ -202,6 +202,10 @@ type AddStickerPackRequest struct {
 	PackKey string `json:"pack_key" example:"19546e18eba0ff69dea78eb591465289d39e16f35e58389ae779d4f9455aff3a"`
 }
 
+type SetPinRequest struct {
+	Pin string `json:"pin"`
+}
+
 type Api struct {
 	signalClient *client.SignalClient
 	wsMutex      sync.Mutex
@@ -2165,4 +2169,69 @@ func (a *Api) ListContacts(c *gin.Context) {
 	}
 
 	c.JSON(200, contacts)
+}
+
+// @Summary Set Pin
+// @Tags Accounts
+// @Description Sets a new Signal Pin
+// @Produce  json
+// @Success 201
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/accounts/{number}/pin [get]
+func (a *Api) SetPin(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req SetPinRequest
+	err = c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	err = a.signalClient.SetPin(number, req.Pin)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(201)
+}
+
+// @Summary Remove Pin
+// @Tags Accounts
+// @Description Removes a Signal Pin
+// @Produce  json
+// @Success 204
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/accounts/{number}/pin [delete]
+func (a *Api) RemovePin(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	err = a.signalClient.RemovePin(number)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(204)
 }

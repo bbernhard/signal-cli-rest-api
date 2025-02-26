@@ -223,6 +223,8 @@ func main() {
 			accounts.PUT(":number/settings", api.UpdateAccountSettings)
 			accounts.POST(":number/username", api.SetUsername)
 			accounts.DELETE(":number/username", api.RemoveUsername)
+			accounts.POST(":number/pin", api.SetPin)
+			accounts.DELETE(":number/pin", api.RemovePin)
 		}
 
 		devices := v1.Group("devices")
