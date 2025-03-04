@@ -4,6 +4,7 @@
 - Register a number (with SMS verification)
 
 `curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/register/<number>'`
+> `number` is your cell phone number which you want to link to the docker container.
 
 e.g:
 
@@ -75,10 +76,17 @@ e.g:
   Fetch all new messages in the inbox of the specified number.
 
   `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/receive/<number>'`
+  > `number`  is the registered phone number for which you want to retrieve incoming messages.
+  
+  > This is a WebSocket connection that remains subscribed to live events. Through this connection, you can observe real-time actions, such as when someone is typing or sending a message.
 
   e.g:
 
   `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/receive/+431212131491291'`
+
+  or with wscat:
+
+  `wscat -c ws://127.0.0.1:8080/v1/receive/+431212131491291 --show-ping-pong --slash`
 
 - Create a new group
 
