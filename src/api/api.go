@@ -2178,7 +2178,8 @@ func (a *Api) ListContacts(c *gin.Context) {
 // @Success 201
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
-// @Router /v1/accounts/{number}/pin [get]
+// @Param data body SetPinRequest true "Request"
+// @Router /v1/accounts/{number}/pin [post]
 func (a *Api) SetPin(c *gin.Context) {
 	number, err := url.PathUnescape(c.Param("number"))
 	if err != nil {

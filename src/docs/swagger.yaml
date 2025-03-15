@@ -206,6 +206,11 @@ definitions:
         - styled
         type: string
     type: object
+  api.SetPinRequest:
+    properties:
+      pin:
+        type: string
+    type: object
   api.SetUsernameRequest:
     properties:
       username:
@@ -456,7 +461,7 @@ paths:
       summary: Remove Pin
       tags:
       - Accounts
-    get:
+    post:
       description: Sets a new Signal Pin
       parameters:
       - description: Registered Phone Number
@@ -464,6 +469,12 @@ paths:
         name: number
         required: true
         type: string
+      - description: Request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.SetPinRequest'
       produces:
       - application/json
       responses:

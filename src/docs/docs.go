@@ -65,7 +65,7 @@ const docTemplate = `{
             }
         },
         "/v1/accounts/{number}/pin": {
-            "get": {
+            "post": {
                 "description": "Sets a new Signal Pin",
                 "produces": [
                     "application/json"
@@ -81,6 +81,15 @@ const docTemplate = `{
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SetPinRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2423,6 +2432,14 @@ const docTemplate = `{
                         "normal",
                         "styled"
                     ]
+                }
+            }
+        },
+        "api.SetPinRequest": {
+            "type": "object",
+            "properties": {
+                "pin": {
+                    "type": "string"
                 }
             }
         },
