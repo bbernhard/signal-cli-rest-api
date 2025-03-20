@@ -145,3 +145,5 @@ There are a bunch of environmental variables that can be set inside the docker c
 * `SWAGGER_USE_HTTPS_AS_PREFERRED_SCHEME`: Use the HTTPS Scheme as preferred scheme in the Swagger UI.
 
 * `PORT`: Defaults to port `8080` unless this env var is set to tell it otherwise.
+
+* `DEFAULT_SIGNAL_TEXT_MODE`: Allows to set the default text mode that should be used when sending a message (supported values: `normal`, `styled`). The setting is only used in case the `text_mode` is not explicitly set in the payload of the `send` method.

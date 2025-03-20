@@ -437,10 +437,19 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
+	textMode := req.TextMode
+	if textMode  == nil {
+		defaultSignalTextMode := utils.GetEnv("DEFAULT_SIGNAL_TEXT_MODE", "normal")
+		if defaultSignalTextMode == "styled" {
+			styledStr := "styled"
+			textMode = &styledStr
+		}
+	}
+
 	data, err := a.signalClient.SendV2(
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
 		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions,
-		req.TextMode, req.EditTimestamp, req.NotifySelf)
+		textMode, req.EditTimestamp, req.NotifySelf)
 	if err != nil {
 		switch err.(type) {
 		case *client.RateLimitErrorType:
