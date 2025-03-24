@@ -1334,15 +1334,23 @@ func (s *SignalClient) GetAccounts() ([]string, error) {
 func (s *SignalClient) GetAttachments() ([]string, error) {
 	files := []string{}
 
-	err := filepath.Walk(s.signalCliConfig+"/attachments/", func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
+	attachmentsPath := s.signalCliConfig+"/attachments/"
+	if _, err := os.Stat(attachmentsPath); !os.IsNotExist(err) {
+		err = filepath.Walk(attachmentsPath, func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+			files = append(files, filepath.Base(path))
 			return nil
+		})
+		if err != nil {
+			return files, err
 		}
-		files = append(files, filepath.Base(path))
-		return nil
-	})
+	} else {
+		return files, nil
+	}
 
-	return files, err
+	return files, nil
 }
 
 func (s *SignalClient) RemoveAttachment(attachment string) error {
