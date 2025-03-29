@@ -309,6 +309,19 @@ definitions:
           type: string
         type: array
     type: object
+  client.ContactProfile:
+    properties:
+      about:
+        type: string
+      given_name:
+        type: string
+      has_avatar:
+        type: boolean
+      last_updated_timestamp:
+        type: integer
+      lastname:
+        type: string
+    type: object
   client.GroupEntry:
     properties:
       admins:
@@ -359,12 +372,20 @@ definitions:
         type: boolean
       color:
         type: string
+      given_name:
+        type: string
       message_expiration:
         type: string
       name:
         type: string
+      nickname:
+        $ref: '#/definitions/client.Nickname'
+      note:
+        type: string
       number:
         type: string
+      profile:
+        $ref: '#/definitions/client.ContactProfile'
       profile_name:
         type: string
       username:
@@ -383,6 +404,15 @@ definitions:
       title:
         type: string
       url:
+        type: string
+    type: object
+  client.Nickname:
+    properties:
+      family_name:
+        type: string
+      given_name:
+        type: string
+      name:
         type: string
     type: object
   client.SetUsernameResponse:

@@ -188,6 +188,20 @@ type ListInstalledStickerPacksResponse struct {
 	Author    string `json:"author"`
 }
 
+type ContactProfile struct {
+	GivenName 	string `json:"given_name"`
+	FamilyName	string `json:"lastname"`
+	About		string `json:"about"`
+	HasAvatar	bool `json:"has_avatar"`
+	LastUpdatedTimestamp	int64 `json:"last_updated_timestamp"`
+}
+
+type Nickname struct {
+	Name string `json:"name"`
+	GivenName string `json:"given_name"`
+	FamilyName string `json:"family_name"`
+}
+
 type ListContactsResponse struct {
 	Number            string `json:"number"`
 	Uuid              string `json:"uuid"`
@@ -197,6 +211,10 @@ type ListContactsResponse struct {
 	Color             string `json:"color"`
 	Blocked           bool   `json:"blocked"`
 	MessageExpiration string `json:"message_expiration"`
+	Note              string `json:"note"`
+	Profile 		  ContactProfile `json:"profile"`
+	GivenName         string `json:"given_name"`
+	Nickname		  Nickname `json:"nickname"`
 }
 
 func cleanupTmpFiles(paths []string) {
@@ -2193,6 +2211,14 @@ func (s *SignalClient) AddStickerPack(number string, packId string, packKey stri
 }
 
 func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, error) {
+	type SignalCliProfileResponse struct {
+		LastUpdateTimestamp int64 `json:"lastUpdateTimestamp"`
+		GivenName 			string `json:"givenName"`
+		FamilyName 			string `json:"familyName"`
+		About 				string `json:"about"`
+		HasAvatar 			bool `json:"hasAvatar"`
+	}
+
 	type ListContactsSignlCliResponse struct {
 		Number            string `json:"number"`
 		Uuid              string `json:"uuid"`
@@ -2202,6 +2228,12 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 		Color             string `json:"color"`
 		Blocked           bool   `json:"blocked"`
 		MessageExpiration string `json:"messageExpiration"`
+		Note 			  string `json:"note"`
+		GivenName		  string `json:"givenName"`
+		Profile			  SignalCliProfileResponse `json:"profile"`
+		Nickname		  string `json:"nickName"`
+		NickGivenName	  string `json:"nickGivenName"`
+		NickFamilyName	  string `json:"nickFamilyName"`
 	}
 
 	resp := []ListContactsResponse{}
@@ -2229,11 +2261,12 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 	var signalCliResp []ListContactsSignlCliResponse
 	err = json.Unmarshal([]byte(rawData), &signalCliResp)
 	if err != nil {
+		log.Error("Couldn't list contacts", err.Error())
 		return resp, errors.New("Couldn't process request - invalid signal-cli response")
 	}
 
 	for _, value := range signalCliResp {
-		resp = append(resp, ListContactsResponse{
+		entry := ListContactsResponse{
 			Number:            value.Number,
 			Uuid:              value.Uuid,
 			Name:              value.Name,
@@ -2242,7 +2275,18 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 			Color:             value.Color,
 			Blocked:           value.Blocked,
 			MessageExpiration: value.MessageExpiration,
-		})
+			Note:			   value.Note,
+			GivenName:		   value.GivenName,
+		}
+		entry.Profile.About = value.Profile.About
+		entry.Profile.HasAvatar = value.Profile.HasAvatar
+		entry.Profile.LastUpdatedTimestamp = value.Profile.LastUpdateTimestamp
+		entry.Profile.GivenName = value.Profile.GivenName
+		entry.Profile.FamilyName = value.Profile.FamilyName
+		entry.Nickname.Name = value.Nickname
+		entry.Nickname.GivenName = value.NickGivenName
+		entry.Nickname.FamilyName = value.NickFamilyName
+		resp = append(resp, entry)
 	}
 
 	return resp, nil

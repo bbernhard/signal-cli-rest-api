@@ -2594,6 +2594,26 @@ const docTemplate = `{
                 }
             }
         },
+        "client.ContactProfile": {
+            "type": "object",
+            "properties": {
+                "about": {
+                    "type": "string"
+                },
+                "given_name": {
+                    "type": "string"
+                },
+                "has_avatar": {
+                    "type": "boolean"
+                },
+                "last_updated_timestamp": {
+                    "type": "integer"
+                },
+                "lastname": {
+                    "type": "string"
+                }
+            }
+        },
         "client.GroupEntry": {
             "type": "object",
             "properties": {
@@ -2670,14 +2690,26 @@ const docTemplate = `{
                 "color": {
                     "type": "string"
                 },
+                "given_name": {
+                    "type": "string"
+                },
                 "message_expiration": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
+                "nickname": {
+                    "$ref": "#/definitions/client.Nickname"
+                },
+                "note": {
+                    "type": "string"
+                },
                 "number": {
                     "type": "string"
+                },
+                "profile": {
+                    "$ref": "#/definitions/client.ContactProfile"
                 },
                 "profile_name": {
                     "type": "string"
@@ -2706,6 +2738,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "client.Nickname": {
+            "type": "object",
+            "properties": {
+                "family_name": {
+                    "type": "string"
+                },
+                "given_name": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
