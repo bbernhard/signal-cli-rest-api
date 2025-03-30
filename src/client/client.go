@@ -217,6 +217,12 @@ type ListContactsResponse struct {
 	Nickname		  Nickname `json:"nickname"`
 }
 
+type ListDevicesResponse struct {
+	Name 				string `json:"name"`
+	LastSeenTimestamp 	int64  `json:"last_seen_timestamp"`
+	CreationTimestamp 	int64  `json:"creation_timestamp"`
+}
+
 func cleanupTmpFiles(paths []string) {
 	for _, path := range paths {
 		os.Remove(path)
@@ -2024,6 +2030,51 @@ func (s *SignalClient) AddDevice(number string, uri string) error {
 		_, err = s.cliClient.Execute(true, cmd, "")
 	}
 	return err
+}
+
+func (s *SignalClient) ListDevices(number string) ([]ListDevicesResponse, error) {
+	resp := []ListDevicesResponse{}
+
+	type ListDevicesSignalCliResponse struct {
+		Id 					int64 `json:"id"`
+		Name				string `json:"name"`
+		CreatedTimestamp	int64 `json:"createdTimestamp"`
+		LastSeenTimestamp	int64 `json:"lastSeenTimestamp"`
+	}
+
+	var err error
+	var rawData string
+	if s.signalCliMode == JsonRpc {
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return resp, err
+		}
+		rawData, err = jsonRpc2Client.getRaw("listDevices", &number, nil)
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "listDevices"}
+		rawData, err = s.cliClient.Execute(true, cmd, "")
+	}
+
+	if err != nil {
+		return resp, err
+	}
+
+	var signalCliResp []ListDevicesSignalCliResponse
+	err = json.Unmarshal([]byte(rawData), &signalCliResp)
+	if err != nil {
+		return resp, err
+	}
+
+	for _, entry := range signalCliResp {
+		deviceEntry := ListDevicesResponse{
+			Name: entry.Name,
+			CreationTimestamp: entry.CreatedTimestamp,
+			LastSeenTimestamp: entry.LastSeenTimestamp,
+		}
+		resp = append(resp, deviceEntry)
+	}
+
+	return resp, nil
 }
 
 func (s *SignalClient) SetTrustMode(number string, trustMode utils.SignalCliTrustMode) error {

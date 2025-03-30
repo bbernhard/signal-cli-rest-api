@@ -1843,6 +1843,35 @@ func (a *Api) AddDevice(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// @Summary List linked devices.
+// @Tags Devices
+// @Description List linked devices associated to this device.
+// @Accept json
+// @Produce json
+// @Param number path string true "Registered Phone Number"
+// @Success 200 {object} []client.ListDevicesResponse
+// @Failure 400 {object} Error
+// @Router /v1/devices/{number} [get]
+func (a *Api) ListDevices(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	devices, err := a.signalClient.ListDevices(number)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.JSON(200, devices)
+}
+
 // @Summary Set account specific settings.
 // @Tags General
 // @Description Set account specific settings.

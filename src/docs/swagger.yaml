@@ -393,6 +393,15 @@ definitions:
       uuid:
         type: string
     type: object
+  client.ListDevicesResponse:
+    properties:
+      creation_timestamp:
+        type: integer
+      last_seen_timestamp:
+        type: integer
+      name:
+        type: string
+    type: object
   client.ListInstalledStickerPacksResponse:
     properties:
       author:
@@ -879,6 +888,32 @@ paths:
       tags:
       - Contacts
   /v1/devices/{number}:
+    get:
+      consumes:
+      - application/json
+      description: List linked devices associated to this device.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/client.ListDevicesResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: List linked devices.
+      tags:
+      - Devices
     post:
       consumes:
       - application/json

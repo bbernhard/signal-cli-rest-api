@@ -666,6 +666,45 @@ const docTemplate = `{
             }
         },
         "/v1/devices/{number}": {
+            "get": {
+                "description": "List linked devices associated to this device.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "List linked devices.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/client.ListDevicesResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Links another device to this device. Only works, if this is the master device.",
                 "consumes": [
@@ -2718,6 +2757,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "client.ListDevicesResponse": {
+            "type": "object",
+            "properties": {
+                "creation_timestamp": {
+                    "type": "integer"
+                },
+                "last_seen_timestamp": {
+                    "type": "integer"
+                },
+                "name": {
                     "type": "string"
                 }
             }

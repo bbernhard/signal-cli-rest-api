@@ -230,6 +230,7 @@ func main() {
 		devices := v1.Group("devices")
 		{
 			devices.POST(":number", api.AddDevice)
+			devices.GET(":number", api.ListDevices)
 		}
 
 		attachments := v1.Group("attachments")
