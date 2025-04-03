@@ -3,6 +3,13 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"plugin"
+	"strconv"
+	"strings"
+
 	"github.com/bbernhard/signal-cli-rest-api/api"
 	"github.com/bbernhard/signal-cli-rest-api/client"
 	docs "github.com/bbernhard/signal-cli-rest-api/docs"
@@ -12,11 +19,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strconv"
-	"plugin"
 )
 
 // @title Signal Cli REST API
@@ -422,5 +424,21 @@ func main() {
 		c.Start()
 	}
 
-	router.Run()
+	router.Run(getBindAddress(port))
+}
+
+func getBindAddress(port string) string {
+	allowedIPs := utils.GetEnv("ALLOWED_IPS", "")
+	if allowedIPs == "" {
+		return ":" + port // Listen to all incoming traffic
+	}
+
+	// Parse the list of allowed IPs
+	ipList := strings.Split(allowedIPs, ",")
+	if len(ipList) == 1 {
+		return ipList[0] + ":" + port // Bind to a single IP
+	}
+
+	log.Fatal("Multiple IPs in ALLOWED_IPS are not supported for binding")
+	return ""
 }
