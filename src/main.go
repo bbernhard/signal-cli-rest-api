@@ -8,6 +8,7 @@ import (
 	"os"
 	"plugin"
 	"strconv"
+	"strings"
 
 	"github.com/bbernhard/signal-cli-rest-api/api"
 	"github.com/bbernhard/signal-cli-rest-api/client"
@@ -82,6 +83,17 @@ func main() {
 	}))
 
 	router.Use(gin.Recovery())
+	trustedProxies := utils.GetEnv("TRUSTED_PROXIES", "")
+	if trustedProxies != "" {
+		proxiesArr := strings.Split(trustedProxies, ",")
+		for i, p := range proxiesArr {
+			proxiesArr[i] = strings.TrimSpace(p)
+		}
+		err := router.SetTrustedProxies(proxiesArr)
+		if err != nil {
+			log.Fatal("Couldn't set trusted proxies: ", err.Error())
+		}
+	}
 
 	port := utils.GetEnv("PORT", "8080")
 	if _, err := strconv.Atoi(port); err != nil {
