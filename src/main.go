@@ -8,7 +8,6 @@ import (
 	"os"
 	"plugin"
 	"strconv"
-	"strings"
 
 	"github.com/bbernhard/signal-cli-rest-api/api"
 	"github.com/bbernhard/signal-cli-rest-api/client"
@@ -428,17 +427,10 @@ func main() {
 }
 
 func getBindAddress(port string) string {
-	allowedIPs := utils.GetEnv("ALLOWED_IPS", "")
-	if allowedIPs == "" {
+	bindIP := utils.GetEnv("BIND_IP", "")
+	if bindIP == "" {
 		return ":" + port // Listen to all incoming traffic
 	}
 
-	// Parse the list of allowed IPs
-	ipList := strings.Split(allowedIPs, ",")
-	if len(ipList) == 1 {
-		return ipList[0] + ":" + port // Bind to a single IP
-	}
-
-	log.Fatal("Multiple IPs in ALLOWED_IPS are not supported for binding")
-	return ""
+	return bindIP + ":" + port // Bind to the specified IP
 }
