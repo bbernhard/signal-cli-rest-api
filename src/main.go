@@ -84,6 +84,7 @@ func main() {
 
 	router.Use(gin.Recovery())
 	trustedProxies := utils.GetEnv("TRUSTED_PROXIES", "")
+	log.Info("Debug: TRUSTED_PROXIES env variable = ", trustedProxies)
 	if trustedProxies != "" {
 		proxiesArr := strings.Split(trustedProxies, ",")
 		for i, p := range proxiesArr {
@@ -440,9 +441,13 @@ func main() {
 
 func getBindAddress(port string) string {
 	bindIP := utils.GetEnv("BIND_IP", "")
+	log.Info("Debug: BIND_IP env variable = ", bindIP)
+	var addr string
 	if bindIP == "" {
-		return ":" + port // Listen to all incoming traffic
+		addr = ":" + port // Listen to all incoming traffic
+	} else {
+		addr = bindIP + ":" + port // Bind to the specified IP
 	}
-
-	return bindIP + ":" + port // Bind to the specified IP
+	log.Info("Final bind address: ", addr)
+	return addr
 }
