@@ -75,7 +75,7 @@ $ sudo docker run -d --name signal-api --restart=always -p 9922:8080 \
               -e 'MODE=native' bbernhard/signal-cli-rest-api
 ```
 
-This launches a instance of the REST service accessible under http://localhost:9922/v2/send. To preserve the Signal number registration, i.e. for updates, the storage location for the `signal-cli` configuration is mapped as Docker Volume into a local `/home/user/signal-api` directory.
+This launches an instance of the REST service accessible under http://localhost:9922/v2/send. To preserve the Signal number registration, i.e. for updates, the storage location for the `signal-cli` configuration is mapped as Docker Volume into a local `/home/user/signal-api` directory.
 
 
 ## Auto Receive Schedule
