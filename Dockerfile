@@ -44,13 +44,17 @@ ENV JAVA_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
 
 ENV LANG en_US.UTF-8
 
-RUN cd /tmp/ \
-	&& git clone https://github.com/swaggo/swag.git swag-${SWAG_VERSION} \	
-	&& cd swag-${SWAG_VERSION} \
-	&& git checkout -q v${SWAG_VERSION} \
-	&& make -s < /dev/null > /dev/null \
-	&& cp /tmp/swag-${SWAG_VERSION}/swag /usr/bin/swag \
-	&& rm -r /tmp/swag-${SWAG_VERSION}
+#RUN cd /tmp/ \
+#	&& git clone https://github.com/swaggo/swag.git swag-${SWAG_VERSION} \
+#	&& cd swag-${SWAG_VERSION} \
+#	&& git checkout -q v${SWAG_VERSION} \
+#	&& make -s < /dev/null > /dev/null \
+#	&& cp /tmp/swag-${SWAG_VERSION}/swag /usr/bin/swag \
+#	&& rm -r /tmp/swag-${SWAG_VERSION}
+
+
+RUN go install github.com/swaggo/swag/cmd/swag@v${SWAG_VERSION}
+
 
 RUN cd /tmp/ \
 	&& wget -nv https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}.tar.gz -O /tmp/signal-cli.tar.gz \
@@ -140,7 +144,7 @@ COPY src/plugin_loader.go /tmp/signal-cli-rest-api-src/
 
 # build signal-cli-rest-api
 RUN ls -la /tmp/signal-cli-rest-api-src
-RUN cd /tmp/signal-cli-rest-api-src && swag init
+RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init
 RUN cd /tmp/signal-cli-rest-api-src && go build -o signal-cli-rest-api main.go
 RUN cd /tmp/signal-cli-rest-api-src && go test ./client -v
 
