@@ -335,7 +335,12 @@ func main() {
 		}
 	}
 
-	swaggerUrl := ginSwagger.URL("http://" + swaggerIp + ":" + string(port) + "/swagger/doc.json")
+	protocol := "http"
+	if utils.GetEnv("SWAGGER_USE_HTTPS_AS_PREFERRED_SCHEME", "false") == "true" {
+		protocol = "https"
+	}
+
+	swaggerUrl := ginSwagger.URL(protocol + "://" + swaggerHost + "/swagger/doc.json")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
 
 	autoReceiveSchedule := utils.GetEnv("AUTO_RECEIVE_SCHEDULE", "")
