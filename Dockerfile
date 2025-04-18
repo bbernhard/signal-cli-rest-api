@@ -30,10 +30,10 @@ RUN arch="$(uname -m)"; \
         esac;
 
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
-	&& apt-get -qq update \
-	&& apt-get -qqy install --no-install-recommends \
+	&& apt-get update \
+	&& apt-get -y install --no-install-recommends \
 		wget software-properties-common git locales zip unzip \
-		file build-essential libz-dev zlib1g-dev < /dev/null > /dev/null \
+		file build-essential libz-dev zlib1g-dev \
 	&& rm -rf /var/lib/apt/lists/* 
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
@@ -99,8 +99,8 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		#&& wget https://gitlab.com/packaging/signal-cli/-/jobs/3716873649/artifacts/download?file_type=archive -O /tmp/signal-cli-native/archive.zip \
 		#&& unzip archive.zip \
 		#&& mv signal-cli-native-arm64/*deb . \
-		&& apt-get -qq update \
-		&& apt-get -qq download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} < /dev/null > /dev/null \
+		&& apt-get update \
+		&& apt-get download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} \
 		&& ar x *.deb \
 		&& tar xf data.tar.gz \
 		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
