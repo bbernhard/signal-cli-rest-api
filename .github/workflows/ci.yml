@@ -35,5 +35,5 @@ jobs:
           docker run --privileged --rm tonistiigi/binfmt --install all
           podman manifest create build
           podman build --format docker --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci --manifest localhost/build .
-          podman push localhost/bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci docker://docker.io/bbernhard/temp:${EPOCHSECONDS}-ci
+          podman push docker://docker.io/bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci
 
