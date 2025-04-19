@@ -18,6 +18,8 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Available platforms
         run: echo ${{ steps.buildx.outputs.platforms }}
+      - name: Install Podman
+        run: sudo apt update && sudo apt install -y podman
   build:
     runs-on: ubuntu-22.04
     needs: setup
@@ -30,8 +32,9 @@ jobs:
           VERSION: ${{ github.run_number }}
         run: |
           echo "Start CI build"
-          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-          docker buildx create --name multibuilder
-          docker buildx use multibuilder
-          docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION}-ci .
+          #docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          #docker buildx create --name multibuilder
+          #docker buildx use multibuilder
+          #docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION}-ci .
+          podman build --format docker --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION}-ci .
 
