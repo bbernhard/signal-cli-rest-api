@@ -36,5 +36,6 @@ jobs:
           #docker buildx create --name multibuilder
           #docker buildx use multibuilder
           #docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION}-ci .
-          podman build --format docker --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION}-ci .
+          podman manifest create build
+          podman build --format docker --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION}-ci --manifest localhost/build .
 
