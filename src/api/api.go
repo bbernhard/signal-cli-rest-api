@@ -1308,14 +1308,9 @@ func (a *Api) SetConfiguration(c *gin.Context) {
 	}
 
 	if req.Logging.Level != "" {
-		if req.Logging.Level == "debug" {
-			log.SetLevel(log.DebugLevel)
-		} else if req.Logging.Level == "info" {
-			log.SetLevel(log.InfoLevel)
-		} else if req.Logging.Level == "warn" {
-			log.SetLevel(log.WarnLevel)
-		} else {
-			c.JSON(400, Error{Msg: "Couldn't set log level - invalid log level"})
+		err = utils.SetLogLevel(req.Logging.Level)
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
 			return
 		}
 	}

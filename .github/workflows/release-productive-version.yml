@@ -39,4 +39,6 @@ jobs:
           echo "Start productive build"
           docker run --privileged --rm tonistiigi/binfmt --install all
           podman manifest create build
-          podman build --build-arg BUILD_VERSION_ARG=${VERSION} --manifest localhost/build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION} -t bbernhard/signal-cli-rest-api:latest . --push
+          podman build --format docker --build-arg BUILD_VERSION_ARG=${VERSION} --manifest localhost/build --platform linux/amd64,linux/arm64,linux/arm/v7 .
+          podman manifest push localhost/build docker://docker.io/bbernhard/signal-cli-rest-api:${VERSION}
+          podman manifest push localhost/build docker://docker.io/bbernhard/signal-cli-rest-api:latest

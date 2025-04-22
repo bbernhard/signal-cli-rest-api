@@ -27,6 +27,11 @@ jobs:
       - uses: actions/checkout@master
         with:
           ref: ${{ github.ref }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build
         env:
           VERSION: ${{ github.run_number }}
@@ -34,7 +39,6 @@ jobs:
           echo "Start CI build"
           docker run --privileged --rm tonistiigi/binfmt --install all
           podman manifest create build
-          podman build --format docker --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci --manifest localhost/build .
-          podman images
-          podman push bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci docker://docker.io/bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci
+          podman build --format docker --platform linux/amd64,linux/arm64,linux/arm/v7 --manifest localhost/build .
+          podman manifest push localhost/build docker://docker.io/bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci
 
