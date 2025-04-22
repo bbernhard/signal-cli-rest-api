@@ -69,6 +69,16 @@ func main() {
 	avatarTmpDir := flag.String("avatar-tmp-dir", "/tmp/", "Avatar tmp directory")
 	flag.Parse()
 
+
+	logLevel := utils.GetEnv("LOG_LEVEL", "")
+	if logLevel != "" {
+		err := utils.SetLogLevel(logLevel)
+		if err != nil {
+			log.Error("Couldn't set log level to '", logLevel, "'. Falling back to the info log level")
+			utils.SetLogLevel("info")
+		}
+	}
+
 	if utils.GetEnv("SWAGGER_USE_HTTPS_AS_PREFERRED_SCHEME", "false") == "false" {
 		docs.SwaggerInfo.Schemes = []string{"http", "https"}
 	} else {
