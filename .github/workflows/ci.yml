@@ -36,5 +36,5 @@ jobs:
           podman manifest create build
           podman build --format docker --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci --manifest localhost/build .
           podman images
-          podman push bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci docker://docker.io/bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci
+          podman push localhost/build docker://docker.io/bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci
 
