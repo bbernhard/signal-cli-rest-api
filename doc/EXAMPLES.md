@@ -74,11 +74,11 @@ e.g:
 
 - Send a message including a link preview
 
-  `curl -X POST -H "Content-Type: application/json" -d '{"message": "Hey, checkout https://www.homeassistant.io", "number": "<number>", "recipients": [<recipient1>], "link_preview": {"url": "https://www.homeassistant.io", "title": "Home Assistant", "base64_thumbnail": "'"$( base64 -w 0 <imagepath>)"'"}}' 'http://127.0.0.1:8080/v2/send'`
+  `curl -X POST -H "Content-Type: application/json" -d '{"message": "Hey, check out https://www.homeassistant.io", "number": "<number>", "recipients": [<recipient1>], "link_preview": {"url": "https://www.homeassistant.io", "title": "Home Assistant", "base64_thumbnail": "'"$( base64 -w 0 <imagepath>)"'"}}' 'http://127.0.0.1:8080/v2/send'`
 
   e.g:
 
-  `curl -X POST -H "Content-Type: application/json" -d '{"message": "Hey, checkout https://www.homeassistant.io", "number": "+431212131491291", "recipients": [+4354546464654], "link_preview": {"url": "https://www.homeassistant.io", "title": "Home Assistant", "base64_thumbnail": "'"$( base64 -w 0 /tmp/logo.png)"'"}}' 'http://127.0.0.1:8080/v2/send'`
+  `curl -X POST -H "Content-Type: application/json" -d '{"message": "Hey, check out https://www.homeassistant.io", "number": "+431212131491291", "recipients": [+4354546464654], "link_preview": {"url": "https://www.homeassistant.io", "title": "Home Assistant", "base64_thumbnail": "'"$( base64 -w 0 /tmp/logo.png)"'"}}' 'http://127.0.0.1:8080/v2/send'`
 
 - Receive messages
 
