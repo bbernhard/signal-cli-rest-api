@@ -229,9 +229,13 @@ func cleanupTmpFiles(paths []string) {
 	}
 }
 
-func cleanupAttachmentEntries(attachmentEntries []AttachmentEntry) {
+func cleanupAttachmentEntries(attachmentEntries []AttachmentEntry, linkPreviewAttachmentEntry *AttachmentEntry) {
 	for _, attachmentEntry := range attachmentEntries {
 		attachmentEntry.cleanUp()
+	}
+
+	if linkPreviewAttachmentEntry != nil {
+		linkPreviewAttachmentEntry.cleanUp()
 	}
 }
 
@@ -415,11 +419,39 @@ func (s *SignalClient) Init() error {
 	return nil
 }
 
+func validateLinkPreview(message string, linkPreview *ds.LinkPreviewType) error {
+	if linkPreview != nil {
+		if linkPreview.Url == "" {
+			return errors.New("Please provide a valid Link Preview URL")
+		}
+
+		if !strings.HasPrefix(linkPreview.Url, "https") {
+			return errors.New("Link Preview URL must start with https://..")
+		}
+
+		if linkPreview.Title == "" {
+			return errors.New("Please provide a valid Link Preview Title")
+		}
+
+		if !strings.Contains(message, linkPreview.Url) {
+			return errors.New("Link Preview URL is missing in the message!")
+		}
+	}
+
+	return nil
+}
+
 func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*SendResponse, error) {
 	var resp SendResponse
+	var linkPreviewAttachmentEntry *AttachmentEntry = nil
 
 	if len(signalCliSendRequest.Recipients) == 0 {
 		return nil, errors.New("Please specify at least one recipient")
+	}
+
+	err := validateLinkPreview(signalCliSendRequest.Message, signalCliSendRequest.LinkPreview)
+	if err != nil {
+		return nil, err
 	}
 
 	signalCliTextFormatStrings := []string{}
@@ -447,7 +479,7 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 
 		err := attachmentEntry.storeBase64AsTemporaryFile()
 		if err != nil {
-			cleanupAttachmentEntries(attachmentEntries)
+			cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
 			return nil, err
 		}
 
@@ -475,6 +507,9 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 			TextStyles     []string `json:"text-style,omitempty"`
 			EditTimestamp  *int64   `json:"edit-timestamp,omitempty"`
 			NotifySelf     bool     `json:"notify-self,omitempty"`
+			PreviewUrl     *string  `json:"preview-url,omitempty"`
+			PreviewTitle   *string  `json:"preview-title,omitempty"`
+			PreviewImage   *string  `json:"preview-image,omitempty"`
 		}
 
 		request := Request{Message: signalCliSendRequest.Message}
@@ -520,15 +555,30 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 			request.TextStyles = signalCliTextFormatStrings
 		}
 
+		if signalCliSendRequest.LinkPreview != nil {
+			request.PreviewUrl = &signalCliSendRequest.LinkPreview.Url
+			request.PreviewTitle = &signalCliSendRequest.LinkPreview.Title
+
+			if signalCliSendRequest.LinkPreview.Base64Thumbnail != "" {
+				linkPreviewAttachmentEntry = NewAttachmentEntry(signalCliSendRequest.LinkPreview.Base64Thumbnail, s.attachmentTmpDir)
+				err := linkPreviewAttachmentEntry.storeBase64AsTemporaryFile()
+				if err != nil {
+					cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
+					return nil, err
+				}
+				request.PreviewImage = &linkPreviewAttachmentEntry.FilePath
+			}
+		}
+
 		rawData, err := jsonRpc2Client.getRaw("send", &signalCliSendRequest.Number, request)
 		if err != nil {
-			cleanupAttachmentEntries(attachmentEntries)
+			cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
 			return nil, err
 		}
 
 		err = json.Unmarshal([]byte(rawData), &resp)
 		if err != nil {
-			cleanupAttachmentEntries(attachmentEntries)
+			cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
 
 			if strings.Contains(err.Error(), signalCliV2GroupError) {
 				return nil, errors.New("Cannot send message to group - please first update your profile.")
@@ -593,6 +643,25 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 			cmd = append(cmd, strconv.FormatInt(*signalCliSendRequest.EditTimestamp, 10))
 		}
 
+		if signalCliSendRequest.LinkPreview != nil {
+			cmd = append(cmd, "--preview-url")
+			cmd = append(cmd, signalCliSendRequest.LinkPreview.Url)
+
+			cmd = append(cmd, "--preview-title")
+			cmd = append(cmd, signalCliSendRequest.LinkPreview.Title)
+
+			if signalCliSendRequest.LinkPreview.Base64Thumbnail != "" {
+				linkPreviewAttachmentEntry = NewAttachmentEntry(signalCliSendRequest.LinkPreview.Base64Thumbnail, s.attachmentTmpDir)
+				err := linkPreviewAttachmentEntry.storeBase64AsTemporaryFile()
+				if err != nil {
+					cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
+					return nil, err
+				}
+				cmd = append(cmd, "--preview-image")
+				cmd = append(cmd, linkPreviewAttachmentEntry.FilePath)
+			}
+		}
+
 		// for backwards compatibility, if nothing is set, use the notify-self flag
 		if signalCliSendRequest.NotifySelf == nil || *signalCliSendRequest.NotifySelf {
 			cmd = append(cmd, "--notify-self")
@@ -600,7 +669,7 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 
 		rawData, err := s.cliClient.Execute(true, cmd, signalCliSendRequest.Message)
 		if err != nil {
-			cleanupAttachmentEntries(attachmentEntries)
+			cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
 			if strings.Contains(err.Error(), signalCliV2GroupError) {
 				return nil, errors.New("Cannot send message to group - please first update your profile.")
 			}
@@ -608,12 +677,12 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 		}
 		resp.Timestamp, err = strconv.ParseInt(strings.TrimSuffix(rawData, "\n"), 10, 64)
 		if err != nil {
-			cleanupAttachmentEntries(attachmentEntries)
+			cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
 			return nil, errors.New(strings.Replace(rawData, "\n", "", -1)) //in case we can't parse the timestamp, it means signal-cli threw an error. So instead of returning the parsing error, return the actual error from signal-cli
 		}
 	}
 
-	cleanupAttachmentEntries(attachmentEntries)
+	cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
 
 	return &resp, nil
 }
@@ -732,7 +801,7 @@ func (s *SignalClient) SendV1(number string, message string, recipients []string
 
 	signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: recipients, Base64Attachments: base64Attachments,
 		RecipientType: recipientType, Sticker: "", Mentions: nil, QuoteTimestamp: nil, QuoteAuthor: nil, QuoteMessage: nil,
-		QuoteMentions: nil, TextMode: nil, EditTimestamp: nil}
+		QuoteMentions: nil, TextMode: nil, EditTimestamp: nil, LinkPreview: nil}
 	timestamp, err := s.send(signalCliSendRequest)
 	return timestamp, err
 }
@@ -753,7 +822,8 @@ func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 }
 
 func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, sticker string, mentions []ds.MessageMention,
-	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []ds.MessageMention, textMode *string, editTimestamp *int64, notifySelf *bool) (*[]SendResponse, error) {
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []ds.MessageMention, textMode *string, editTimestamp *int64, notifySelf *bool,
+	linkPreview *ds.LinkPreviewType) (*[]SendResponse, error) {
 	if len(recps) == 0 {
 		return nil, errors.New("Please provide at least one recipient")
 	}
@@ -804,7 +874,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: []string{group}, Base64Attachments: base64Attachments,
 			RecipientType: ds.Group, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf}
+			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview}
 		timestamp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
@@ -816,7 +886,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: numbers, Base64Attachments: base64Attachments,
 			RecipientType: ds.Number, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf}
+			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview}
 		timestamp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
@@ -828,7 +898,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: usernames, Base64Attachments: base64Attachments,
 			RecipientType: ds.Username, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf}
+			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview}
 		timestamp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err

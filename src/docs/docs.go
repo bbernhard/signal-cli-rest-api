@@ -2426,6 +2426,9 @@ const docTemplate = `{
                 "edit_timestamp": {
                     "type": "integer"
                 },
+                "link_preview": {
+                    "$ref": "#/definitions/data.LinkPreviewType"
+                },
                 "mentions": {
                     "type": "array",
                     "items": {
@@ -2816,6 +2819,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username_link": {
+                    "type": "string"
+                }
+            }
+        },
+        "data.LinkPreviewType": {
+            "type": "object",
+            "properties": {
+                "base64_thumbnail": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
                     "type": "string"
                 }
             }

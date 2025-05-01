@@ -27,6 +27,13 @@ type SendMessageRecipient struct {
 	Type       string `json:"type"`
 }
 
+type LinkPreviewType struct {
+	Url             string 	  `json:"url"`
+	Title           string    `json:"title"`
+	Description     string    `json:"description"`
+	Base64Thumbnail string    `json:"base64_thumbnail"`
+}
+
 type SignalCliSendRequest struct {
 	Number            string
 	Message           string
@@ -42,4 +49,5 @@ type SignalCliSendRequest struct {
 	TextMode          *string
 	EditTimestamp     *int64
 	NotifySelf        *bool
+	LinkPreview       *LinkPreviewType
 }

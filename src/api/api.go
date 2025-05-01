@@ -125,6 +125,7 @@ type SendMessageV2 struct {
 	TextMode          *string             `json:"text_mode" enums:"normal,styled"`
 	EditTimestamp     *int64              `json:"edit_timestamp"`
 	NotifySelf        *bool               `json:"notify_self"`
+	LinkPreview       *ds.LinkPreviewType `json:"link_preview"`
 }
 
 type TypingIndicatorRequest struct {
@@ -449,7 +450,7 @@ func (a *Api) SendV2(c *gin.Context) {
 	data, err := a.signalClient.SendV2(
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
 		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions,
-		textMode, req.EditTimestamp, req.NotifySelf)
+		textMode, req.EditTimestamp, req.NotifySelf, req.LinkPreview)
 	if err != nil {
 		switch err.(type) {
 		case *client.RateLimitErrorType:
