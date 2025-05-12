@@ -10,7 +10,7 @@ on:
 
 jobs:
   setup:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -21,7 +21,7 @@ jobs:
       - name: Install Podman
         run: sudo apt update && sudo apt install -y podman
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: setup
     steps:
       - uses: actions/checkout@master
