@@ -122,6 +122,7 @@ type IdentityEntry struct {
 	Fingerprint  string `json:"fingerprint"`
 	Added        string `json:"added"`
 	SafetyNumber string `json:"safety_number"`
+	Uuid         string `json:"uuid"`
 }
 
 type SignalCliGroupMember struct {
@@ -1561,47 +1562,38 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 }
 
 func (s *SignalClient) ListIdentities(number string) (*[]IdentityEntry, error) {
+	var err error
+	var rawData string
 	identityEntries := []IdentityEntry{}
 	if s.signalCliMode == JsonRpc {
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
 			return nil, err
 		}
-		rawData, err := jsonRpc2Client.getRaw("listIdentities", &number, nil)
-		signalCliIdentityEntries := []SignalCliIdentityEntry{}
-		err = json.Unmarshal([]byte(rawData), &signalCliIdentityEntries)
-		if err != nil {
-			return nil, err
-		}
-		for _, signalCliIdentityEntry := range signalCliIdentityEntries {
-			identityEntry := IdentityEntry{
-				Number:       signalCliIdentityEntry.Number,
-				Status:       signalCliIdentityEntry.TrustLevel,
-				Added:        strconv.FormatInt(signalCliIdentityEntry.AddedTimestamp, 10),
-				Fingerprint:  signalCliIdentityEntry.Fingerprint,
-				SafetyNumber: signalCliIdentityEntry.SafetyNumber,
-			}
-			identityEntries = append(identityEntries, identityEntry)
-		}
+		rawData, err = jsonRpc2Client.getRaw("listIdentities", &number, nil)
 	} else {
-		rawData, err := s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-a", number, "listIdentities"}, "")
-		if err != nil {
-			return nil, err
-		}
+		rawData, err = s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "listIdentities"}, "")
+	}
 
-		keyValuePairs := parseWhitespaceDelimitedKeyValueStringList(rawData, []string{"NumberAndTrustStatus", "Added", "Fingerprint", "Safety Number"})
-		for _, keyValuePair := range keyValuePairs {
-			numberAndTrustStatus := keyValuePair["NumberAndTrustStatus"]
-			numberAndTrustStatusSplitted := strings.Split(numberAndTrustStatus, ":")
+	if err != nil {
+		return nil, err
+	}
 
-			identityEntry := IdentityEntry{Number: strings.Trim(numberAndTrustStatusSplitted[0], " "),
-				Status:       strings.Trim(numberAndTrustStatusSplitted[1], " "),
-				Added:        keyValuePair["Added"],
-				Fingerprint:  strings.Trim(keyValuePair["Fingerprint"], " "),
-				SafetyNumber: strings.Trim(keyValuePair["Safety Number"], " "),
-			}
-			identityEntries = append(identityEntries, identityEntry)
+	signalCliIdentityEntries := []SignalCliIdentityEntry{}
+	err = json.Unmarshal([]byte(rawData), &signalCliIdentityEntries)
+	if err != nil {
+		return nil, err
+	}
+	for _, signalCliIdentityEntry := range signalCliIdentityEntries {
+		identityEntry := IdentityEntry{
+			Number:       signalCliIdentityEntry.Number,
+			Status:       signalCliIdentityEntry.TrustLevel,
+			Added:        strconv.FormatInt(signalCliIdentityEntry.AddedTimestamp, 10),
+			Fingerprint:  signalCliIdentityEntry.Fingerprint,
+			SafetyNumber: signalCliIdentityEntry.SafetyNumber,
+			Uuid:         signalCliIdentityEntry.Uuid,
 		}
+		identityEntries = append(identityEntries, identityEntry)
 	}
 
 	return &identityEntries, nil
