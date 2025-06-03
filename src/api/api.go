@@ -439,7 +439,7 @@ func (a *Api) SendV2(c *gin.Context) {
 	}
 
 	textMode := req.TextMode
-	if textMode  == nil {
+	if textMode == nil {
 		defaultSignalTextMode := utils.GetEnv("DEFAULT_SIGNAL_TEXT_MODE", "normal")
 		if defaultSignalTextMode == "styled" {
 			styledStr := "styled"

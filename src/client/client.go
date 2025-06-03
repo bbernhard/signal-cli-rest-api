@@ -190,38 +190,38 @@ type ListInstalledStickerPacksResponse struct {
 }
 
 type ContactProfile struct {
-	GivenName 	string `json:"given_name"`
-	FamilyName	string `json:"lastname"`
-	About		string `json:"about"`
-	HasAvatar	bool `json:"has_avatar"`
-	LastUpdatedTimestamp	int64 `json:"last_updated_timestamp"`
+	GivenName            string `json:"given_name"`
+	FamilyName           string `json:"lastname"`
+	About                string `json:"about"`
+	HasAvatar            bool   `json:"has_avatar"`
+	LastUpdatedTimestamp int64  `json:"last_updated_timestamp"`
 }
 
 type Nickname struct {
-	Name string `json:"name"`
-	GivenName string `json:"given_name"`
+	Name       string `json:"name"`
+	GivenName  string `json:"given_name"`
 	FamilyName string `json:"family_name"`
 }
 
 type ListContactsResponse struct {
-	Number            string `json:"number"`
-	Uuid              string `json:"uuid"`
-	Name              string `json:"name"`
-	ProfileName       string `json:"profile_name"`
-	Username          string `json:"username"`
-	Color             string `json:"color"`
-	Blocked           bool   `json:"blocked"`
-	MessageExpiration string `json:"message_expiration"`
-	Note              string `json:"note"`
-	Profile 		  ContactProfile `json:"profile"`
-	GivenName         string `json:"given_name"`
-	Nickname		  Nickname `json:"nickname"`
+	Number            string         `json:"number"`
+	Uuid              string         `json:"uuid"`
+	Name              string         `json:"name"`
+	ProfileName       string         `json:"profile_name"`
+	Username          string         `json:"username"`
+	Color             string         `json:"color"`
+	Blocked           bool           `json:"blocked"`
+	MessageExpiration string         `json:"message_expiration"`
+	Note              string         `json:"note"`
+	Profile           ContactProfile `json:"profile"`
+	GivenName         string         `json:"given_name"`
+	Nickname          Nickname       `json:"nickname"`
 }
 
 type ListDevicesResponse struct {
-	Name 				string `json:"name"`
-	LastSeenTimestamp 	int64  `json:"last_seen_timestamp"`
-	CreationTimestamp 	int64  `json:"creation_timestamp"`
+	Name              string `json:"name"`
+	LastSeenTimestamp int64  `json:"last_seen_timestamp"`
+	CreationTimestamp int64  `json:"creation_timestamp"`
 }
 
 func cleanupTmpFiles(paths []string) {
@@ -1311,7 +1311,7 @@ func (s *SignalClient) GetGroupAvatar(number string, groupId string) ([]byte, er
 		rawData, err = jsonRpc2Client.getRaw("getAvatar", &number, request)
 		if err != nil {
 			if err.Error() == "Could not find avatar" {
-				return []byte{},&NotFoundError{Description: "No avatar found."}
+				return []byte{}, &NotFoundError{Description: "No avatar found."}
 			}
 			return []byte{}, err
 		}
@@ -1480,7 +1480,7 @@ func (s *SignalClient) GetAccounts() ([]string, error) {
 func (s *SignalClient) GetAttachments() ([]string, error) {
 	files := []string{}
 
-	attachmentsPath := s.signalCliConfig+"/attachments/"
+	attachmentsPath := s.signalCliConfig + "/attachments/"
 	if _, err := os.Stat(attachmentsPath); !os.IsNotExist(err) {
 		err = filepath.Walk(attachmentsPath, func(path string, info os.FileInfo, err error) error {
 			if info.IsDir() {
@@ -2149,10 +2149,10 @@ func (s *SignalClient) ListDevices(number string) ([]ListDevicesResponse, error)
 	resp := []ListDevicesResponse{}
 
 	type ListDevicesSignalCliResponse struct {
-		Id 					int64 `json:"id"`
-		Name				string `json:"name"`
-		CreatedTimestamp	int64 `json:"createdTimestamp"`
-		LastSeenTimestamp	int64 `json:"lastSeenTimestamp"`
+		Id                int64  `json:"id"`
+		Name              string `json:"name"`
+		CreatedTimestamp  int64  `json:"createdTimestamp"`
+		LastSeenTimestamp int64  `json:"lastSeenTimestamp"`
 	}
 
 	var err error
@@ -2180,7 +2180,7 @@ func (s *SignalClient) ListDevices(number string) ([]ListDevicesResponse, error)
 
 	for _, entry := range signalCliResp {
 		deviceEntry := ListDevicesResponse{
-			Name: entry.Name,
+			Name:              entry.Name,
 			CreationTimestamp: entry.CreatedTimestamp,
 			LastSeenTimestamp: entry.LastSeenTimestamp,
 		}
@@ -2376,28 +2376,28 @@ func (s *SignalClient) AddStickerPack(number string, packId string, packKey stri
 
 func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, error) {
 	type SignalCliProfileResponse struct {
-		LastUpdateTimestamp int64 `json:"lastUpdateTimestamp"`
-		GivenName 			string `json:"givenName"`
-		FamilyName 			string `json:"familyName"`
-		About 				string `json:"about"`
-		HasAvatar 			bool `json:"hasAvatar"`
+		LastUpdateTimestamp int64  `json:"lastUpdateTimestamp"`
+		GivenName           string `json:"givenName"`
+		FamilyName          string `json:"familyName"`
+		About               string `json:"about"`
+		HasAvatar           bool   `json:"hasAvatar"`
 	}
 
 	type ListContactsSignlCliResponse struct {
-		Number            string `json:"number"`
-		Uuid              string `json:"uuid"`
-		Name              string `json:"name"`
-		ProfileName       string `json:"profileName"`
-		Username          string `json:"username"`
-		Color             string `json:"color"`
-		Blocked           bool   `json:"blocked"`
-		MessageExpiration string `json:"messageExpiration"`
-		Note 			  string `json:"note"`
-		GivenName		  string `json:"givenName"`
-		Profile			  SignalCliProfileResponse `json:"profile"`
-		Nickname		  string `json:"nickName"`
-		NickGivenName	  string `json:"nickGivenName"`
-		NickFamilyName	  string `json:"nickFamilyName"`
+		Number            string                   `json:"number"`
+		Uuid              string                   `json:"uuid"`
+		Name              string                   `json:"name"`
+		ProfileName       string                   `json:"profileName"`
+		Username          string                   `json:"username"`
+		Color             string                   `json:"color"`
+		Blocked           bool                     `json:"blocked"`
+		MessageExpiration string                   `json:"messageExpiration"`
+		Note              string                   `json:"note"`
+		GivenName         string                   `json:"givenName"`
+		Profile           SignalCliProfileResponse `json:"profile"`
+		Nickname          string                   `json:"nickName"`
+		NickGivenName     string                   `json:"nickGivenName"`
+		NickFamilyName    string                   `json:"nickFamilyName"`
 	}
 
 	resp := []ListContactsResponse{}
@@ -2439,8 +2439,8 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 			Color:             value.Color,
 			Blocked:           value.Blocked,
 			MessageExpiration: value.MessageExpiration,
-			Note:			   value.Note,
-			GivenName:		   value.GivenName,
+			Note:              value.Note,
+			GivenName:         value.GivenName,
 		}
 		entry.Profile.About = value.Profile.About
 		entry.Profile.HasAvatar = value.Profile.HasAvatar
@@ -2456,7 +2456,7 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 	return resp, nil
 }
 
-func (s *SignalClient) SetPin(number string, registrationLockPin string) (error) {
+func (s *SignalClient) SetPin(number string, registrationLockPin string) error {
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			RegistrationLockPin string `json:"pin"`
@@ -2481,8 +2481,7 @@ func (s *SignalClient) SetPin(number string, registrationLockPin string) (error)
 	return nil
 }
 
-
-func (s *SignalClient) RemovePin(number string) (error) {
+func (s *SignalClient) RemovePin(number string) error {
 	if s.signalCliMode == JsonRpc {
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
