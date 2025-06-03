@@ -1288,6 +1288,57 @@ func (s *SignalClient) GetGroup(number string, groupId string) (*GroupEntry, err
 	return nil, nil
 }
 
+func (s *SignalClient) GetGroupAvatar(number string, groupId string) ([]byte, error) {
+	var err error
+	var rawData string
+
+	internalGroupId, err := ConvertGroupIdToInternalGroupId(groupId)
+	if err != nil {
+		return []byte{}, errors.New("Invalid group id")
+	}
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			GroupId string `json:"groupId"`
+		}
+
+		request := Request{GroupId: internalGroupId}
+
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return []byte{}, err
+		}
+		rawData, err = jsonRpc2Client.getRaw("getAvatar", &number, request)
+		if err != nil {
+			if err.Error() == "Could not find avatar" {
+				return []byte{},&NotFoundError{Description: "No avatar found."}
+			}
+			return []byte{}, err
+		}
+	} else {
+		rawData, err = s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "getAvatar", "-g", internalGroupId}, "")
+		if err != nil {
+			return []byte{}, err
+		}
+	}
+
+	type SignalCliResponse struct {
+		Data string `json:"data"`
+	}
+	var signalCliResponse SignalCliResponse
+	err = json.Unmarshal([]byte(rawData), &signalCliResponse)
+	if err != nil {
+		return []byte{}, errors.New("Couldn't unmarshal data: " + err.Error())
+	}
+
+	groupAvatarBytes, err := base64.StdEncoding.DecodeString(signalCliResponse.Data)
+	if err != nil {
+		return []byte{}, errors.New("Couldn't decode base64 encoded group avatar: " + err.Error())
+	}
+
+	return groupAvatarBytes, nil
+}
+
 func (s *SignalClient) DeleteGroup(number string, groupId string) error {
 	if s.signalCliMode == JsonRpc {
 		type Request struct {

@@ -967,6 +967,40 @@ func (a *Api) GetGroup(c *gin.Context) {
 	}
 }
 
+// @Summary Returns the avatar of a Signal Group.
+// @Tags Groups
+// @Description Returns the avatar of a Signal Group.
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} string	"Image"
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
+// @Router /v1/groups/{number}/{groupid}/avatar [get]
+func (a *Api) GetGroupAvatar(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	groupId := c.Param("groupid")
+
+	groupAvatar, err := a.signalClient.GetGroupAvatar(number, groupId)
+	if err != nil {
+		switch err.(type) {
+		case *client.NotFoundError:
+			c.JSON(404, Error{Msg: err.Error()})
+			return
+		default:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+	}
+
+	mimeType := mimetype.Detect(groupAvatar)
+	c.Data(200, mimeType.String(), groupAvatar)
+}
+
 // @Summary Delete a Signal Group.
 // @Tags Groups
 // @Description Delete the specified Signal Group.

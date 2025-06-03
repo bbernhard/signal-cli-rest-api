@@ -1080,6 +1080,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/groups/{number}/{groupid}/avatar": {
+            "get": {
+                "description": "Returns the avatar of a Signal Group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Returns the avatar of a Signal Group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Image",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/groups/{number}/{groupid}/block": {
             "post": {
                 "description": "Block the specified Signal Group.",
@@ -2719,6 +2764,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "uuid": {
                     "type": "string"
                 }
             }

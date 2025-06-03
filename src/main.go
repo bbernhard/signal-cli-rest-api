@@ -210,6 +210,7 @@ func main() {
 			groups.POST(":number", api.CreateGroup)
 			groups.GET(":number", api.GetGroups)
 			groups.GET(":number/:groupid", api.GetGroup)
+			groups.GET(":number/:groupid/avatar", api.GetGroupAvatar)
 			groups.DELETE(":number/:groupid", api.DeleteGroup)
 			groups.POST(":number/:groupid/block", api.BlockGroup)
 			groups.POST(":number/:groupid/join", api.JoinGroup)

@@ -367,6 +367,8 @@ definitions:
         type: string
       status:
         type: string
+      uuid:
+        type: string
     type: object
   client.ListContactsResponse:
     properties:
@@ -1176,6 +1178,36 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: Add one or more admins to an existing Signal Group.
+      tags:
+      - Groups
+  /v1/groups/{number}/{groupid}/avatar:
+    get:
+      consumes:
+      - application/json
+      description: Returns the avatar of a Signal Group.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Returns the avatar of a Signal Group.
       tags:
       - Groups
   /v1/groups/{number}/{groupid}/block:
