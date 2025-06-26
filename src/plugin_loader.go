@@ -16,6 +16,7 @@ import (
 
 type PluginInputData struct {
 	Params  map[string]string
+	QueryParams map[string]string
 	Payload string
 }
 
@@ -50,6 +51,7 @@ func execPlugin(c *gin.Context, pluginConfig utils.PluginConfig) {
 
 	pluginInputData := &PluginInputData{
 		Params: make(map[string]string),
+		QueryParams: make(map[string]string),
 		Payload: string(jsonData),
 	}
 
@@ -64,6 +66,11 @@ func execPlugin(c *gin.Context, pluginConfig utils.PluginConfig) {
 			paramName := strings.TrimPrefix(part, ":")
 			pluginInputData.Params[paramName] = c.Param(paramName)
 		}
+	}
+
+	queryParams := c.Request.URL.Query()
+	for key, values := range queryParams {
+		pluginInputData.QueryParams[key] = values[0]
 	}
 
 	l := lua.NewState()
