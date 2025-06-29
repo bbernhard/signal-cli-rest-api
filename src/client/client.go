@@ -370,10 +370,11 @@ type SignalClient struct {
 	signalCliApiConfigPath   string
 	signalCliApiConfig       *utils.SignalCliApiConfig
 	cliClient                *CliClient
+	receiveWebhookUrl        string
 }
 
 func NewSignalClient(signalCliConfig string, attachmentTmpDir string, avatarTmpDir string, signalCliMode SignalCliMode,
-	jsonRpc2ClientConfigPath string, signalCliApiConfigPath string) *SignalClient {
+	jsonRpc2ClientConfigPath string, signalCliApiConfigPath string, receiveWebhookUrl string) *SignalClient {
 	return &SignalClient{
 		signalCliConfig:          signalCliConfig,
 		attachmentTmpDir:         attachmentTmpDir,
@@ -382,6 +383,7 @@ func NewSignalClient(signalCliConfig string, attachmentTmpDir string, avatarTmpD
 		jsonRpc2ClientConfigPath: jsonRpc2ClientConfigPath,
 		jsonRpc2Clients:          make(map[string]*JsonRpc2Client),
 		signalCliApiConfigPath:   signalCliApiConfigPath,
+		receiveWebhookUrl:        receiveWebhookUrl,
 	}
 }
 
@@ -411,7 +413,7 @@ func (s *SignalClient) Init() error {
 				return err
 			}
 
-			go s.jsonRpc2Clients[number].ReceiveData(number) //receive messages in goroutine
+			go s.jsonRpc2Clients[number].ReceiveData(number, s.receiveWebhookUrl) //receive messages in goroutine
 		}
 	} else {
 		s.cliClient = NewCliClient(s.signalCliMode, s.signalCliApiConfig)

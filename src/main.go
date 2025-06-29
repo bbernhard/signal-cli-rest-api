@@ -155,9 +155,14 @@ func main() {
 		}
 	}
 
+	webhookUrl := utils.GetEnv("RECEIVE_WEBHOOK_URL", "")
+	if webhookUrl != "" && signalCliMode != client.JsonRpc {
+		log.Fatal("Env variable RECEIVE_WEBHOOK_URL can't be used with mode json-rpc!")
+	}
+
 	jsonRpc2ClientConfigPathPath := *signalCliConfig + "/jsonrpc2.yml"
 	signalCliApiConfigPath := *signalCliConfig + "/api-config.yml"
-	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath, signalCliApiConfigPath)
+	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath, signalCliApiConfigPath, webhookUrl)
 	err = signalClient.Init()
 	if err != nil {
 		log.Fatal("Couldn't init Signal Client: ", err.Error())
