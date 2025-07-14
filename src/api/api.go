@@ -57,6 +57,7 @@ type UpdateGroupRequest struct {
 	Description    *string `json:"description"`
 	Name           *string `json:"name"`
 	ExpirationTime *int    `json:"expiration_time"`
+	GroupLinkState *string `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
 }
 
 type ChangeGroupMembersRequest struct {
@@ -1521,7 +1522,18 @@ func (a *Api) UpdateGroup(c *gin.Context) {
 		return
 	}
 
-	err = a.signalClient.UpdateGroup(number, internalGroupId, req.Base64Avatar, req.Description, req.Name, req.ExpirationTime)
+	var groupLinkState *client.GroupLinkState = nil
+	if req.GroupLinkState != nil {
+		if !utils.StringInSlice(*req.GroupLinkState, []string{"enabled", "enabled-with-approval", "disabled"}) {
+			c.JSON(400, Error{Msg: "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!"})
+			return
+		}
+		var gLinkState client.GroupLinkState
+		gLinkStateVal := gLinkState.FromString(*req.GroupLinkState)
+		groupLinkState = &gLinkStateVal
+	}
+
+	err = a.signalClient.UpdateGroup(number, internalGroupId, req.Base64Avatar, req.Description, req.Name, req.ExpirationTime, groupLinkState)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return

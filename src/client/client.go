@@ -1745,7 +1745,8 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	return err
 }
 
-func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *string, groupDescription *string, groupName *string, expirationTime *int) error {
+func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *string, groupDescription *string,
+	groupName *string, expirationTime *int, groupLinkState *GroupLinkState) error {
 	var err error
 	var avatarTmpPath string = ""
 	if base64Avatar != nil {
@@ -1790,6 +1791,7 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 			Description *string `json:"description,omitempty"`
 			Name        *string `json:"name,omitempty"`
 			Expiration  int     `json:"expiration,omitempty"`
+			Link        string  `json:"link,omitempty"`
 		}
 		request := Request{GroupId: groupId}
 
@@ -1802,6 +1804,10 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 
 		if expirationTime != nil {
 			request.Expiration = *expirationTime
+		}
+
+		if groupLinkState != nil {
+			request.Link = (*groupLinkState).String()
 		}
 
 		jsonRpc2Client, err := s.getJsonRpc2Client()
@@ -1825,6 +1831,10 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 
 		if expirationTime != nil {
 			cmd = append(cmd, []string{"--expiration", strconv.Itoa(*expirationTime)}...)
+		}
+
+		if groupLinkState != nil {
+			cmd = append(cmd, []string{"--link", (*groupLinkState).String()}...)
 		}
 
 		_, err = s.cliClient.Execute(true, cmd, "")
