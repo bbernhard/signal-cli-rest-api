@@ -127,6 +127,7 @@ type SendMessageV2 struct {
 	EditTimestamp     *int64              `json:"edit_timestamp"`
 	NotifySelf        *bool               `json:"notify_self"`
 	LinkPreview       *ds.LinkPreviewType `json:"link_preview"`
+	ViewOnce          *bool               `json:"view_once"`
 }
 
 type TypingIndicatorRequest struct {
@@ -448,10 +449,15 @@ func (a *Api) SendV2(c *gin.Context) {
 		}
 	}
 
+	if req.ViewOnce != nil && *req.ViewOnce && (len(req.Base64Attachments) == 0) {
+		c.JSON(400, Error{Msg: "'view_once' can only be set for image attachments!"})
+		return
+	}
+
 	data, err := a.signalClient.SendV2(
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
 		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions,
-		textMode, req.EditTimestamp, req.NotifySelf, req.LinkPreview)
+		textMode, req.EditTimestamp, req.NotifySelf, req.LinkPreview, req.ViewOnce)
 	if err != nil {
 		switch err.(type) {
 		case *client.RateLimitErrorType:

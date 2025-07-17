@@ -2519,6 +2519,9 @@ const docTemplate = `{
                         "normal",
                         "styled"
                     ]
+                },
+                "view_once": {
+                    "type": "boolean"
                 }
             }
         },
@@ -2624,6 +2627,14 @@ const docTemplate = `{
                 },
                 "expiration_time": {
                     "type": "integer"
+                },
+                "group_link": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "enabled",
+                        "enabled-with-approval"
+                    ]
                 },
                 "name": {
                     "type": "string"

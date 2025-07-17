@@ -207,6 +207,8 @@ definitions:
         - normal
         - styled
         type: string
+      view_once:
+        type: boolean
     type: object
   api.SetPinRequest:
     properties:
@@ -275,6 +277,12 @@ definitions:
         type: string
       expiration_time:
         type: integer
+      group_link:
+        enum:
+        - disabled
+        - enabled
+        - enabled-with-approval
+        type: string
       name:
         type: string
     type: object

@@ -50,4 +50,5 @@ type SignalCliSendRequest struct {
 	EditTimestamp     *int64
 	NotifySelf        *bool
 	LinkPreview       *LinkPreviewType
+	ViewOnce          *bool
 }
