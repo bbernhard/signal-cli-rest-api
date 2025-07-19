@@ -13,7 +13,7 @@ import (
 const supervisorctlConfigTemplate = `
 [program:%s]
 process_name=%s
-command=bash -c "nc -l -p %d <%s | signal-cli --output=json --config %s jsonRpc >%s"
+command=bash -c "nc -l -p %d <%s | signal-cli --output=json --config %s jsonRpc%s%s >%s"
 autostart=true
 autorestart=true
 startretries=10
@@ -58,6 +58,18 @@ func main() {
 		log.Fatal("Couldn't change permissions of fifo with name ", fifoPathname, ": ", err.Error())
 	}
 
+	signalCliIgnoreAttachments := ""
+	ignoreAttachments := utils.GetEnv("JSON_RPC_IGNORE_ATTACHMENTS", "")
+	if ignoreAttachments == "true" {
+		signalCliIgnoreAttachments = " --ignore-attachments"
+	}
+
+	signalCliIgnoreStories := ""
+	ignoreStories := utils.GetEnv("JSON_RPC_IGNORE_STORIES", "")
+	if ignoreStories == "true" {
+		signalCliIgnoreStories = " --ignore-stories"
+	}
+
 	supervisorctlProgramName := "signal-cli-json-rpc-1"
 	supervisorctlLogFolder := "/var/log/" + supervisorctlProgramName
 	_, err = exec.Command("mkdir", "-p", supervisorctlLogFolder).Output()
@@ -72,7 +84,8 @@ func main() {
 
 
 	supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
-		tcpPort, fifoPathname, signalCliConfigDir, fifoPathname, supervisorctlProgramName, supervisorctlProgramName)
+		tcpPort, fifoPathname, signalCliConfigDir, signalCliIgnoreAttachments, signalCliIgnoreStories, fifoPathname,
+		supervisorctlProgramName, supervisorctlProgramName)
 	
 
 	err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)

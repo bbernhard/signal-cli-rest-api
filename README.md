@@ -150,3 +150,6 @@ There are a bunch of environmental variables that can be set inside the docker c
 * `DEFAULT_SIGNAL_TEXT_MODE`: Allows to set the default text mode that should be used when sending a message (supported values: `normal`, `styled`). The setting is only used in case the `text_mode` is not explicitly set in the payload of the `send` method.
 
 * `LOG_LEVEL`: Allows to set the log level. Supported values: `debug`, `info`, `warn`, `error`. If nothing is specified, it defaults to `info`.
+
+* `JSON_RPC_IGNORE_ATTACHMENTS`: When set to `true`, attachments are not automatically downloaded in json-rpc mode (default: `false`)
+* `JSON_RPC_IGNORE_STORIES`: When set to `true`, stories are not automatically downloaded in json-rpc mode (default: `false`)
