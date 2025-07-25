@@ -993,7 +993,7 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 			AddMembersPermissions string   `json:"setPermissionAddMember,omitempty"`
 			Expiration            int      `json:"expiration,omitempty"`
 		}
-		request := Request{Name: name, Members: members}
+		request := Request{Name: name, Members: prefixUsernameMembers(members)}
 
 		if groupLinkState != DefaultGroupLinkState {
 			request.Link = groupLinkState.String()
@@ -1036,7 +1036,7 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 		internalGroupId = resp.GroupId
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-n", name, "-m"}
-		cmd = append(cmd, members...)
+		cmd = append(cmd, prefixUsernameMembers(members)...)
 
 		if addMembersPermission != DefaultGroupPermission {
 			cmd = append(cmd, []string{"--set-permission-add-member", addMembersPermission.String()}...)
@@ -1072,6 +1072,19 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 	return groupId, nil
 }
 
+func prefixUsernameMembers(members []string) []string {
+	res := []string{}
+	for _, member := range members {
+		recipientType, err := getRecipientType(member)
+		if err == nil && recipientType == ds.Username {
+			res = append(res, "u:" + member)
+		} else {
+			res = append(res, member)
+		}
+	}
+	return res
+}
+
 func (s *SignalClient) updateGroupMembers(number string, groupId string, members []string, add bool) error {
 	var err error
 
@@ -1102,9 +1115,9 @@ func (s *SignalClient) updateGroupMembers(number string, groupId string, members
 		}
 		request := Request{GroupId: internalGroupId}
 		if add {
-			request.Members = append(request.Members, members...)
+			request.Members = append(request.Members, prefixUsernameMembers(members)...)
 		} else {
-			request.RemoveMembers = append(request.RemoveMembers, members...)
+			request.RemoveMembers = append(request.RemoveMembers, prefixUsernameMembers(members)...)
 		}
 
 		jsonRpc2Client, err := s.getJsonRpc2Client()
