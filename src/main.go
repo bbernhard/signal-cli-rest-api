@@ -157,7 +157,7 @@ func main() {
 
 	webhookUrl := utils.GetEnv("RECEIVE_WEBHOOK_URL", "")
 	if webhookUrl != "" && signalCliMode != client.JsonRpc {
-		log.Fatal("Env variable RECEIVE_WEBHOOK_URL can't be used with mode json-rpc!")
+		log.Fatal("Env variable RECEIVE_WEBHOOK_URL can only be used with mode json-rpc!")
 	}
 
 	jsonRpc2ClientConfigPathPath := *signalCliConfig + "/jsonrpc2.yml"
