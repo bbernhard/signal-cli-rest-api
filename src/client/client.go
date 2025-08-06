@@ -496,24 +496,25 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 		}
 
 		type Request struct {
-			Recipients     []string `json:"recipient,omitempty"`
-			Usernames      []string `json:"username,omitempty"`
-			Message        string   `json:"message"`
-			GroupId        string   `json:"group-id,omitempty"`
-			Attachments    []string `json:"attachment,omitempty"`
-			Sticker        string   `json:"sticker,omitempty"`
-			Mentions       []string `json:"mentions,omitempty"`
-			QuoteTimestamp *int64   `json:"quote-timestamp,omitempty"`
-			QuoteAuthor    *string  `json:"quote-author,omitempty"`
-			QuoteMessage   *string  `json:"quote-message,omitempty"`
-			QuoteMentions  []string `json:"quote-mentions,omitempty"`
-			TextStyles     []string `json:"text-style,omitempty"`
-			EditTimestamp  *int64   `json:"edit-timestamp,omitempty"`
-			NotifySelf     bool     `json:"notify-self,omitempty"`
-			PreviewUrl     *string  `json:"preview-url,omitempty"`
-			PreviewTitle   *string  `json:"preview-title,omitempty"`
-			PreviewImage   *string  `json:"preview-image,omitempty"`
-			ViewOnce        bool    `json:"view-once,omitempty"`
+			Recipients         []string `json:"recipient,omitempty"`
+			Usernames          []string `json:"username,omitempty"`
+			Message            string   `json:"message"`
+			GroupId            string   `json:"group-id,omitempty"`
+			Attachments        []string `json:"attachment,omitempty"`
+			Sticker            string   `json:"sticker,omitempty"`
+			Mentions           []string `json:"mentions,omitempty"`
+			QuoteTimestamp     *int64   `json:"quote-timestamp,omitempty"`
+			QuoteAuthor        *string  `json:"quote-author,omitempty"`
+			QuoteMessage       *string  `json:"quote-message,omitempty"`
+			QuoteMentions      []string `json:"quote-mentions,omitempty"`
+			TextStyles         []string `json:"text-style,omitempty"`
+			EditTimestamp      *int64   `json:"edit-timestamp,omitempty"`
+			NotifySelf         bool     `json:"notify-self,omitempty"`
+			PreviewUrl         *string  `json:"preview-url,omitempty"`
+			PreviewTitle       *string  `json:"preview-title,omitempty"`
+			PreviewImage       *string  `json:"preview-image,omitempty"`
+			PreviewDescription *string  `json:"preview-description,omitempty"`
+			ViewOnce           bool    `json:"view-once,omitempty"`
 		}
 
 		request := Request{Message: signalCliSendRequest.Message}
@@ -566,6 +567,7 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 		if signalCliSendRequest.LinkPreview != nil {
 			request.PreviewUrl = &signalCliSendRequest.LinkPreview.Url
 			request.PreviewTitle = &signalCliSendRequest.LinkPreview.Title
+			request.PreviewDescription = &signalCliSendRequest.LinkPreview.Description
 
 			if signalCliSendRequest.LinkPreview.Base64Thumbnail != "" {
 				linkPreviewAttachmentEntry = NewAttachmentEntry(signalCliSendRequest.LinkPreview.Base64Thumbnail, s.attachmentTmpDir)
@@ -668,6 +670,9 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 				cmd = append(cmd, "--preview-image")
 				cmd = append(cmd, linkPreviewAttachmentEntry.FilePath)
 			}
+
+			cmd = append(cmd, "--preview-description")
+			cmd = append(cmd, signalCliSendRequest.LinkPreview.Description)
 		}
 
 		// for backwards compatibility, if nothing is set, use the notify-self flag
