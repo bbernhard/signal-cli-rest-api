@@ -8,8 +8,13 @@ set -e
 usermod -u ${SIGNAL_CLI_UID} signal-api
 groupmod -o -g ${SIGNAL_CLI_GID} signal-api
 
-# Fix permissions to ensure backward compatibility
-chown ${SIGNAL_CLI_UID}:${SIGNAL_CLI_GID} -R ${SIGNAL_CLI_CONFIG_DIR}
+# Fix permissions to ensure backward compatibility if SIGNAL_CLI_CHOWN_ON_STARTUP is not set to "false"
+if [ "$SIGNAL_CLI_CHOWN_ON_STARTUP" != "false" ]; then
+  echo "Changing ownership of ${SIGNAL_CLI_CONFIG_DIR} to ${SIGNAL_CLI_UID}:${SIGNAL_CLI_GID}"
+  chown ${SIGNAL_CLI_UID}:${SIGNAL_CLI_GID} -R ${SIGNAL_CLI_CONFIG_DIR}
+else
+  echo "Skipping chown on startup since SIGNAL_CLI_CHOWN_ON_STARTUP is set to 'false'"
+fi
 
 # Show warning on docker exec
 cat <<EOF >> /root/.bashrc

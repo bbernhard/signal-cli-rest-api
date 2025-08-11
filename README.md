@@ -139,6 +139,8 @@ There are a bunch of environmental variables that can be set inside the docker c
 
 * `SIGNAL_CLI_GID`: Specifies the gid of the `signal-api` group inside the docker container. Defaults to `1000`
 
+* `SIGNAL_CLI_CHOWN_ON_STARTUP`: If set to `false` will skip the sometimes time consuming chown on startup. Defaults to `true`
+
 * `SWAGGER_HOST`: The host that's used in the Swagger UI for the interactive examples (and useful when this runs behind a reverse proxy). Defaults to SWAGGER_IP:PORT.
 
 * `SWAGGER_IP`: The IP that's used in the Swagger UI for the interactive examples. Defaults to the container ip.
