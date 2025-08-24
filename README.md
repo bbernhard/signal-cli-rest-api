@@ -60,11 +60,11 @@ The `signal-cli-rest-api` supports three different modes of execution, which can
 * `json-rpc` Mode: A single, JVM-based `signal-cli` instance is spawned as daemon process. This mode is usually the fastest, but requires more memory as the JVM keeps running.
 
 
-|     mode     |    speed    |    resident memory usage |
-|-------------:|:------------|:------------|
-|   `normal`    |    :heavy_check_mark:       | normal
-|   `native`    |    :heavy_check_mark: :heavy_check_mark:    | normal
-|   `json-rpc`  |    :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: | increased
+|       mode | speed                                                    | resident memory usage |
+| ---------: | :------------------------------------------------------- | :-------------------- |
+|   `normal` | :heavy_check_mark:                                       | normal                |
+|   `native` | :heavy_check_mark: :heavy_check_mark:                    | normal                |
+| `json-rpc` | :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: | increased             |
 
 
 **Example of running `signal-cli-rest` in `native` mode**
@@ -117,12 +117,13 @@ The Swagger API documentation can be found [here](https://bbernhard.github.io/si
 
 ### Clients, Libraries and Scripts
 
-|     Name    | Type | Language | Description |Maintainer |
-| ------------- |:------:|:-----:|---|:-----:|
-| [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/) | Library | Python | Small python library | [@bbernhard](https://github.com/bbernhard)
-| [signalbot](https://pypi.org/project/signalbot/) | Library | Python | Framework to build Signal bots | [@filipre](https://github.com/filipre)
-| [signal-cli-to-file](https://github.com/jneidel/signal-cli-to-file) | Script | JavaScript | Save incoming signal messages as files | [@jneidel](https://github.com/jneidel) |
-| [signal-rest-ts](https://www.npmjs.com/package/signal-rest-ts) | Library | TypeScript | TypeScript module to build Signal bots | [@pseudogeneric](https://github.com/pseudogeneric) |
+| Name                                                                     |  Type   |  Language  | Description                            |                     Maintainer                     |
+| ------------------------------------------------------------------------ | :-----: | :--------: | -------------------------------------- | :------------------------------------------------: |
+| [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/)       | Library |   Python   | Small python library                   |     [@bbernhard](https://github.com/bbernhard)     |
+| [signalbot](https://pypi.org/project/signalbot/)                         | Library |   Python   | Framework to build Signal bots         |       [@filipre](https://github.com/filipre)       |
+| [signal-cli-to-file](https://github.com/jneidel/signal-cli-to-file)      | Script  | JavaScript | Save incoming signal messages as files |       [@jneidel](https://github.com/jneidel)       |
+| [signal-rest-ts](https://www.npmjs.com/package/signal-rest-ts)           | Library | TypeScript | TypeScript module to build Signal bots | [@pseudogeneric](https://github.com/pseudogeneric) |
+| [secured-signal-api](https://github.com/codeshelldev/secured-signal-api) |  Proxy  |     Go     | Docker Proxy for Signal REST API       |  [@codeshelldev](https://github.com/codeshelldev)  |
 
 In case you need more functionality, please **file a ticket** or **create a PR**.
 
