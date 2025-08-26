@@ -288,16 +288,7 @@ func parseWhitespaceDelimitedKeyValueStringList(in string, keys []string) []map[
 }
 
 func getContainerId() (string, error) {
-	data, err := ioutil.ReadFile("/proc/1/cpuset")
-	if err != nil {
-		return "", err
-	}
-	lines := strings.Split(string(data), "\n")
-	if len(lines) == 0 {
-		return "", errors.New("Couldn't get docker container id (empty)")
-	}
-	containerId := strings.Replace(lines[0], "/docker/", "", -1)
-	return containerId, nil
+	return os.Hostname()
 }
 
 func ConvertGroupIdToInternalGroupId(id string) (string, error) {
