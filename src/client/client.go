@@ -163,6 +163,10 @@ type SendResponse struct {
 	Timestamp int64 `json:"timestamp"`
 }
 
+type RemoteDeleteResponse struct {
+	Timestamp int64 `json:"timestamp"`
+}
+
 type About struct {
 	SupportedApiVersions []string            `json:"versions"`
 	BuildNr              int                 `json:"build"`
@@ -2529,4 +2533,71 @@ func (s *SignalClient) RemovePin(number string) error {
 		}
 	}
 	return nil
+}
+
+func (s *SignalClient) RemoteDelete(number string, recipient string, timestamp int64) (RemoteDeleteResponse, error) {
+	// see https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc#remotedelete
+	var err error
+	var resp RemoteDeleteResponse
+	var rawData string
+
+	recp := recipient
+	isGroup := false
+	if strings.HasPrefix(recipient, groupPrefix) {
+		isGroup = true
+		recp, err = ConvertGroupIdToInternalGroupId(recipient)
+		if err != nil {
+			return resp, errors.New("Invalid group id")
+		}
+	}
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Recipient string `json:"recipient,omitempty"`
+			GroupId   string `json:"group-id,omitempty"`
+			Timestamp int64  `json:"target-timestamp"`
+		}
+		request := Request{}
+		if !isGroup {
+			request.Recipient = recp
+		} else {
+			request.GroupId = recp
+		}
+		request.Timestamp = timestamp
+
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return resp, err
+		}
+		rawData, err = jsonRpc2Client.getRaw("remoteDelete", &number, request)
+		if err != nil {
+			return resp, err
+		}
+
+		err = json.Unmarshal([]byte(rawData), &resp)
+
+		return resp, err
+	} else {
+		cmd := []string{
+			"--config", s.signalCliConfig,
+			"-a", number,
+			"remoteDelete",
+		}
+		if !isGroup {
+			cmd = append(cmd, recp)
+		} else {
+			cmd = append(cmd, []string{"-g", recp}...)
+		}
+		cmd = append(cmd, []string{"-t", strconv.FormatInt(timestamp, 10)}...)
+		rawData, err = s.cliClient.Execute(true, cmd, "")
+		if err != nil {
+			return resp, err
+		}
+
+		resp.Timestamp, err = strconv.ParseInt(strings.TrimSuffix(rawData, "\n"), 10, 64)
+		if err != nil {
+			return resp, err
+		}
+		return resp, nil
+	}
 }
