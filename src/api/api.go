@@ -2332,18 +2332,17 @@ func (a *Api) RemovePin(c *gin.Context) {
 	c.Status(204)
 }
 
-// @Summary Send a signal message.
+// @Summary Delete a signal message.
 // @Tags Messages
-// @Description Send a signal message
+// @Description Delete a signal message
 // @Accept  json
 // @Produce  json
-// @Success 201 {string} string "OK"
+// @Success 201 {object} RemoteDeleteResponse
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
-// @Param data body TypingIndicatorRequest true "Type"
+// @Param data body RemoteDeleteRequest true "Type"
 // @Router /v1/remote-delete/{number} [post]
 func (a *Api) RemoteDelete(c *gin.Context) {
-
 	var req RemoteDeleteRequest
 	err := c.BindJSON(&req)
 	if err != nil {
