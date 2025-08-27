@@ -2575,6 +2575,9 @@ func (s *SignalClient) RemoteDelete(number string, recipient string, timestamp i
 		}
 
 		err = json.Unmarshal([]byte(rawData), &resp)
+		if err != nil {
+			return resp, errors.New("Couldn't process request - invalid signal-cli response")
+		}
 
 		return resp, err
 	} else {
