@@ -2598,6 +2598,6 @@ func (s *SignalClient) RemoteDelete(number string, recipient string, timestamp i
 		}
 
 		resp.Timestamp, err = strconv.ParseInt(strings.TrimSuffix(rawData, "\n"), 10, 64)
-			return resp, err
+		return resp, err
 	}
 }
