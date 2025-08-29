@@ -121,6 +121,18 @@ definitions:
       use_voice:
         type: boolean
     type: object
+  api.RemoteDeleteRequest:
+    properties:
+      recipient:
+        type: string
+      timestamp:
+        type: integer
+    type: object
+  api.RemoteDeleteResponse:
+    properties:
+      timestamp:
+        type: string
+    type: object
   api.SearchResponse:
     properties:
       number:
@@ -1706,6 +1718,37 @@ paths:
       summary: Verify a registered phone number.
       tags:
       - Devices
+  /v1/remote-delete/{number}:
+    post:
+      consumes:
+      - application/json
+      description: Delete a signal message
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Type
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.RemoteDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.RemoteDeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Delete a signal message.
+      tags:
+      - Messages
   /v1/search/{number}:
     get:
       consumes:

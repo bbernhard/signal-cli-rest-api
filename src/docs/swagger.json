@@ -1851,6 +1851,53 @@
                 }
             }
         },
+        "/v1/remote-delete/{number}": {
+            "post": {
+                "description": "Delete a signal message",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Delete a signal message.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Type",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.RemoteDeleteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.RemoteDeleteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/search/{number}": {
             "get": {
                 "description": "Check if one or more phone numbers are registered with the Signal Service.",
@@ -2388,6 +2435,25 @@
                 },
                 "use_voice": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api.RemoteDeleteRequest": {
+            "type": "object",
+            "properties": {
+                "recipient": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.RemoteDeleteResponse": {
+            "type": "object",
+            "properties": {
+                "timestamp": {
+                    "type": "string"
                 }
             }
         },
