@@ -281,7 +281,7 @@ func main() {
 
 		remoteDelete := v1.Group("remote-delete")
 		{
-			remoteDelete.POST(":number", api.RemoteDelete)
+			remoteDelete.DELETE(":number", api.RemoteDelete)
 		}
 
 		reactions := v1.Group("/reactions")

@@ -1855,7 +1855,7 @@ const docTemplate = `{
             }
         },
         "/v1/remote-delete/{number}": {
-            "post": {
+            "delete": {
                 "description": "Delete a signal message",
                 "consumes": [
                     "application/json"

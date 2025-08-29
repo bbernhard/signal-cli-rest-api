@@ -2341,7 +2341,7 @@ func (a *Api) RemovePin(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param data body RemoteDeleteRequest true "Type"
-// @Router /v1/remote-delete/{number} [post]
+// @Router /v1/remote-delete/{number} [delete]
 func (a *Api) RemoteDelete(c *gin.Context) {
 	var req RemoteDeleteRequest
 	err := c.BindJSON(&req)

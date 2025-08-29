@@ -1719,7 +1719,7 @@ paths:
       tags:
       - Devices
   /v1/remote-delete/{number}:
-    post:
+    delete:
       consumes:
       - application/json
       description: Delete a signal message
