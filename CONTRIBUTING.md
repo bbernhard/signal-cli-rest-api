@@ -4,24 +4,26 @@ Contributions are welcome, including bug reports, implementing features or writi
 
 ## Dev Environment Setup
 
-The recommended way is:
+The recommended way is to use docker compose:
 
-1. Build the docker image, setting the version to a number of your choosing
+1. In the `docker-compose.yml` replace the `image: bbernhard/signal-cli-rest-api:latest` for `build: "."`
+
+The development workflow is:
+
+1. Make changes in the source code.
+2. Build the image and run a container.
     ```bash
-    docker build --network=host --tag bbernhard/signal-cli-rest-api:<a dev version> .
+    docker compose build
     ```
-2. Adjust the `docker-compose.yml`
-    * Replace the `image: bbernhard/signal-cli-rest-api:latest` for `image: bbernhard/signal-cli-rest-api:<a dev version>`
-    * Add the version to the environment:
-        ```yml
-        environment:
-            - BUILD_VERSION=<a dev version>
-        ```
-3. Run the image
     ```bash
     docker compose up
     ```
-4. Make code changes and repeat steps 1 to 3
+3. Test the changes.
+4. Bring the container down.
+    ```bash
+    docker compose down
+    ```
+4. Repeat as many times as needed.
 
 ## Building the documentation
 
