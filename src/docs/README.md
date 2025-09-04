@@ -18,12 +18,12 @@ Then run the app in `/src`
 go run main.go
 ```
 
-Or with the docker compose in the root of the repository
+Or with docker compose in the root of the repository
 ```bash
 docker compose up
 ```
 
-And navigate to the following address to view the docs
+Then navigate to the following address to view the docs
 
 http://127.0.0.1:8080/swagger/index.html
 
