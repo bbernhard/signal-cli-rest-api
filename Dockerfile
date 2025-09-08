@@ -144,7 +144,7 @@ COPY src/plugin_loader.go /tmp/signal-cli-rest-api-src/
 RUN ls -la /tmp/signal-cli-rest-api-src
 RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init
 RUN cd /tmp/signal-cli-rest-api-src && go build -o signal-cli-rest-api main.go
-RUN cd /tmp/signal-cli-rest-api-src && go test ./client -v
+RUN cd /tmp/signal-cli-rest-api-src && go test ./client -v && go test ./utils -v
 
 # build supervisorctl_config_creator
 RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper 

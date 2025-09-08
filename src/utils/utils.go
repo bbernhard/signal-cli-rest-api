@@ -41,7 +41,7 @@ func IsPhoneNumber(s string) bool {
 				return false
 			}
 		} else {
-			if c < '0' || c > '9' {
+			if (c < '0' || c > '9') && (c != ' ') {
 				return false
 			}
 		}
