@@ -2543,12 +2543,20 @@ func (s *SignalClient) RemoteDelete(number string, recipient string, timestamp i
 
 	recp := recipient
 	isGroup := false
-	if strings.HasPrefix(recipient, groupPrefix) {
+
+	recipientType, err := getRecipientType(recipient)
+	if err != nil {
+		return resp, err
+	}
+
+	if recipientType == ds.Group {
 		isGroup = true
 		recp, err = ConvertGroupIdToInternalGroupId(recipient)
 		if err != nil {
 			return resp, errors.New("Invalid group id")
 		}
+	} else if recipientType != ds.Number && recipientType != ds.Username {
+		return resp, errors.New("Invalid recipient type")
 	}
 
 	if s.signalCliMode == JsonRpc {
