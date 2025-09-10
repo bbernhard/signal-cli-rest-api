@@ -163,6 +163,10 @@ type SendMessageResponse struct {
 	Timestamp string `json:"timestamp"`
 }
 
+type RemoteDeleteResponse struct {
+	Timestamp string `json:"timestamp"`
+}
+
 type TrustModeRequest struct {
 	TrustMode string `json:"trust_mode"`
 }
@@ -207,6 +211,11 @@ type AddStickerPackRequest struct {
 
 type SetPinRequest struct {
 	Pin string `json:"pin"`
+}
+
+type RemoteDeleteRequest struct {
+	Recipient string `json:"recipient"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 type Api struct {
@@ -2321,4 +2330,41 @@ func (a *Api) RemovePin(c *gin.Context) {
 	}
 
 	c.Status(204)
+}
+
+// @Summary Delete a signal message.
+// @Tags Messages
+// @Description Delete a signal message
+// @Accept  json
+// @Produce  json
+// @Success 201 {object} RemoteDeleteResponse
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param data body RemoteDeleteRequest true "Type"
+// @Router /v1/remote-delete/{number} [delete]
+func (a *Api) RemoteDelete(c *gin.Context) {
+	var req RemoteDeleteRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	timestamp, err := a.signalClient.RemoteDelete(number, req.Recipient, req.Timestamp)
+
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.JSON(201, RemoteDeleteResponse{Timestamp: strconv.FormatInt(timestamp.Timestamp, 10)})
 }

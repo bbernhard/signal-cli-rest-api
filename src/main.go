@@ -279,6 +279,11 @@ func main() {
 			typingIndicator.DELETE(":number", api.SendStopTyping)
 		}
 
+		remoteDelete := v1.Group("remote-delete")
+		{
+			remoteDelete.DELETE(":number", api.RemoteDelete)
+		}
+
 		reactions := v1.Group("/reactions")
 		{
 			reactions.POST(":number", api.SendReaction)
