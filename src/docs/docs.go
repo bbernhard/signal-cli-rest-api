@@ -2371,6 +2371,13 @@ const docTemplate = `{
                         "only-admins",
                         "every-member"
                     ]
+                },
+                "send_messages": {
+                    "type": "string",
+                    "enum": [
+                        "only-admins",
+                        "every-member"
+                    ]
                 }
             }
         },
@@ -2704,6 +2711,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "permissions": {
+                    "$ref": "#/definitions/api.GroupPermissions"
                 }
             }
         },

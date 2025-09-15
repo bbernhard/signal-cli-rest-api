@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/h2non/filetype"
@@ -509,7 +510,7 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 			PreviewTitle       *string  `json:"preview-title,omitempty"`
 			PreviewImage       *string  `json:"preview-image,omitempty"`
 			PreviewDescription *string  `json:"preview-description,omitempty"`
-			ViewOnce           bool    `json:"view-once,omitempty"`
+			ViewOnce           bool     `json:"view-once,omitempty"`
 		}
 
 		request := Request{Message: signalCliSendRequest.Message}
@@ -981,17 +982,19 @@ func (s *SignalClient) RemoveReceiveChannel(channelUuid string) {
 	jsonRpc2Client.RemoveReceiveChannel(channelUuid)
 }
 
-func (s *SignalClient) CreateGroup(number string, name string, members []string, description string, editGroupPermission GroupPermission, addMembersPermission GroupPermission, groupLinkState GroupLinkState, expirationTime *int) (string, error) {
+func (s *SignalClient) CreateGroup(number string, name string, members []string, description string, editGroupPermission GroupPermission, addMembersPermission GroupPermission,
+	sendMessagesPermission GroupPermission, groupLinkState GroupLinkState, expirationTime *int) (string, error) {
 	var internalGroupId string
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Name                  string   `json:"name"`
-			Members               []string `json:"members"`
-			Link                  string   `json:"link,omitempty"`
-			Description           string   `json:"description,omitempty"`
-			EditGroupPermissions  string   `json:"setPermissionEditDetails,omitempty"`
-			AddMembersPermissions string   `json:"setPermissionAddMember,omitempty"`
-			Expiration            int      `json:"expiration,omitempty"`
+			Name                    string   `json:"name"`
+			Members                 []string `json:"members"`
+			Link                    string   `json:"link,omitempty"`
+			Description             string   `json:"description,omitempty"`
+			EditGroupPermissions    string   `json:"setPermissionEditDetails,omitempty"`
+			AddMembersPermissions   string   `json:"setPermissionAddMember,omitempty"`
+			SendMessagesPermissions string   `json:"setPermissionSendMessages,omitempty"`
+			Expiration              int      `json:"expiration,omitempty"`
 		}
 		request := Request{Name: name, Members: prefixUsernameMembers(members)}
 
@@ -1009,6 +1012,10 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 
 		if addMembersPermission != DefaultGroupPermission {
 			request.AddMembersPermissions = addMembersPermission.String()
+		}
+
+		if sendMessagesPermission != DefaultGroupPermission {
+			request.SendMessagesPermissions = sendMessagesPermission.String()
 		}
 
 		if expirationTime != nil {
@@ -1046,6 +1053,10 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 			cmd = append(cmd, []string{"--set-permission-edit-details", editGroupPermission.String()}...)
 		}
 
+		if sendMessagesPermission != DefaultGroupPermission {
+			cmd = append(cmd, []string{"--set-permission-send-messages", sendMessagesPermission.String()}...)
+		}
+
 		if groupLinkState != DefaultGroupLinkState {
 			cmd = append(cmd, []string{"--link", groupLinkState.String()}...)
 		}
@@ -1077,7 +1088,7 @@ func prefixUsernameMembers(members []string) []string {
 	for _, member := range members {
 		recipientType, err := getRecipientType(member)
 		if err == nil && recipientType == ds.Username {
-			res = append(res, "u:" + member)
+			res = append(res, "u:"+member)
 		} else {
 			res = append(res, member)
 		}
@@ -1767,8 +1778,8 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	return err
 }
 
-func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *string, groupDescription *string,
-	groupName *string, expirationTime *int, groupLinkState *GroupLinkState) error {
+func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *string, groupDescription *string, groupName *string, expirationTime *int,
+	groupLinkState *GroupLinkState, editGroupPermission GroupPermission, addMembersPermission GroupPermission, sendMessagesPermission GroupPermission) error {
 	var err error
 	var avatarTmpPath string = ""
 	if base64Avatar != nil {
@@ -1808,12 +1819,15 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			GroupId     string  `json:"groupId"`
-			Avatar      string  `json:"avatar,omitempty"`
-			Description *string `json:"description,omitempty"`
-			Name        *string `json:"name,omitempty"`
-			Expiration  int     `json:"expiration,omitempty"`
-			Link        string  `json:"link,omitempty"`
+			GroupId                 string  `json:"groupId"`
+			Avatar                  string  `json:"avatar,omitempty"`
+			Description             *string `json:"description,omitempty"`
+			Name                    *string `json:"name,omitempty"`
+			Expiration              int     `json:"expiration,omitempty"`
+			Link                    string  `json:"link,omitempty"`
+			EditGroupPermissions    string  `json:"setPermissionEditDetails,omitempty"`
+			AddMembersPermissions   string  `json:"setPermissionAddMember,omitempty"`
+			SendMessagesPermissions string  `json:"setPermissionSendMessages,omitempty"`
 		}
 		request := Request{GroupId: groupId}
 
@@ -1830,6 +1844,18 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 
 		if groupLinkState != nil {
 			request.Link = (*groupLinkState).String()
+		}
+
+		if editGroupPermission != DefaultGroupPermission {
+			request.EditGroupPermissions = editGroupPermission.String()
+		}
+
+		if addMembersPermission != DefaultGroupPermission {
+			request.AddMembersPermissions = addMembersPermission.String()
+		}
+
+		if sendMessagesPermission != DefaultGroupPermission {
+			request.SendMessagesPermissions = sendMessagesPermission.String()
 		}
 
 		jsonRpc2Client, err := s.getJsonRpc2Client()
@@ -1857,6 +1883,18 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 
 		if groupLinkState != nil {
 			cmd = append(cmd, []string{"--link", (*groupLinkState).String()}...)
+		}
+
+		if addMembersPermission != DefaultGroupPermission {
+			cmd = append(cmd, []string{"--set-permission-add-member", addMembersPermission.String()}...)
+		}
+
+		if editGroupPermission != DefaultGroupPermission {
+			cmd = append(cmd, []string{"--set-permission-edit-details", editGroupPermission.String()}...)
+		}
+
+		if sendMessagesPermission != DefaultGroupPermission {
+			cmd = append(cmd, []string{"--set-permission-send-messages", sendMessagesPermission.String()}...)
 		}
 
 		_, err = s.cliClient.Execute(true, cmd, "")

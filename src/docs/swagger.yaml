@@ -76,6 +76,11 @@ definitions:
         - only-admins
         - every-member
         type: string
+      send_messages:
+        enum:
+        - only-admins
+        - every-member
+        type: string
     type: object
   api.LoggingConfiguration:
     properties:
@@ -297,6 +302,8 @@ definitions:
         type: string
       name:
         type: string
+      permissions:
+        $ref: '#/definitions/api.GroupPermissions'
     type: object
   api.UpdateProfileRequest:
     properties:

@@ -39,8 +39,9 @@ type UpdateContactRequest struct {
 }
 
 type GroupPermissions struct {
-	AddMembers string `json:"add_members" enums:"only-admins,every-member"`
-	EditGroup  string `json:"edit_group" enums:"only-admins,every-member"`
+	AddMembers   string `json:"add_members" enums:"only-admins,every-member"`
+	EditGroup    string `json:"edit_group" enums:"only-admins,every-member"`
+	SendMessages string `json:"send_messages" enums:"only-admins,every-member"`
 }
 
 type CreateGroupRequest struct {
@@ -53,11 +54,12 @@ type CreateGroupRequest struct {
 }
 
 type UpdateGroupRequest struct {
-	Base64Avatar   *string `json:"base64_avatar"`
-	Description    *string `json:"description"`
-	Name           *string `json:"name"`
-	ExpirationTime *int    `json:"expiration_time"`
-	GroupLinkState *string `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
+	Base64Avatar   *string           `json:"base64_avatar"`
+	Description    *string           `json:"description"`
+	Name           *string           `json:"name"`
+	ExpirationTime *int              `json:"expiration_time"`
+	GroupLinkState *string           `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
+	Permissions    *GroupPermissions `json:"permissions"`
 }
 
 type ChangeGroupMembersRequest struct {
@@ -696,6 +698,7 @@ func (a *Api) CreateGroup(c *gin.Context) {
 
 	editGroupPermission := client.DefaultGroupPermission
 	addMembersPermission := client.DefaultGroupPermission
+	sendMessagesPermission := client.DefaultGroupPermission
 	groupLinkState := client.DefaultGroupLinkState
 
 	if req.Permissions.AddMembers != "" {
@@ -714,6 +717,15 @@ func (a *Api) CreateGroup(c *gin.Context) {
 		editGroupPermission = editGroupPermission.FromString(req.Permissions.EditGroup)
 	}
 
+	if req.Permissions.SendMessages != "" {
+		if !utils.StringInSlice(req.Permissions.SendMessages, []string{"every-member", "only-admins"}) {
+			c.JSON(400, Error{Msg: "Invalid send messages permissions provided - only 'every-member' and 'only-admins' allowed!"})
+			return
+		}
+
+		sendMessagesPermission = sendMessagesPermission.FromString(req.Permissions.SendMessages)
+	}
+
 	if req.GroupLinkState != "" {
 		if !utils.StringInSlice(req.GroupLinkState, []string{"enabled", "enabled-with-approval", "disabled"}) {
 			c.JSON(400, Error{Msg: "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!"})
@@ -722,7 +734,8 @@ func (a *Api) CreateGroup(c *gin.Context) {
 		groupLinkState = groupLinkState.FromString(req.GroupLinkState)
 	}
 
-	groupId, err := a.signalClient.CreateGroup(number, req.Name, req.Members, req.Description, editGroupPermission, addMembersPermission, groupLinkState, req.ExpirationTime)
+	groupId, err := a.signalClient.CreateGroup(number, req.Name, req.Members, req.Description, editGroupPermission, addMembersPermission,
+		sendMessagesPermission, groupLinkState, req.ExpirationTime)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
@@ -1548,7 +1561,39 @@ func (a *Api) UpdateGroup(c *gin.Context) {
 		groupLinkState = &gLinkStateVal
 	}
 
-	err = a.signalClient.UpdateGroup(number, internalGroupId, req.Base64Avatar, req.Description, req.Name, req.ExpirationTime, groupLinkState)
+	editGroupPermission := client.DefaultGroupPermission
+	addMembersPermission := client.DefaultGroupPermission
+	sendMessagesPermission := client.DefaultGroupPermission
+
+	if req.Permissions != nil {
+		if req.Permissions.AddMembers != "" {
+			if !utils.StringInSlice(req.Permissions.AddMembers, []string{"every-member", "only-admins"}) {
+				c.JSON(400, Error{Msg: "Invalid add members permission provided - only 'every-member' and 'only-admins' allowed!"})
+				return
+			}
+			addMembersPermission = addMembersPermission.FromString(req.Permissions.AddMembers)
+		}
+
+		if req.Permissions.EditGroup != "" {
+			if !utils.StringInSlice(req.Permissions.EditGroup, []string{"every-member", "only-admins"}) {
+				c.JSON(400, Error{Msg: "Invalid edit group permissions provided - only 'every-member' and 'only-admins' allowed!"})
+				return
+			}
+			editGroupPermission = editGroupPermission.FromString(req.Permissions.EditGroup)
+		}
+
+		if req.Permissions.SendMessages != "" {
+			if !utils.StringInSlice(req.Permissions.SendMessages, []string{"every-member", "only-admins"}) {
+				c.JSON(400, Error{Msg: "Invalid send messages permissions provided - only 'every-member' and 'only-admins' allowed!"})
+				return
+			}
+
+			sendMessagesPermission = sendMessagesPermission.FromString(req.Permissions.SendMessages)
+		}
+	}
+
+	err = a.signalClient.UpdateGroup(number, internalGroupId, req.Base64Avatar, req.Description, req.Name, req.ExpirationTime, groupLinkState,
+		editGroupPermission, addMembersPermission, sendMessagesPermission)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
