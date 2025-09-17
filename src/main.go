@@ -3,6 +3,13 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"plugin"
+	"strconv"
+	"strings"
+
 	"github.com/bbernhard/signal-cli-rest-api/api"
 	"github.com/bbernhard/signal-cli-rest-api/client"
 	docs "github.com/bbernhard/signal-cli-rest-api/docs"
@@ -12,11 +19,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strconv"
-	"plugin"
 )
 
 // @title Signal Cli REST API
@@ -91,6 +93,18 @@ func main() {
 	}))
 
 	router.Use(gin.Recovery())
+	trustedProxies := utils.GetEnv("TRUSTED_PROXIES", "")
+	log.Info("Debug: TRUSTED_PROXIES env variable = ", trustedProxies)
+	if trustedProxies != "" {
+		proxiesArr := strings.Split(trustedProxies, ",")
+		for i, p := range proxiesArr {
+			proxiesArr[i] = strings.TrimSpace(p)
+		}
+		err := router.SetTrustedProxies(proxiesArr)
+		if err != nil {
+			log.Fatal("Couldn't set trusted proxies: ", err.Error())
+		}
+	}
 
 	port := utils.GetEnv("PORT", "8080")
 	if _, err := strconv.Atoi(port); err != nil {
@@ -448,5 +462,18 @@ func main() {
 		c.Start()
 	}
 
-	router.Run()
+	router.Run(getBindAddress(port))
+}
+
+func getBindAddress(port string) string {
+	bindIP := utils.GetEnv("BIND_IP", "")
+	log.Info("Debug: BIND_IP env variable = ", bindIP)
+	var addr string
+	if bindIP == "" {
+		addr = ":" + port // Listen to all incoming traffic
+	} else {
+		addr = bindIP + ":" + port // Bind to the specified IP
+	}
+	log.Info("Final bind address: ", addr)
+	return addr
 }
