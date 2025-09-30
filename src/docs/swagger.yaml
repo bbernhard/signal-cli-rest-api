@@ -903,6 +903,44 @@ paths:
         contact doesn’t exist yet, it will be added.
       tags:
       - Contacts
+  /v1/contacts/{number}/{uuid}:
+    get:
+      description: List a specific contact.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/client.ListContactsResponse'
+      summary: List Contact
+      tags:
+      - Contacts
+  /v1/contacts/{number}/{uuid}/avatar:
+    get:
+      description: Returns the avatar of a contact.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image
+          schema:
+            type: string
+      summary: Returns the avatar of a contact
+      tags:
+      - Contacts
   /v1/contacts/{number}/sync:
     post:
       consumes:

@@ -29,6 +29,14 @@ const signalCliV2GroupError = "Cannot create a V2 group as self does not have a 
 
 const endpointNotSupportedInJsonRpcMode = "This endpoint is not supported in JSON-RPC mode."
 
+type AvatarType int
+
+const (
+	GroupAvatar AvatarType = iota + 1
+	ContactAvatar
+	ProfileAvatar
+)
+
 type GroupPermission int
 
 const (
@@ -1323,21 +1331,33 @@ func (s *SignalClient) GetGroup(number string, groupId string) (*GroupEntry, err
 	return nil, nil
 }
 
-func (s *SignalClient) GetGroupAvatar(number string, groupId string) ([]byte, error) {
+func (s *SignalClient) GetAvatar(number string, id string, avatarType AvatarType) ([]byte, error) {
 	var err error
 	var rawData string
 
-	internalGroupId, err := ConvertGroupIdToInternalGroupId(groupId)
-	if err != nil {
-		return []byte{}, errors.New("Invalid group id")
+	if avatarType == GroupAvatar {
+		id, err = ConvertGroupIdToInternalGroupId(id)
+		if err != nil {
+			return []byte{}, errors.New("Invalid group id")
+		}
 	}
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			GroupId string `json:"groupId"`
+			GroupId string `json:"groupId,omitempty"`
+			Contact string `json:"contact,omitempty"`
+			Profile string `json:"profile,omitempty"`
 		}
 
-		request := Request{GroupId: internalGroupId}
+		var request Request
+
+		if avatarType == GroupAvatar {
+			request.GroupId = id
+		} else if avatarType == ContactAvatar {
+			request.Contact = id
+		} else if avatarType == ProfileAvatar {
+			request.Profile = id
+		}
 
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
@@ -1351,8 +1371,21 @@ func (s *SignalClient) GetGroupAvatar(number string, groupId string) ([]byte, er
 			return []byte{}, err
 		}
 	} else {
-		rawData, err = s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "getAvatar", "-g", internalGroupId}, "")
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "getAvatar"}
+
+		if avatarType == GroupAvatar {
+			cmd = append(cmd, []string{"-g", id}...)
+		} else if avatarType == ContactAvatar {
+			cmd = append(cmd, []string{"--contact", id}...)
+		} else if avatarType == ProfileAvatar {
+			cmd = append(cmd, []string{"--profile", id}...)
+		}
+
+		rawData, err = s.cliClient.Execute(true, cmd, "")
 		if err != nil {
+			if strings.Contains(err.Error(), "Could not find avatar") {
+				return []byte{}, &NotFoundError{Description: "No avatar found."}
+			}
 			return []byte{}, err
 		}
 	}
@@ -2528,6 +2561,21 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 	return resp, nil
 }
 
+func (s *SignalClient) ListContact(number string, uuid string) (ListContactsResponse, error) {
+	contacts, err := s.ListContacts(number)
+	if err != nil {
+		return ListContactsResponse{}, err
+	}
+
+	for _, contact := range contacts {
+		if contact.Uuid == uuid {
+			return contact, nil
+		}
+	}
+
+	return ListContactsResponse{}, &NotFoundError{Description: "No contact with that id (" + uuid + ") found"}
+}
+
 func (s *SignalClient) SetPin(number string, registrationLockPin string) error {
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
@@ -2544,11 +2592,10 @@ func (s *SignalClient) SetPin(number string, registrationLockPin string) error {
 		}
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "setPin", registrationLockPin}
-		rawData, err := s.cliClient.Execute(true, cmd, "")
+		_, err := s.cliClient.Execute(true, cmd, "")
 		if err != nil {
 			return err
 		}
-		log.Info(string(rawData))
 	}
 	return nil
 }

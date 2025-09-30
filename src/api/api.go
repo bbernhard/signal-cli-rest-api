@@ -1014,7 +1014,7 @@ func (a *Api) GetGroupAvatar(c *gin.Context) {
 	}
 	groupId := c.Param("groupid")
 
-	groupAvatar, err := a.signalClient.GetGroupAvatar(number, groupId)
+	groupAvatar, err := a.signalClient.GetAvatar(number, groupId, client.GroupAvatar)
 	if err != nil {
 		switch err.(type) {
 		case *client.NotFoundError:
@@ -2309,6 +2309,81 @@ func (a *Api) ListContacts(c *gin.Context) {
 	}
 
 	c.JSON(200, contacts)
+}
+
+// @Summary List Contact
+// @Tags Contacts
+// @Description List a specific contact.
+// @Produce  json
+// @Success 200 {object} client.ListContactsResponse
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/contacts/{number}/{uuid} [get]
+func (a *Api) ListContact(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	uuid := c.Param("uuid")
+	if uuid == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - uuid missing"})
+		return
+	}
+
+	contact, err := a.signalClient.ListContact(number, uuid)
+	if err != nil {
+		switch err.(type) {
+		case *client.NotFoundError:
+			c.JSON(404, Error{Msg: err.Error()})
+			return
+		default:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+	}
+
+	c.JSON(200, contact)
+}
+
+// @Summary Returns the avatar of a contact
+// @Tags Contacts
+// @Description Returns the avatar of a contact.
+// @Produce  json
+// @Success 200 {string} string	"Image"
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/contacts/{number}/{uuid}/avatar [get]
+func (a *Api) GetProfileAvatar(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	uuid := c.Param("uuid")
+	if uuid == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - uuid missing"})
+		return
+	}
+
+	avatar, err := a.signalClient.GetAvatar(number, uuid, client.ProfileAvatar)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	mimeType := mimetype.Detect(avatar)
+	c.Data(200, mimeType.String(), avatar)
 }
 
 // @Summary Set Pin

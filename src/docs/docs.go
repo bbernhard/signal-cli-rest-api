@@ -665,6 +665,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/contacts/{number}/{uuid}": {
+            "get": {
+                "description": "List a specific contact.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "List Contact",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/client.ListContactsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/contacts/{number}/{uuid}/avatar": {
+            "get": {
+                "description": "Returns the avatar of a contact.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Returns the avatar of a contact",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Image",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/devices/{number}": {
             "get": {
                 "description": "List linked devices associated to this device.",

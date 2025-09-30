@@ -3,6 +3,12 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"plugin"
+	"strconv"
+
 	"github.com/bbernhard/signal-cli-rest-api/api"
 	"github.com/bbernhard/signal-cli-rest-api/client"
 	docs "github.com/bbernhard/signal-cli-rest-api/docs"
@@ -12,11 +18,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strconv"
-	"plugin"
 )
 
 // @title Signal Cli REST API
@@ -68,7 +69,6 @@ func main() {
 	attachmentTmpDir := flag.String("attachment-tmp-dir", "/tmp/", "Attachment tmp directory")
 	avatarTmpDir := flag.String("avatar-tmp-dir", "/tmp/", "Avatar tmp directory")
 	flag.Parse()
-
 
 	logLevel := utils.GetEnv("LOG_LEVEL", "")
 	if logLevel != "" {
@@ -305,6 +305,8 @@ func main() {
 		{
 			contacts.GET(":number", api.ListContacts)
 			contacts.PUT(":number", api.UpdateContact)
+			contacts.GET(":number/:uuid", api.ListContact)
+			contacts.GET(":number/:uuid/avatar", api.GetProfileAvatar)
 			contacts.POST(":number/sync", api.SendContacts)
 		}
 
