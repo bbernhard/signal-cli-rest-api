@@ -1,7 +1,9 @@
 package utils
 
-import "testing"
-import "reflect"
+import (
+	"reflect"
+	"testing"
+)
 
 func expectMessageEqual(t *testing.T, message1 string, message2 string) {
 	if message1 != message2 {
@@ -123,27 +125,35 @@ func TestBoldTextInsideSpoiler(t *testing.T) {
 func TestEscapeAsterisks(t *testing.T) {
 	textstyleParser := NewTextstyleParser("\\*escaped text\\*")
 	message, signalCliFormatStrings := textstyleParser.Parse()
-	expectMessageEqual(t, message, "escaped text")
+	expectMessageEqual(t, message, "*escaped text*")
 	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
 }
 
 func TestEscapeAsterisks1(t *testing.T) {
 	textstyleParser := NewTextstyleParser("\\**escaped text\\**")
 	message, signalCliFormatStrings := textstyleParser.Parse()
-	expectMessageEqual(t, message, "escaped text")
+	expectMessageEqual(t, message, "**escaped text**")
 	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
 }
 
 func TestEscapeBackticks(t *testing.T) {
 	textstyleParser := NewTextstyleParser("\\`escaped text\\`")
 	message, signalCliFormatStrings := textstyleParser.Parse()
-	expectMessageEqual(t, message, "escaped text")
+	expectMessageEqual(t, message, "`escaped text`")
 	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
 }
 
 func TestEscapeTilde(t *testing.T) {
 	textstyleParser := NewTextstyleParser("\\~escaped text\\~")
 	message, signalCliFormatStrings := textstyleParser.Parse()
-	expectMessageEqual(t, message, "escaped text")
+	expectMessageEqual(t, message, "~escaped text~")
 	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
+}
+
+func TestEscapeNew(t *testing.T) {
+	textstyleParser := NewTextstyleParser("Test \\** \\* \\~ Escape")
+	message, signalCliFormatStrings := textstyleParser.Parse()
+	expectMessageEqual(t, message, "Test ** * ~ Escape")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
+
 }

@@ -141,12 +141,14 @@ func (l *TextstyleParser) Parse() (string, []string) {
 				l.next()
 				if prevChar == EscapeCharacter {
 					prevChar = c
+					l.fullString += "**"
 					continue
 				}
 				l.handleToken(BoldBegin, Bold)
 			} else { //Italic
 				if prevChar == EscapeCharacter {
 					prevChar = c
+					l.fullString += "*"
 					continue
 				}
 				l.handleToken(ItalicBegin, Italic)
@@ -155,18 +157,21 @@ func (l *TextstyleParser) Parse() (string, []string) {
 			l.next()
 			if prevChar == EscapeCharacter {
 				prevChar = c
+				l.fullString += "||"
 				continue
 			}
 			l.handleToken(SpoilerBegin, Spoiler)
 		} else if c == '~' {
 			if prevChar == EscapeCharacter {
 				prevChar = c
+				l.fullString += "~"
 				continue
 			}
 			l.handleToken(StrikethroughBegin, Strikethrough)
 		} else if c == '`' {
 			if prevChar == EscapeCharacter {
 				prevChar = c
+				l.fullString += "`"
 				continue
 			}
 			l.handleToken(MonoSpaceBegin, Monospace)
