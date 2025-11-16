@@ -139,3 +139,17 @@ There are a bunch of environmental variables that can be set inside the docker c
 * `SWAGGER_IP`: The IP that's used in the Swagger UI for the interactive examples. Defaults to the container ip.
 
 * `PORT`: Defaults to port `8080` unless this env var is set to tell it otherwise.
+
+
+
+
+remove-cache:
+	docker builder prune --all --force
+	docker buildx prune --all -f
+
+
+docker builder prune --all --force
+
+
+
+docker buildx build --memory=8g --memory-swap=8g --platform linux/amd64 -f ./Dockerfile -t jailsondias/signal:latest .. --progress=plain
