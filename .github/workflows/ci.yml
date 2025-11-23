@@ -20,6 +20,8 @@ jobs:
         run: echo ${{ steps.buildx.outputs.platforms }}
       - name: Install Podman
         run: sudo apt update && sudo apt install -y podman
+      - name: Free up some disk space
+        run: sudo rm -rf /usr/share/dotnet && sudo rm -rf "$AGENT_TOOLSDIRECTORY"
   build:
     runs-on: ubuntu-24.04
     needs: setup
