@@ -21,7 +21,7 @@ jobs:
       - name: Install Podman
         run: sudo apt update && sudo apt install -y podman
       - name: Free up some disk space
-        run: sudo rm -rf /usr/share/dotnet && sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        run: sudo apt-get remove -y '^aspnetcore-.*' && sudo apt-get remove -y '^dotnet-.*' --fix-missing && sudo apt-get remove -y 'php.*' --fix-missing && sudo apt-get remove -y '^mongodb-.*' --fix-missing && sudo apt-get autoremove -y && sudo apt-get clean
   build:
     runs-on: ubuntu-24.04
     needs: setup
