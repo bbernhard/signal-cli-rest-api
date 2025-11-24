@@ -20,8 +20,45 @@ jobs:
         run: echo ${{ steps.buildx.outputs.platforms }}
       - name: Install Podman
         run: sudo apt update && sudo apt install -y podman
-      - name: Free up some disk space
-        run: sudo apt-get remove -y '^aspnetcore-.*' && sudo apt-get remove -y '^dotnet-.*' --fix-missing && sudo apt-get remove -y 'php.*' --fix-missing && sudo apt-get remove -y '^mongodb-.*' --fix-missing && sudo apt-get remove -y '^mysql-.*' --fix-missing && sudo apt-get remove -y google-cloud-sdk --fix-missing && sudo apt-get autoremove -y && sudo apt-get clean && sudo rm -rf /usr/share/dotnet && sudo rm -rf /usr/local/lib/android && sudo rm -rf /usr/lib/jvm && sudo rm -rf /usr/local/.ghcup && sudo rm -rf /usr/share/swift && sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+     - name: Free up disk space
+       run: |
+		# Remove Java (JDKs)
+		sudo rm -rf /usr/lib/jvm
+
+		# Remove .NET SDKs
+		sudo rm -rf /usr/share/dotnet
+
+		# Remove Swift toolchain
+		sudo rm -rf /usr/share/swift
+
+		# Remove Haskell (GHC)
+		sudo rm -rf /usr/local/.ghcup
+
+		# Remove Julia
+		sudo rm -rf /usr/local/julia*
+
+		# Remove Android SDKs
+		sudo rm -rf /usr/local/lib/android
+
+		# Remove Chromium
+		sudo rm -rf /usr/local/share/chromium
+
+		# Remove Microsoft/Edge and Google Chrome builds
+		sudo rm -rf /opt/microsoft /opt/google
+
+		# Remove Azure CLI
+		sudo rm -rf /opt/az
+
+		# Remove PowerShell
+		sudo rm -rf /usr/local/share/powershell
+
+		# Remove CodeQL and other toolcaches
+		sudo rm -rf /opt/hostedtoolcache
+
+		docker system prune -af || true
+		docker builder prune -af || true
+		df -h
+ 
   build:
     runs-on: ubuntu-24.04
     needs: setup
