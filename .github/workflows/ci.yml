@@ -38,6 +38,7 @@ jobs:
         env:
           VERSION: ${{ github.run_number }}
         run: |
+          df -h
           echo "Start CI build"
           docker run --privileged --rm tonistiigi/binfmt --install all
           podman manifest create build
