@@ -20,7 +20,7 @@ jobs:
         run: echo ${{ steps.buildx.outputs.platforms }}
       - name: Install Podman
         run: sudo apt update && sudo apt install -y podman
-     -  name: Free up disk space
+      - name: Free up disk space
         run: |
           # Remove Java (JDKs)
           sudo rm -rf /usr/lib/jvm
