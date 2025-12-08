@@ -2296,8 +2296,12 @@ func (s *SignalClient) ListDevices(number string) ([]ListDevicesResponse, error)
 }
 
 func (s *SignalClient) SetTrustMode(number string, trustMode utils.SignalCliTrustMode) error {
-	s.signalCliApiConfig.SetTrustModeForNumber(number, trustMode)
-	return s.signalCliApiConfig.Persist()
+	if s.signalCliMode == JsonRpc {
+		return errors.New("Not supported in json-rpc mode, use the environment variable JSON_RPC_TRUST_NEW_IDENTITIES instead!")
+	} else {
+		s.signalCliApiConfig.SetTrustModeForNumber(number, trustMode)
+		return s.signalCliApiConfig.Persist()
+	}
 }
 
 func (s *SignalClient) GetTrustMode(number string) utils.SignalCliTrustMode {

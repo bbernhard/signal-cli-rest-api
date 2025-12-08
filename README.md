@@ -156,3 +156,4 @@ There are a bunch of environmental variables that can be set inside the docker c
 
 * `JSON_RPC_IGNORE_ATTACHMENTS`: When set to `true`, attachments are not automatically downloaded in json-rpc mode (default: `false`)
 * `JSON_RPC_IGNORE_STORIES`: When set to `true`, stories are not automatically downloaded in json-rpc mode (default: `false`)
+* `JSON_RPC_TRUST_NEW_IDENTITIES`: Choose how to trust new identities in json-rpc mode. Supported values: `on-first-use`, `always`, `never`. (default: `on-first-use`)

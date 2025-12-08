@@ -2,18 +2,19 @@ package main
 
 import (
 	"fmt"
-	"github.com/bbernhard/signal-cli-rest-api/utils"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/bbernhard/signal-cli-rest-api/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 const supervisorctlConfigTemplate = `
 [program:%s]
 process_name=%s
-command=bash -c "nc -l -p %d <%s | signal-cli --output=json --config %s jsonRpc%s%s >%s"
+command=bash -c "nc -l -p %d <%s | signal-cli --output=json --config %s%s jsonRpc%s%s >%s"
 autostart=true
 autorestart=true
 startretries=10
@@ -77,16 +78,26 @@ func main() {
 		log.Fatal("Couldn't create log folder ", supervisorctlLogFolder, ": ", err.Error())
 	}
 
+	trustNewIdentities := ""
+	trustNewIdentitiesEnv := utils.GetEnv("JSON_RPC_TRUST_NEW_IDENTITIES", "")
+	if trustNewIdentitiesEnv == "on-first-use" {
+		trustNewIdentities = " --trust-new-identities on-first-use"
+	} else if trustNewIdentitiesEnv == "always" {
+		trustNewIdentities = " --trust-new-identities always"
+	} else if trustNewIdentitiesEnv == "never" {
+		trustNewIdentities = " --trust-new-identities never"
+	} else if trustNewIdentitiesEnv != "" {
+		log.Fatal("Invalid JSON_RPC_TRUST_NEW_IDENTITIES environment variable set!")
+	}
+
 	log.Info("Updated jsonrpc2.yml")
 
 	//write supervisorctl config
 	supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-1.conf"
 
-
 	supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
-		tcpPort, fifoPathname, signalCliConfigDir, signalCliIgnoreAttachments, signalCliIgnoreStories, fifoPathname,
+		tcpPort, fifoPathname, signalCliConfigDir, trustNewIdentities, signalCliIgnoreAttachments, signalCliIgnoreStories, fifoPathname,
 		supervisorctlProgramName, supervisorctlProgramName)
-	
 
 	err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
 	if err != nil {
