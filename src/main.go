@@ -230,6 +230,7 @@ func main() {
 		link := v1.Group("qrcodelink")
 		{
 			link.GET("", api.GetQrCodeLink)
+			link.GET("/raw", api.GetQrCodeLinkUri)
 		}
 
 		accounts := v1.Group("accounts")
@@ -247,6 +248,8 @@ func main() {
 		{
 			devices.POST(":number", api.AddDevice)
 			devices.GET(":number", api.ListDevices)
+			devices.DELETE(":number/:deviceId", api.RemoveDevice)
+			devices.DELETE(":number/local-data", api.DeleteLocalAccountData)
 		}
 
 		attachments := v1.Group("attachments")

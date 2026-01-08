@@ -232,6 +232,7 @@ type ListContactsResponse struct {
 }
 
 type ListDevicesResponse struct {
+	Id                int64  `json:"id"`
 	Name              string `json:"name"`
 	LastSeenTimestamp int64  `json:"last_seen_timestamp"`
 	CreationTimestamp int64  `json:"creation_timestamp"`
@@ -781,6 +782,32 @@ func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool, delet
 	}
 
 	return err
+}
+
+func (s *SignalClient) DeleteLocalAccountData(number string, ignoreRegistered bool) error {
+    if s.signalCliMode == JsonRpc {
+        type Request struct {
+            IgnoreRegistered bool `json:"ignore-registered,omitempty"`
+        }
+        req := Request{}
+        if ignoreRegistered {
+            req.IgnoreRegistered = true
+        }
+
+        jsonRpc2Client, err := s.getJsonRpc2Client()
+        if err != nil {
+            return err
+        }
+        _, err = jsonRpc2Client.getRaw("deleteLocalAccountData", &number, req)
+        return err
+    } else {
+        cmd := []string{"--config", s.signalCliConfig, "-a", number, "deleteLocalAccountData"}
+        if ignoreRegistered {
+            cmd = append(cmd, "--ignore-registered")
+        }
+        _, err := s.cliClient.Execute(true, cmd, "")
+        return err
+    }
 }
 
 func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin string) error {
@@ -1463,25 +1490,7 @@ func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int) ([]by
 			return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
 		}
 
-		go (func() {
-			type FinishRequest struct {
-				DeviceLinkUri string `json:"deviceLinkUri"`
-				DeviceName    string `json:"deviceName"`
-			}
-
-			req := FinishRequest{
-				DeviceLinkUri: resp.DeviceLinkUri,
-				DeviceName:    deviceName,
-			}
-
-			result, err := jsonRpc2Client.getRaw("finishLink", nil, &req)
-			if err != nil {
-				log.Debug("Error linking device: ", err.Error())
-				return
-			}
-			log.Debug("Linking device result: ", result)
-			s.signalCliApiConfig.Load(s.signalCliApiConfigPath)
-		})()
+		s.finishLinkAsync(jsonRpc2Client, deviceName, resp.DeviceLinkUri)
 
 		return png, nil
 	}
@@ -1504,6 +1513,57 @@ func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int) ([]by
 		return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
 	}
 	return png, nil
+}
+
+func (s *SignalClient) GetDeviceLinkUri(deviceName string) (string, error) {
+    if s.signalCliMode == JsonRpc {
+        type StartResponse struct {
+            DeviceLinkUri string `json:"deviceLinkUri"`
+        }
+        jsonRpc2Client, err := s.getJsonRpc2Client()
+        if err != nil {
+            return "", err
+        }
+
+        raw, err := jsonRpc2Client.getRaw("startLink", nil, struct{}{})
+        if err != nil {
+            return "", errors.New("Couldn't start link: " + err.Error())
+        }
+
+        var resp StartResponse
+        if err := json.Unmarshal([]byte(raw), &resp); err != nil {
+            return "", errors.New("Couldn't parse startLink response: " + err.Error())
+        }
+
+        // Complete the linking handshake in the background, just like GetQrCodeLink does.
+        s.finishLinkAsync(jsonRpc2Client, deviceName, resp.DeviceLinkUri)
+        return resp.DeviceLinkUri, nil
+    }
+
+    cmd := []string{"--config", s.signalCliConfig, "link", "-n", deviceName}
+    deviceLinkUri, err := s.cliClient.Execute(false, cmd, "")
+    if err != nil {
+        return "", errors.New("Couldn't create link URI: " + err.Error())
+    }
+    return strings.TrimSpace(deviceLinkUri), nil
+}
+
+func (s *SignalClient) finishLinkAsync(jsonRpc2Client *JsonRpc2Client, deviceName string, deviceLinkUri string) {
+    type finishRequest struct {
+        DeviceLinkUri string `json:"deviceLinkUri"`
+        DeviceName    string `json:"deviceName"`
+    }
+
+    go func() {
+        req := finishRequest{DeviceLinkUri: deviceLinkUri, DeviceName: deviceName}
+        result, err := jsonRpc2Client.getRaw("finishLink", nil, &req)
+        if err != nil {
+            log.Debug("Error linking device: ", err.Error())
+            return
+        }
+        log.Debug("Linking device result: ", result)
+        s.signalCliApiConfig.Load(s.signalCliApiConfigPath)
+    }()
 }
 
 func (s *SignalClient) GetAccounts() ([]string, error) {
@@ -2285,6 +2345,7 @@ func (s *SignalClient) ListDevices(number string) ([]ListDevicesResponse, error)
 
 	for _, entry := range signalCliResp {
 		deviceEntry := ListDevicesResponse{
+			Id:                entry.Id,
 			Name:              entry.Name,
 			CreationTimestamp: entry.CreatedTimestamp,
 			LastSeenTimestamp: entry.LastSeenTimestamp,
@@ -2293,6 +2354,25 @@ func (s *SignalClient) ListDevices(number string) ([]ListDevicesResponse, error)
 	}
 
 	return resp, nil
+}
+
+func (s *SignalClient) RemoveDevice(number string, deviceId int64) error {
+	var err error
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			DeviceId int64 `json:"deviceId"`
+		}
+		request := Request{DeviceId: deviceId}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("removeDevice", &number, request)
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "removeDevice", "--deviceId", strconv.FormatInt(deviceId, 10)}
+		_, err = s.cliClient.Execute(true, cmd, "")
+	}
+	return err
 }
 
 func (s *SignalClient) SetTrustMode(number string, trustMode utils.SignalCliTrustMode) error {
