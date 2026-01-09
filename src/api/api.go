@@ -220,6 +220,14 @@ type RemoteDeleteRequest struct {
 	Timestamp int64  `json:"timestamp"`
 }
 
+type DeleteLocalAccountDataRequest struct {
+    IgnoreRegistered bool `json:"ignore_registered" example:"false"`
+}
+
+type DeviceLinkUriResponse struct {
+    DeviceLinkUri string `json:"device_link_uri"`
+}
+
 type Api struct {
 	signalClient *client.SignalClient
 	wsMutex      sync.Mutex
@@ -326,6 +334,43 @@ func (a *Api) UnregisterNumber(c *gin.Context) {
 		return
 	}
 	c.Writer.WriteHeader(204)
+}
+
+// @Summary Delete local account data
+// @Tags Devices
+// @Description Delete all local data for the specified account. Only use this after unregistering the account or after removing a linked device.
+// @Accept json
+// @Produce json
+// @Param number path string true "Registered Phone Number"
+// @Param data body DeleteLocalAccountDataRequest false "Cleanup options"
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/devices/{number}/local-data [delete]
+func (a *Api) DeleteLocalAccountData(c *gin.Context) {
+    number, err := url.PathUnescape(c.Param("number"))
+    if err != nil {
+        c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+        return
+    }
+    if number == "" {
+        c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+        return
+    }
+
+    req := DeleteLocalAccountDataRequest{}
+    if c.Request.Body != nil && c.Request.ContentLength != 0 {
+        if err := c.BindJSON(&req); err != nil {
+            c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+            return
+        }
+    }
+
+    if err := a.signalClient.DeleteLocalAccountData(number, req.IgnoreRegistered); err != nil {
+        c.JSON(400, Error{Msg: err.Error()})
+        return
+    }
+
+    c.Status(http.StatusNoContent)
 }
 
 // @Summary Verify a registered phone number.
@@ -1101,6 +1146,30 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 	}
 
 	c.Data(200, "image/png", png)
+}
+
+// @Summary Get raw device link URI
+// @Tags Devices
+// @Description Generate the deviceLinkUri string for linking without scanning a QR code.
+// @Produce json
+// @Param device_name query string true "Device Name"
+// @Success 200 {object} DeviceLinkUriResponse
+// @Failure 400 {object} Error
+// @Router /v1/qrcodelink/raw [get]
+func (a *Api) GetQrCodeLinkUri(c *gin.Context) {
+    deviceName := c.Query("device_name")
+    if deviceName == "" {
+        c.JSON(400, Error{Msg: "Please provide a name for the device"})
+        return
+    }
+
+    deviceLinkUri, err := a.signalClient.GetDeviceLinkUri(deviceName)
+    if err != nil {
+        c.JSON(400, Error{Msg: err.Error()})
+        return
+    }
+
+    c.JSON(200, DeviceLinkUriResponse{DeviceLinkUri: deviceLinkUri})
 }
 
 // @Summary List all accounts
@@ -1972,6 +2041,40 @@ func (a *Api) ListDevices(c *gin.Context) {
 	}
 
 	c.JSON(200, devices)
+}
+
+// @Summary Remove linked device
+// @Tags Devices
+// @Description Remove a linked device from the primary account.
+// @Param number path string true "Registered Phone Number"
+// @Param deviceId path int true "Device ID from listDevices"
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/devices/{number}/{deviceId} [delete]
+func (a *Api) RemoveDevice(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	deviceIdStr := c.Param("deviceId")
+    deviceId, err := strconv.ParseInt(deviceIdStr, 10, 64)
+	if err != nil {
+		c.JSON(400, Error{Msg: "deviceId must be numeric"})
+		return
+	}
+
+	err = a.signalClient.RemoveDevice(number, deviceId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 // @Summary Set account specific settings.
