@@ -807,29 +807,29 @@ func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool, delet
 }
 
 func (s *SignalClient) DeleteLocalAccountData(number string, ignoreRegistered bool) error {
-    if s.signalCliMode == JsonRpc {
-        type Request struct {
-            IgnoreRegistered bool `json:"ignore-registered,omitempty"`
-        }
-        req := Request{}
-        if ignoreRegistered {
-            req.IgnoreRegistered = true
-        }
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			IgnoreRegistered bool `json:"ignore-registered,omitempty"`
+		}
+		req := Request{}
+		if ignoreRegistered {
+			req.IgnoreRegistered = true
+		}
 
-        jsonRpc2Client, err := s.getJsonRpc2Client()
-        if err != nil {
-            return err
-        }
-        _, err = jsonRpc2Client.getRaw("deleteLocalAccountData", &number, req)
-        return err
-    } else {
-        cmd := []string{"--config", s.signalCliConfig, "-a", number, "deleteLocalAccountData"}
-        if ignoreRegistered {
-            cmd = append(cmd, "--ignore-registered")
-        }
-        _, err := s.cliClient.Execute(true, cmd, "")
-        return err
-    }
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("deleteLocalAccountData", &number, req)
+		return err
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "deleteLocalAccountData"}
+		if ignoreRegistered {
+			cmd = append(cmd, "--ignore-registered")
+		}
+		_, err := s.cliClient.Execute(true, cmd, "")
+		return err
+	}
 }
 
 func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin string) error {
@@ -1538,54 +1538,54 @@ func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int) ([]by
 }
 
 func (s *SignalClient) GetDeviceLinkUri(deviceName string) (string, error) {
-    if s.signalCliMode == JsonRpc {
-        type StartResponse struct {
-            DeviceLinkUri string `json:"deviceLinkUri"`
-        }
-        jsonRpc2Client, err := s.getJsonRpc2Client()
-        if err != nil {
-            return "", err
-        }
+	if s.signalCliMode == JsonRpc {
+		type StartResponse struct {
+			DeviceLinkUri string `json:"deviceLinkUri"`
+		}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return "", err
+		}
 
-        raw, err := jsonRpc2Client.getRaw("startLink", nil, struct{}{})
-        if err != nil {
-            return "", errors.New("Couldn't start link: " + err.Error())
-        }
+		raw, err := jsonRpc2Client.getRaw("startLink", nil, struct{}{})
+		if err != nil {
+			return "", errors.New("Couldn't start link: " + err.Error())
+		}
 
-        var resp StartResponse
-        if err := json.Unmarshal([]byte(raw), &resp); err != nil {
-            return "", errors.New("Couldn't parse startLink response: " + err.Error())
-        }
+		var resp StartResponse
+		if err := json.Unmarshal([]byte(raw), &resp); err != nil {
+			return "", errors.New("Couldn't parse startLink response: " + err.Error())
+		}
 
-        // Complete the linking handshake in the background, just like GetQrCodeLink does.
-        s.finishLinkAsync(jsonRpc2Client, deviceName, resp.DeviceLinkUri)
-        return resp.DeviceLinkUri, nil
-    }
+		// Complete the linking handshake in the background, just like GetQrCodeLink does.
+		s.finishLinkAsync(jsonRpc2Client, deviceName, resp.DeviceLinkUri)
+		return resp.DeviceLinkUri, nil
+	}
 
-    cmd := []string{"--config", s.signalCliConfig, "link", "-n", deviceName}
-    deviceLinkUri, err := s.cliClient.Execute(false, cmd, "")
-    if err != nil {
-        return "", errors.New("Couldn't create link URI: " + err.Error())
-    }
-    return strings.TrimSpace(deviceLinkUri), nil
+	cmd := []string{"--config", s.signalCliConfig, "link", "-n", deviceName}
+	deviceLinkUri, err := s.cliClient.Execute(false, cmd, "")
+	if err != nil {
+		return "", errors.New("Couldn't create link URI: " + err.Error())
+	}
+	return strings.TrimSpace(deviceLinkUri), nil
 }
 
 func (s *SignalClient) finishLinkAsync(jsonRpc2Client *JsonRpc2Client, deviceName string, deviceLinkUri string) {
-    type finishRequest struct {
-        DeviceLinkUri string `json:"deviceLinkUri"`
-        DeviceName    string `json:"deviceName"`
-    }
+	type finishRequest struct {
+		DeviceLinkUri string `json:"deviceLinkUri"`
+		DeviceName    string `json:"deviceName"`
+	}
 
-    go func() {
-        req := finishRequest{DeviceLinkUri: deviceLinkUri, DeviceName: deviceName}
-        result, err := jsonRpc2Client.getRaw("finishLink", nil, &req)
-        if err != nil {
-            log.Debug("Error linking device: ", err.Error())
-            return
-        }
-        log.Debug("Linking device result: ", result)
-        s.signalCliApiConfig.Load(s.signalCliApiConfigPath)
-    }()
+	go func() {
+		req := finishRequest{DeviceLinkUri: deviceLinkUri, DeviceName: deviceName}
+		result, err := jsonRpc2Client.getRaw("finishLink", nil, &req)
+		if err != nil {
+			log.Debug("Error linking device: ", err.Error())
+			return
+		}
+		log.Debug("Linking device result: ", result)
+		s.signalCliApiConfig.Load(s.signalCliApiConfigPath)
+	}()
 }
 
 func (s *SignalClient) GetAccounts() ([]string, error) {
