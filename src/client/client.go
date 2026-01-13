@@ -761,27 +761,49 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 
 func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool, deleteLocalData bool) error {
 	if s.signalCliMode == JsonRpc {
-		return errors.New("This functionality is only available in normal/native mode!")
-	}
-
-	command := []string{"--config", s.signalCliConfig, "-a", number, "unregister"}
-	if deleteAccount {
-		command = append(command, "--delete-account")
-	}
-
-	_, err := s.cliClient.Execute(true, command, "")
-
-	if deleteLocalData {
-		command := []string{"--config", s.signalCliConfig, "-a", number, "deleteLocalAccountData"}
-		_, err2 := s.cliClient.Execute(true, command, "")
-		if (err2 != nil) && (err != nil) {
-			err = fmt.Errorf("%w (%s)", err, err2.Error())
-		} else if (err2 != nil) && (err == nil) {
-			err = err2
+		type Request struct {
+			DeleteAccount bool `json:"delete-account,omitempty"`
 		}
-	}
+		req := Request{}
 
-	return err
+		if deleteAccount {
+			req.DeleteAccount = true
+		}
+
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("unregister", &number, req)
+		if err != nil {
+			return err
+		}
+
+		if deleteLocalData {
+			return s.DeleteLocalAccountData(number, false)
+		}
+		return nil
+
+	} else {
+		command := []string{"--config", s.signalCliConfig, "-a", number, "unregister"}
+		if deleteAccount {
+			command = append(command, "--delete-account")
+		}
+
+		_, err := s.cliClient.Execute(true, command, "")
+
+		if deleteLocalData {
+			command := []string{"--config", s.signalCliConfig, "-a", number, "deleteLocalAccountData"}
+			_, err2 := s.cliClient.Execute(true, command, "")
+			if (err2 != nil) && (err != nil) {
+				err = fmt.Errorf("%w (%s)", err, err2.Error())
+			} else if (err2 != nil) && (err == nil) {
+				err = err2
+			}
+		}
+
+		return err
+	}
 }
 
 func (s *SignalClient) DeleteLocalAccountData(number string, ignoreRegistered bool) error {
