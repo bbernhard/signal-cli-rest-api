@@ -1,21 +1,21 @@
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 0d89c075..fda49332 100644
+index f51d9f1c..6357f590 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -43,6 +43,7 @@ dependencies {
+@@ -55,6 +55,7 @@ dependencies {
      implementation(libs.slf4j.jul)
      implementation(libs.logback)
-     implementation(project(":lib"))
-+    implementation(files("/tmp/libsignal-client.jar"))
+     implementation(project(":libsignal-cli"))
++	implementation(files("/tmp/libsignal-client.jar"))
  }
  
  configurations {
-@@ -51,6 +52,10 @@ configurations {
+@@ -63,6 +64,10 @@ configurations {
      }
  }
  
 +configurations.all {
-+    exclude(group = "org.signal", module = "libsignal-client")
++	exclude(group = "org.signal", module = "libsignal-client")
 +}
 +
  

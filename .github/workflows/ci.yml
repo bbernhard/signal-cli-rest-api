@@ -10,28 +10,75 @@ on:
 
 jobs:
   setup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
       - name: Available platforms
         run: echo ${{ steps.buildx.outputs.platforms }}
+      - name: Install Podman
+        run: sudo apt update && sudo apt install -y podman 
+ 
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: setup
     steps:
       - uses: actions/checkout@master
         with:
           ref: ${{ github.ref }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Free up disk space
+        run: |
+          # Remove Java (JDKs)
+          sudo rm -rf /usr/lib/jvm
+
+          # Remove .NET SDKs
+          sudo rm -rf /usr/share/dotnet
+
+          # Remove Swift toolchain
+          sudo rm -rf /usr/share/swift
+
+          # Remove Haskell (GHC)
+          sudo rm -rf /usr/local/.ghcup
+
+          # Remove Julia
+          sudo rm -rf /usr/local/julia*
+
+          # Remove Android SDKs
+          sudo rm -rf /usr/local/lib/android
+
+          # Remove Chromium
+          sudo rm -rf /usr/local/share/chromium
+
+          # Remove Microsoft/Edge and Google Chrome builds
+          sudo rm -rf /opt/microsoft /opt/google
+
+          # Remove Azure CLI
+          sudo rm -rf /opt/az
+
+          # Remove PowerShell
+          sudo rm -rf /usr/local/share/powershell
+
+          # Remove CodeQL and other toolcaches
+          sudo rm -rf /opt/hostedtoolcache
+
+          docker system prune -af || true
+          docker builder prune -af || true
+          df -h
       - name: Build
         env:
           VERSION: ${{ github.run_number }}
         run: |
+          df -h
           echo "Start CI build"
-          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-          docker buildx create --name multibuilder
-          docker buildx use multibuilder
-          docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t bbernhard/signal-cli-rest-api:${VERSION}-ci .
+          docker run --privileged --rm tonistiigi/binfmt --install all
+          podman manifest create build
+          podman build --format docker --platform linux/amd64,linux/arm64,linux/arm/v7 --manifest localhost/build .
+          podman manifest push localhost/build docker://docker.io/bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci
 

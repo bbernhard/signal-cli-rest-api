@@ -64,6 +64,77 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/accounts/{number}/pin": {
+            "post": {
+                "description": "Sets a new Signal Pin",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Set Pin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SetPinRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Removes a Signal Pin",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Remove Pin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/accounts/{number}/rate-limit-challenge": {
             "post": {
                 "description": "When running into rate limits, sometimes the limit can be lifted, by solving a CAPTCHA. To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html. The \"challenge_token\" is the token from the failed send attempt. The \"captcha\" is the captcha result, starting with signalcaptcha://",
@@ -594,7 +665,104 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/contacts/{number}/{uuid}": {
+            "get": {
+                "description": "List a specific contact.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "List Contact",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/client.ListContactsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/contacts/{number}/{uuid}/avatar": {
+            "get": {
+                "description": "Returns the avatar of a contact.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Returns the avatar of a contact",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Image",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/devices/{number}": {
+            "get": {
+                "description": "List linked devices associated to this device.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "List linked devices.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/client.ListDevicesResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Links another device to this device. Only works, if this is the master device.",
                 "consumes": [
@@ -957,6 +1125,51 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/groups/{number}/{groupid}/avatar": {
+            "get": {
+                "description": "Returns the avatar of a Signal Group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Returns the avatar of a Signal Group.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Image",
                         "schema": {
                             "type": "string"
                         }
@@ -1699,7 +1912,54 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/search": {
+        "/v1/remote-delete/{number}": {
+            "delete": {
+                "description": "Delete a signal message",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Delete a signal message.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Type",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.RemoteDeleteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.RemoteDeleteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/search/{number}": {
             "get": {
                 "description": "Check if one or more phone numbers are registered with the Signal Service.",
                 "consumes": [
@@ -1717,7 +1977,8 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Registered Phone Number",
                         "name": "number",
-                        "in": "path"
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "type": "array",
@@ -2014,7 +2275,7 @@ const docTemplate = `{
         },
         "/v2/send": {
             "post": {
-                "description": "Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: *italic text*, **bold text**, ~strikethrough text~.",
+                "description": "Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: \\*italic text\\*, \\*\\*bold text\\*\\*, ~strikethrough text~, ||spoiler||, \\` + "`" + `monospace\\` + "`" + `. If you want to escape a formatting character, prefix it with two backslashes.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2168,6 +2429,13 @@ const docTemplate = `{
                         "only-admins",
                         "every-member"
                     ]
+                },
+                "send_messages": {
+                    "type": "string",
+                    "enum": [
+                        "only-admins",
+                        "every-member"
+                    ]
                 }
             }
         },
@@ -2235,6 +2503,25 @@ const docTemplate = `{
                 },
                 "use_voice": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api.RemoteDeleteRequest": {
+            "type": "object",
+            "properties": {
+                "recipient": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.RemoteDeleteResponse": {
+            "type": "object",
+            "properties": {
+                "timestamp": {
+                    "type": "string"
                 }
             }
         },
@@ -2315,6 +2602,9 @@ const docTemplate = `{
                 "edit_timestamp": {
                     "type": "integer"
                 },
+                "link_preview": {
+                    "$ref": "#/definitions/data.LinkPreviewType"
+                },
                 "mentions": {
                     "type": "array",
                     "items": {
@@ -2360,6 +2650,17 @@ const docTemplate = `{
                         "normal",
                         "styled"
                     ]
+                },
+                "view_once": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.SetPinRequest": {
+            "type": "object",
+            "properties": {
+                "pin": {
+                    "type": "string"
                 }
             }
         },
@@ -2455,8 +2756,22 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "expiration_time": {
+                    "type": "integer"
+                },
+                "group_link": {
+                    "type": "string",
+                    "enum": [
+                        "disabled",
+                        "enabled",
+                        "enabled-with-approval"
+                    ]
+                },
                 "name": {
                     "type": "string"
+                },
+                "permissions": {
+                    "$ref": "#/definitions/api.GroupPermissions"
                 }
             }
         },
@@ -2511,6 +2826,26 @@ const docTemplate = `{
                 }
             }
         },
+        "client.ContactProfile": {
+            "type": "object",
+            "properties": {
+                "about": {
+                    "type": "string"
+                },
+                "given_name": {
+                    "type": "string"
+                },
+                "has_avatar": {
+                    "type": "boolean"
+                },
+                "last_updated_timestamp": {
+                    "type": "integer"
+                },
+                "lastname": {
+                    "type": "string"
+                }
+            }
+        },
         "client.GroupEntry": {
             "type": "object",
             "properties": {
@@ -2522,6 +2857,9 @@ const docTemplate = `{
                 },
                 "blocked": {
                     "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
@@ -2572,6 +2910,9 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
                 }
             }
         },
@@ -2584,14 +2925,26 @@ const docTemplate = `{
                 "color": {
                     "type": "string"
                 },
+                "given_name": {
+                    "type": "string"
+                },
                 "message_expiration": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
+                "nickname": {
+                    "$ref": "#/definitions/client.Nickname"
+                },
+                "note": {
+                    "type": "string"
+                },
                 "number": {
                     "type": "string"
+                },
+                "profile": {
+                    "$ref": "#/definitions/client.ContactProfile"
                 },
                 "profile_name": {
                     "type": "string"
@@ -2600,6 +2953,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "client.ListDevicesResponse": {
+            "type": "object",
+            "properties": {
+                "creation_timestamp": {
+                    "type": "integer"
+                },
+                "last_seen_timestamp": {
+                    "type": "integer"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -2624,6 +2991,20 @@ const docTemplate = `{
                 }
             }
         },
+        "client.Nickname": {
+            "type": "object",
+            "properties": {
+                "family_name": {
+                    "type": "string"
+                },
+                "given_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "client.SetUsernameResponse": {
             "type": "object",
             "properties": {
@@ -2631,6 +3012,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username_link": {
+                    "type": "string"
+                }
+            }
+        },
+        "data.LinkPreviewType": {
+            "type": "object",
+            "properties": {
+                "base64_thumbnail": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
                     "type": "string"
                 }
             }

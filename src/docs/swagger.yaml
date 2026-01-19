@@ -76,6 +76,11 @@ definitions:
         - only-admins
         - every-member
         type: string
+      send_messages:
+        enum:
+        - only-admins
+        - every-member
+        type: string
     type: object
   api.LoggingConfiguration:
     properties:
@@ -120,6 +125,18 @@ definitions:
         type: string
       use_voice:
         type: boolean
+    type: object
+  api.RemoteDeleteRequest:
+    properties:
+      recipient:
+        type: string
+      timestamp:
+        type: integer
+    type: object
+  api.RemoteDeleteResponse:
+    properties:
+      timestamp:
+        type: string
     type: object
   api.SearchResponse:
     properties:
@@ -174,6 +191,8 @@ definitions:
         type: array
       edit_timestamp:
         type: integer
+      link_preview:
+        $ref: '#/definitions/data.LinkPreviewType'
       mentions:
         items:
           $ref: '#/definitions/data.MessageMention'
@@ -204,6 +223,13 @@ definitions:
         enum:
         - normal
         - styled
+        type: string
+      view_once:
+        type: boolean
+    type: object
+  api.SetPinRequest:
+    properties:
+      pin:
         type: string
     type: object
   api.SetUsernameRequest:
@@ -266,8 +292,18 @@ definitions:
         type: string
       description:
         type: string
+      expiration_time:
+        type: integer
+      group_link:
+        enum:
+        - disabled
+        - enabled
+        - enabled-with-approval
+        type: string
       name:
         type: string
+      permissions:
+        $ref: '#/definitions/api.GroupPermissions'
     type: object
   api.UpdateProfileRequest:
     properties:
@@ -302,6 +338,19 @@ definitions:
           type: string
         type: array
     type: object
+  client.ContactProfile:
+    properties:
+      about:
+        type: string
+      given_name:
+        type: string
+      has_avatar:
+        type: boolean
+      last_updated_timestamp:
+        type: integer
+      lastname:
+        type: string
+    type: object
   client.GroupEntry:
     properties:
       admins:
@@ -310,6 +359,8 @@ definitions:
         type: array
       blocked:
         type: boolean
+      description:
+        type: string
       id:
         type: string
       internal_id:
@@ -343,6 +394,8 @@ definitions:
         type: string
       status:
         type: string
+      uuid:
+        type: string
     type: object
   client.ListContactsResponse:
     properties:
@@ -350,17 +403,34 @@ definitions:
         type: boolean
       color:
         type: string
+      given_name:
+        type: string
       message_expiration:
         type: string
       name:
         type: string
+      nickname:
+        $ref: '#/definitions/client.Nickname'
+      note:
+        type: string
       number:
         type: string
+      profile:
+        $ref: '#/definitions/client.ContactProfile'
       profile_name:
         type: string
       username:
         type: string
       uuid:
+        type: string
+    type: object
+  client.ListDevicesResponse:
+    properties:
+      creation_timestamp:
+        type: integer
+      last_seen_timestamp:
+        type: integer
+      name:
         type: string
     type: object
   client.ListInstalledStickerPacksResponse:
@@ -376,11 +446,31 @@ definitions:
       url:
         type: string
     type: object
+  client.Nickname:
+    properties:
+      family_name:
+        type: string
+      given_name:
+        type: string
+      name:
+        type: string
+    type: object
   client.SetUsernameResponse:
     properties:
       username:
         type: string
       username_link:
+        type: string
+    type: object
+  data.LinkPreviewType:
+    properties:
+      base64_thumbnail:
+        type: string
+      description:
+        type: string
+      title:
+        type: string
+      url:
         type: string
     type: object
   data.MessageMention:
@@ -429,6 +519,53 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: List all accounts
+      tags:
+      - Accounts
+  /v1/accounts/{number}/pin:
+    delete:
+      description: Removes a Signal Pin
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Remove Pin
+      tags:
+      - Accounts
+    post:
+      description: Sets a new Signal Pin
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.SetPinRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Set Pin
       tags:
       - Accounts
   /v1/accounts/{number}/rate-limit-challenge:
@@ -766,6 +903,44 @@ paths:
         contact doesn’t exist yet, it will be added.
       tags:
       - Contacts
+  /v1/contacts/{number}/{uuid}:
+    get:
+      description: List a specific contact.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/client.ListContactsResponse'
+      summary: List Contact
+      tags:
+      - Contacts
+  /v1/contacts/{number}/{uuid}/avatar:
+    get:
+      description: Returns the avatar of a contact.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image
+          schema:
+            type: string
+      summary: Returns the avatar of a contact
+      tags:
+      - Contacts
   /v1/contacts/{number}/sync:
     post:
       consumes:
@@ -793,6 +968,32 @@ paths:
       tags:
       - Contacts
   /v1/devices/{number}:
+    get:
+      consumes:
+      - application/json
+      description: List linked devices associated to this device.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/client.ListDevicesResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: List linked devices.
+      tags:
+      - Devices
     post:
       consumes:
       - application/json
@@ -1042,6 +1243,36 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: Add one or more admins to an existing Signal Group.
+      tags:
+      - Groups
+  /v1/groups/{number}/{groupid}/avatar:
+    get:
+      consumes:
+      - application/json
+      description: Returns the avatar of a Signal Group.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Returns the avatar of a Signal Group.
       tags:
       - Groups
   /v1/groups/{number}/{groupid}/block:
@@ -1532,7 +1763,38 @@ paths:
       summary: Verify a registered phone number.
       tags:
       - Devices
-  /v1/search:
+  /v1/remote-delete/{number}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a signal message
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Type
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.RemoteDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.RemoteDeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Delete a signal message.
+      tags:
+      - Messages
+  /v1/search/{number}:
     get:
       consumes:
       - application/json
@@ -1542,6 +1804,7 @@ paths:
       - description: Registered Phone Number
         in: path
         name: number
+        required: true
         type: string
       - collectionFormat: multi
         description: Numbers to check
@@ -1751,8 +2014,9 @@ paths:
       consumes:
       - application/json
       description: 'Send a signal message. Set the text_mode to ''styled'' in case
-        you want to add formatting to your text message. Styling Options: *italic
-        text*, **bold text**, ~strikethrough text~.'
+        you want to add formatting to your text message. Styling Options: \*italic
+        text\*, \*\*bold text\*\*, ~strikethrough text~, ||spoiler||, \`monospace\`.
+        If you want to escape a formatting character, prefix it with two backslashes.'
       parameters:
       - description: Input Data
         in: body

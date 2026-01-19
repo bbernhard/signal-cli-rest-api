@@ -39,8 +39,9 @@ type UpdateContactRequest struct {
 }
 
 type GroupPermissions struct {
-	AddMembers string `json:"add_members" enums:"only-admins,every-member"`
-	EditGroup  string `json:"edit_group" enums:"only-admins,every-member"`
+	AddMembers   string `json:"add_members" enums:"only-admins,every-member"`
+	EditGroup    string `json:"edit_group" enums:"only-admins,every-member"`
+	SendMessages string `json:"send_messages" enums:"only-admins,every-member"`
 }
 
 type CreateGroupRequest struct {
@@ -53,9 +54,12 @@ type CreateGroupRequest struct {
 }
 
 type UpdateGroupRequest struct {
-	Base64Avatar *string `json:"base64_avatar"`
-	Description  *string `json:"description"`
-	Name         *string `json:"name"`
+	Base64Avatar   *string           `json:"base64_avatar"`
+	Description    *string           `json:"description"`
+	Name           *string           `json:"name"`
+	ExpirationTime *int              `json:"expiration_time"`
+	GroupLinkState *string           `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
+	Permissions    *GroupPermissions `json:"permissions"`
 }
 
 type ChangeGroupMembersRequest struct {
@@ -124,6 +128,8 @@ type SendMessageV2 struct {
 	TextMode          *string             `json:"text_mode" enums:"normal,styled"`
 	EditTimestamp     *int64              `json:"edit_timestamp"`
 	NotifySelf        *bool               `json:"notify_self"`
+	LinkPreview       *ds.LinkPreviewType `json:"link_preview"`
+	ViewOnce          *bool               `json:"view_once"`
 }
 
 type TypingIndicatorRequest struct {
@@ -156,6 +162,10 @@ type TrustIdentityRequest struct {
 }
 
 type SendMessageResponse struct {
+	Timestamp string `json:"timestamp"`
+}
+
+type RemoteDeleteResponse struct {
 	Timestamp string `json:"timestamp"`
 }
 
@@ -199,6 +209,23 @@ type SetUsernameRequest struct {
 type AddStickerPackRequest struct {
 	PackId  string `json:"pack_id" example:"9a32eda01a7a28574f2eb48668ae0dc4"`
 	PackKey string `json:"pack_key" example:"19546e18eba0ff69dea78eb591465289d39e16f35e58389ae779d4f9455aff3a"`
+}
+
+type SetPinRequest struct {
+	Pin string `json:"pin"`
+}
+
+type RemoteDeleteRequest struct {
+	Recipient string `json:"recipient"`
+	Timestamp int64  `json:"timestamp"`
+}
+
+type DeleteLocalAccountDataRequest struct {
+    IgnoreRegistered bool `json:"ignore_registered" example:"false"`
+}
+
+type DeviceLinkUriResponse struct {
+    DeviceLinkUri string `json:"device_link_uri"`
 }
 
 type Api struct {
@@ -309,6 +336,43 @@ func (a *Api) UnregisterNumber(c *gin.Context) {
 	c.Writer.WriteHeader(204)
 }
 
+// @Summary Delete local account data
+// @Tags Devices
+// @Description Delete all local data for the specified account. Only use this after unregistering the account or after removing a linked device.
+// @Accept json
+// @Produce json
+// @Param number path string true "Registered Phone Number"
+// @Param data body DeleteLocalAccountDataRequest false "Cleanup options"
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/devices/{number}/local-data [delete]
+func (a *Api) DeleteLocalAccountData(c *gin.Context) {
+    number, err := url.PathUnescape(c.Param("number"))
+    if err != nil {
+        c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+        return
+    }
+    if number == "" {
+        c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+        return
+    }
+
+    req := DeleteLocalAccountDataRequest{}
+    if c.Request.Body != nil && c.Request.ContentLength != 0 {
+        if err := c.BindJSON(&req); err != nil {
+            c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+            return
+        }
+    }
+
+    if err := a.signalClient.DeleteLocalAccountData(number, req.IgnoreRegistered); err != nil {
+        c.JSON(400, Error{Msg: err.Error()})
+        return
+    }
+
+    c.Status(http.StatusNoContent)
+}
+
 // @Summary Verify a registered phone number.
 // @Tags Devices
 // @Description Verify a registered phone number with the signal network.
@@ -394,7 +458,7 @@ func (a *Api) Send(c *gin.Context) {
 
 // @Summary Send a signal message.
 // @Tags Messages
-// @Description Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: *italic text*, **bold text**, ~strikethrough text~.
+// @Description Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: \*italic text\*, \*\*bold text\*\*, ~strikethrough text~, ||spoiler||, \`monospace\`. If you want to escape a formatting character, prefix it with two backslashes.
 // @Accept  json
 // @Produce  json
 // @Success 201 {object} SendMessageResponse
@@ -432,10 +496,24 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
+	textMode := req.TextMode
+	if textMode == nil {
+		defaultSignalTextMode := utils.GetEnv("DEFAULT_SIGNAL_TEXT_MODE", "normal")
+		if defaultSignalTextMode == "styled" {
+			styledStr := "styled"
+			textMode = &styledStr
+		}
+	}
+
+	if req.ViewOnce != nil && *req.ViewOnce && (len(req.Base64Attachments) == 0) {
+		c.JSON(400, Error{Msg: "'view_once' can only be set for image attachments!"})
+		return
+	}
+
 	data, err := a.signalClient.SendV2(
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
 		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions,
-		req.TextMode, req.EditTimestamp, req.NotifySelf)
+		textMode, req.EditTimestamp, req.NotifySelf, req.LinkPreview, req.ViewOnce)
 	if err != nil {
 		switch err.(type) {
 		case *client.RateLimitErrorType:
@@ -665,6 +743,7 @@ func (a *Api) CreateGroup(c *gin.Context) {
 
 	editGroupPermission := client.DefaultGroupPermission
 	addMembersPermission := client.DefaultGroupPermission
+	sendMessagesPermission := client.DefaultGroupPermission
 	groupLinkState := client.DefaultGroupLinkState
 
 	if req.Permissions.AddMembers != "" {
@@ -683,6 +762,15 @@ func (a *Api) CreateGroup(c *gin.Context) {
 		editGroupPermission = editGroupPermission.FromString(req.Permissions.EditGroup)
 	}
 
+	if req.Permissions.SendMessages != "" {
+		if !utils.StringInSlice(req.Permissions.SendMessages, []string{"every-member", "only-admins"}) {
+			c.JSON(400, Error{Msg: "Invalid send messages permissions provided - only 'every-member' and 'only-admins' allowed!"})
+			return
+		}
+
+		sendMessagesPermission = sendMessagesPermission.FromString(req.Permissions.SendMessages)
+	}
+
 	if req.GroupLinkState != "" {
 		if !utils.StringInSlice(req.GroupLinkState, []string{"enabled", "enabled-with-approval", "disabled"}) {
 			c.JSON(400, Error{Msg: "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!"})
@@ -691,7 +779,8 @@ func (a *Api) CreateGroup(c *gin.Context) {
 		groupLinkState = groupLinkState.FromString(req.GroupLinkState)
 	}
 
-	groupId, err := a.signalClient.CreateGroup(number, req.Name, req.Members, req.Description, editGroupPermission, addMembersPermission, groupLinkState, req.ExpirationTime)
+	groupId, err := a.signalClient.CreateGroup(number, req.Name, req.Members, req.Description, editGroupPermission, addMembersPermission,
+		sendMessagesPermission, groupLinkState, req.ExpirationTime)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
@@ -952,6 +1041,40 @@ func (a *Api) GetGroup(c *gin.Context) {
 	}
 }
 
+// @Summary Returns the avatar of a Signal Group.
+// @Tags Groups
+// @Description Returns the avatar of a Signal Group.
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} string	"Image"
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group ID"
+// @Router /v1/groups/{number}/{groupid}/avatar [get]
+func (a *Api) GetGroupAvatar(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	groupId := c.Param("groupid")
+
+	groupAvatar, err := a.signalClient.GetAvatar(number, groupId, client.GroupAvatar)
+	if err != nil {
+		switch err.(type) {
+		case *client.NotFoundError:
+			c.JSON(404, Error{Msg: err.Error()})
+			return
+		default:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+	}
+
+	mimeType := mimetype.Detect(groupAvatar)
+	c.Data(200, mimeType.String(), groupAvatar)
+}
+
 // @Summary Delete a Signal Group.
 // @Tags Groups
 // @Description Delete the specified Signal Group.
@@ -1023,6 +1146,30 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 	}
 
 	c.Data(200, "image/png", png)
+}
+
+// @Summary Get raw device link URI
+// @Tags Devices
+// @Description Generate the deviceLinkUri string for linking without scanning a QR code.
+// @Produce json
+// @Param device_name query string true "Device Name"
+// @Success 200 {object} DeviceLinkUriResponse
+// @Failure 400 {object} Error
+// @Router /v1/qrcodelink/raw [get]
+func (a *Api) GetQrCodeLinkUri(c *gin.Context) {
+    deviceName := c.Query("device_name")
+    if deviceName == "" {
+        c.JSON(400, Error{Msg: "Please provide a name for the device"})
+        return
+    }
+
+    deviceLinkUri, err := a.signalClient.GetDeviceLinkUri(deviceName)
+    if err != nil {
+        c.JSON(400, Error{Msg: err.Error()})
+        return
+    }
+
+    c.JSON(200, DeviceLinkUriResponse{DeviceLinkUri: deviceLinkUri})
 }
 
 // @Summary List all accounts
@@ -1294,14 +1441,9 @@ func (a *Api) SetConfiguration(c *gin.Context) {
 	}
 
 	if req.Logging.Level != "" {
-		if req.Logging.Level == "debug" {
-			log.SetLevel(log.DebugLevel)
-		} else if req.Logging.Level == "info" {
-			log.SetLevel(log.InfoLevel)
-		} else if req.Logging.Level == "warn" {
-			log.SetLevel(log.WarnLevel)
-		} else {
-			c.JSON(400, Error{Msg: "Couldn't set log level - invalid log level"})
+		err = utils.SetLogLevel(req.Logging.Level)
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
 			return
 		}
 	}
@@ -1531,7 +1673,50 @@ func (a *Api) UpdateGroup(c *gin.Context) {
 		return
 	}
 
-	err = a.signalClient.UpdateGroup(number, internalGroupId, req.Base64Avatar, req.Description, req.Name)
+	var groupLinkState *client.GroupLinkState = nil
+	if req.GroupLinkState != nil {
+		if !utils.StringInSlice(*req.GroupLinkState, []string{"enabled", "enabled-with-approval", "disabled"}) {
+			c.JSON(400, Error{Msg: "Invalid group link provided - only 'enabled', 'enabled-with-approval' and 'disabled' allowed!"})
+			return
+		}
+		var gLinkState client.GroupLinkState
+		gLinkStateVal := gLinkState.FromString(*req.GroupLinkState)
+		groupLinkState = &gLinkStateVal
+	}
+
+	editGroupPermission := client.DefaultGroupPermission
+	addMembersPermission := client.DefaultGroupPermission
+	sendMessagesPermission := client.DefaultGroupPermission
+
+	if req.Permissions != nil {
+		if req.Permissions.AddMembers != "" {
+			if !utils.StringInSlice(req.Permissions.AddMembers, []string{"every-member", "only-admins"}) {
+				c.JSON(400, Error{Msg: "Invalid add members permission provided - only 'every-member' and 'only-admins' allowed!"})
+				return
+			}
+			addMembersPermission = addMembersPermission.FromString(req.Permissions.AddMembers)
+		}
+
+		if req.Permissions.EditGroup != "" {
+			if !utils.StringInSlice(req.Permissions.EditGroup, []string{"every-member", "only-admins"}) {
+				c.JSON(400, Error{Msg: "Invalid edit group permissions provided - only 'every-member' and 'only-admins' allowed!"})
+				return
+			}
+			editGroupPermission = editGroupPermission.FromString(req.Permissions.EditGroup)
+		}
+
+		if req.Permissions.SendMessages != "" {
+			if !utils.StringInSlice(req.Permissions.SendMessages, []string{"every-member", "only-admins"}) {
+				c.JSON(400, Error{Msg: "Invalid send messages permissions provided - only 'every-member' and 'only-admins' allowed!"})
+				return
+			}
+
+			sendMessagesPermission = sendMessagesPermission.FromString(req.Permissions.SendMessages)
+		}
+	}
+
+	err = a.signalClient.UpdateGroup(number, internalGroupId, req.Base64Avatar, req.Description, req.Name, req.ExpirationTime, groupLinkState,
+		editGroupPermission, addMembersPermission, sendMessagesPermission)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
@@ -1773,11 +1958,11 @@ func (a *Api) SendStopTyping(c *gin.Context) {
 // @Description Check if one or more phone numbers are registered with the Signal Service.
 // @Accept  json
 // @Produce  json
-// @Param number path string false "Registered Phone Number"
+// @Param number path string true "Registered Phone Number"
 // @Param numbers query []string true "Numbers to check" collectionFormat(multi)
 // @Success 200 {object} []SearchResponse
 // @Failure 400 {object} Error
-// @Router /v1/search [get]
+// @Router /v1/search/{number} [get]
 func (a *Api) SearchForNumbers(c *gin.Context) {
 	query := c.Request.URL.Query()
 	if _, ok := query["numbers"]; !ok {
@@ -1876,6 +2061,69 @@ func (a *Api) AddDevice(c *gin.Context) {
 	}
 
 	err = a.signalClient.AddDevice(number, req.Uri)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary List linked devices.
+// @Tags Devices
+// @Description List linked devices associated to this device.
+// @Accept json
+// @Produce json
+// @Param number path string true "Registered Phone Number"
+// @Success 200 {object} []client.ListDevicesResponse
+// @Failure 400 {object} Error
+// @Router /v1/devices/{number} [get]
+func (a *Api) ListDevices(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	devices, err := a.signalClient.ListDevices(number)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.JSON(200, devices)
+}
+
+// @Summary Remove linked device
+// @Tags Devices
+// @Description Remove a linked device from the primary account.
+// @Param number path string true "Registered Phone Number"
+// @Param deviceId path int true "Device ID from listDevices"
+// @Success 204
+// @Failure 400 {object} Error
+// @Router /v1/devices/{number}/{deviceId} [delete]
+func (a *Api) RemoveDevice(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	deviceIdStr := c.Param("deviceId")
+    deviceId, err := strconv.ParseInt(deviceIdStr, 10, 64)
+	if err != nil {
+		c.JSON(400, Error{Msg: "deviceId must be numeric"})
+		return
+	}
+
+	err = a.signalClient.RemoveDevice(number, deviceId)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
@@ -2218,4 +2466,182 @@ func (a *Api) ListContacts(c *gin.Context) {
 	}
 
 	c.JSON(200, contacts)
+}
+
+// @Summary List Contact
+// @Tags Contacts
+// @Description List a specific contact.
+// @Produce  json
+// @Success 200 {object} client.ListContactsResponse
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/contacts/{number}/{uuid} [get]
+func (a *Api) ListContact(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	uuid := c.Param("uuid")
+	if uuid == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - uuid missing"})
+		return
+	}
+
+	contact, err := a.signalClient.ListContact(number, uuid)
+	if err != nil {
+		switch err.(type) {
+		case *client.NotFoundError:
+			c.JSON(404, Error{Msg: err.Error()})
+			return
+		default:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+	}
+
+	c.JSON(200, contact)
+}
+
+// @Summary Returns the avatar of a contact
+// @Tags Contacts
+// @Description Returns the avatar of a contact.
+// @Produce  json
+// @Success 200 {string} string	"Image"
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/contacts/{number}/{uuid}/avatar [get]
+func (a *Api) GetProfileAvatar(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	uuid := c.Param("uuid")
+	if uuid == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - uuid missing"})
+		return
+	}
+
+	avatar, err := a.signalClient.GetAvatar(number, uuid, client.ProfileAvatar)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	mimeType := mimetype.Detect(avatar)
+	c.Data(200, mimeType.String(), avatar)
+}
+
+// @Summary Set Pin
+// @Tags Accounts
+// @Description Sets a new Signal Pin
+// @Produce  json
+// @Success 201
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param data body SetPinRequest true "Request"
+// @Router /v1/accounts/{number}/pin [post]
+func (a *Api) SetPin(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req SetPinRequest
+	err = c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	err = a.signalClient.SetPin(number, req.Pin)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(201)
+}
+
+// @Summary Remove Pin
+// @Tags Accounts
+// @Description Removes a Signal Pin
+// @Produce  json
+// @Success 204
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Router /v1/accounts/{number}/pin [delete]
+func (a *Api) RemovePin(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	err = a.signalClient.RemovePin(number)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(204)
+}
+
+// @Summary Delete a signal message.
+// @Tags Messages
+// @Description Delete a signal message
+// @Accept  json
+// @Produce  json
+// @Success 201 {object} RemoteDeleteResponse
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param data body RemoteDeleteRequest true "Type"
+// @Router /v1/remote-delete/{number} [delete]
+func (a *Api) RemoteDelete(c *gin.Context) {
+	var req RemoteDeleteRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	timestamp, err := a.signalClient.RemoteDelete(number, req.Recipient, req.Timestamp)
+
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.JSON(201, RemoteDeleteResponse{Timestamp: strconv.FormatInt(timestamp.Timestamp, 10)})
 }

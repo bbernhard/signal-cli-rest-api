@@ -3,6 +3,8 @@ package utils
 import (
 	"os"
 	"strconv"
+	"errors"
+	log "github.com/sirupsen/logrus"
 )
 
 func GetEnv(key string, defaultVal string) string {
@@ -39,10 +41,25 @@ func IsPhoneNumber(s string) bool {
 				return false
 			}
 		} else {
-			if c < '0' || c > '9' {
+			if (c < '0' || c > '9') && (c != ' ') {
 				return false
 			}
 		}
 	}
 	return true
+}
+
+func SetLogLevel(logLevel string) error {
+	if logLevel == "debug" {
+		log.SetLevel(log.DebugLevel)
+	} else if logLevel == "info" {
+		log.SetLevel(log.InfoLevel)
+	} else if logLevel == "error" {
+		log.SetLevel(log.ErrorLevel)
+	} else if logLevel == "warn" {
+		log.SetLevel(log.WarnLevel)
+	} else {
+		return errors.New("Couldn't set log level - invalid log level")
+	}
+	return nil
 }

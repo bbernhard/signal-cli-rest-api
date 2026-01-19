@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"plugin"
 	"strconv"
 
 	"github.com/bbernhard/signal-cli-rest-api/api"
@@ -62,13 +63,27 @@ import (
 // @host localhost:8080
 // @schemes http
 // @BasePath /
+
 func main() {
 	signalCliConfig := flag.String("signal-cli-config", "/home/.local/share/signal-cli/", "Config directory where signal-cli config is stored")
 	attachmentTmpDir := flag.String("attachment-tmp-dir", "/tmp/", "Attachment tmp directory")
 	avatarTmpDir := flag.String("avatar-tmp-dir", "/tmp/", "Avatar tmp directory")
 	flag.Parse()
 
-	docs.SwaggerInfo.Schemes = []string{"http", "https"}
+	logLevel := utils.GetEnv("LOG_LEVEL", "")
+	if logLevel != "" {
+		err := utils.SetLogLevel(logLevel)
+		if err != nil {
+			log.Error("Couldn't set log level to '", logLevel, "'. Falling back to the info log level")
+			utils.SetLogLevel("info")
+		}
+	}
+
+	if utils.GetEnv("SWAGGER_USE_HTTPS_AS_PREFERRED_SCHEME", "false") == "false" {
+		docs.SwaggerInfo.Schemes = []string{"http", "https"}
+	} else {
+		docs.SwaggerInfo.Schemes = []string{"https", "http"}
+	}
 
 	router := gin.New()
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
@@ -140,9 +155,14 @@ func main() {
 		}
 	}
 
+	webhookUrl := utils.GetEnv("RECEIVE_WEBHOOK_URL", "")
+	if webhookUrl != "" && signalCliMode != client.JsonRpc {
+		log.Fatal("Env variable RECEIVE_WEBHOOK_URL can only be used with mode json-rpc!")
+	}
+
 	jsonRpc2ClientConfigPathPath := *signalCliConfig + "/jsonrpc2.yml"
 	signalCliApiConfigPath := *signalCliConfig + "/api-config.yml"
-	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath, signalCliApiConfigPath)
+	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath, signalCliApiConfigPath, webhookUrl)
 	err = signalClient.Init()
 	if err != nil {
 		log.Fatal("Couldn't init Signal Client: ", err.Error())
@@ -197,6 +217,7 @@ func main() {
 			groups.POST(":number/join_by_invite_link", api.JoinGroupByInviteLink)
 			groups.GET(":number/join_info_by_invite_link", api.GetJoinGroupInfoByInviteLink)
 			groups.GET(":number/:groupid", api.GetGroup)
+			groups.GET(":number/:groupid/avatar", api.GetGroupAvatar)
 			groups.DELETE(":number/:groupid", api.DeleteGroup)
 			groups.POST(":number/:groupid/block", api.BlockGroup)
 			groups.POST(":number/:groupid/join", api.JoinGroup)
@@ -211,6 +232,7 @@ func main() {
 		link := v1.Group("qrcodelink")
 		{
 			link.GET("", api.GetQrCodeLink)
+			link.GET("/raw", api.GetQrCodeLinkUri)
 		}
 
 		accounts := v1.Group("accounts")
@@ -220,11 +242,16 @@ func main() {
 			accounts.PUT(":number/settings", api.UpdateAccountSettings)
 			accounts.POST(":number/username", api.SetUsername)
 			accounts.DELETE(":number/username", api.RemoveUsername)
+			accounts.POST(":number/pin", api.SetPin)
+			accounts.DELETE(":number/pin", api.RemovePin)
 		}
 
 		devices := v1.Group("devices")
 		{
 			devices.POST(":number", api.AddDevice)
+			devices.GET(":number", api.ListDevices)
+			devices.DELETE(":number/:deviceId", api.RemoveDevice)
+			devices.DELETE(":number/local-data", api.DeleteLocalAccountData)
 		}
 
 		attachments := v1.Group("attachments")
@@ -257,6 +284,11 @@ func main() {
 			typingIndicator.DELETE(":number", api.SendStopTyping)
 		}
 
+		remoteDelete := v1.Group("remote-delete")
+		{
+			remoteDelete.DELETE(":number", api.RemoteDelete)
+		}
+
 		reactions := v1.Group("/reactions")
 		{
 			reactions.POST(":number", api.SendReaction)
@@ -278,7 +310,48 @@ func main() {
 		{
 			contacts.GET(":number", api.ListContacts)
 			contacts.PUT(":number", api.UpdateContact)
+			contacts.GET(":number/:uuid", api.ListContact)
+			contacts.GET(":number/:uuid/avatar", api.GetProfileAvatar)
 			contacts.POST(":number/sync", api.SendContacts)
+		}
+
+		if utils.GetEnv("ENABLE_PLUGINS", "false") == "true" {
+			signalCliRestApiPluginSharedObjDir := utils.GetEnv("SIGNAL_CLI_REST_API_PLUGIN_SHARED_OBJ_DIR", "")
+			sharedObj, err := plugin.Open(signalCliRestApiPluginSharedObjDir + "signal-cli-rest-api_plugin_loader.so")
+			if err != nil {
+				log.Fatal("Couldn't load shared object: ", err)
+			}
+
+			pluginHandlerSymbol, err := sharedObj.Lookup("PluginHandler")
+			if err != nil {
+				log.Fatal("Couldn't get PluginHandler: ", err)
+			}
+
+			pluginHandler, ok := pluginHandlerSymbol.(utils.PluginHandler)
+			if !ok {
+				log.Fatal("Couldn't cast PluginHandler")
+			}
+
+			plugins := v1.Group("/plugins")
+			{
+				pluginConfigs := utils.NewPluginConfigs()
+				err := pluginConfigs.Load("/plugins")
+				if err != nil {
+					log.Fatal("Couldn't load plugin configs: ", err.Error())
+				}
+
+				for _, pluginConfig := range pluginConfigs.Configs {
+					if pluginConfig.Method == "GET" {
+						plugins.GET(pluginConfig.Endpoint, pluginHandler.ExecutePlugin(pluginConfig))
+					} else if pluginConfig.Method == "POST" {
+						plugins.POST(pluginConfig.Endpoint, pluginHandler.ExecutePlugin(pluginConfig))
+					} else if pluginConfig.Method == "DELETE" {
+						plugins.DELETE(pluginConfig.Endpoint, pluginHandler.ExecutePlugin(pluginConfig))
+					} else if pluginConfig.Method == "PUT" {
+						plugins.PUT(pluginConfig.Endpoint, pluginHandler.ExecutePlugin(pluginConfig))
+					}
+				}
+			}
 		}
 	}
 
@@ -290,7 +363,12 @@ func main() {
 		}
 	}
 
-	swaggerUrl := ginSwagger.URL("http://" + swaggerIp + ":" + string(port) + "/swagger/doc.json")
+	protocol := "http"
+	if utils.GetEnv("SWAGGER_USE_HTTPS_AS_PREFERRED_SCHEME", "false") == "true" {
+		protocol = "https"
+	}
+
+	swaggerUrl := ginSwagger.URL(protocol + "://" + swaggerHost + "/swagger/doc.json")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, swaggerUrl))
 
 	autoReceiveSchedule := utils.GetEnv("AUTO_RECEIVE_SCHEDULE", "")

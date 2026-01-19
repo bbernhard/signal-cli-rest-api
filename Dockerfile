@@ -1,13 +1,13 @@
-ARG SIGNAL_CLI_VERSION=0.13.9
-ARG LIBSIGNAL_CLIENT_VERSION=0.58.2
-ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.13.9+morph027+1
+ARG SIGNAL_CLI_VERSION=0.13.22
+ARG LIBSIGNAL_CLIENT_VERSION=0.86.1
+ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.13.22+morph027+1
 
-ARG SWAG_VERSION=1.6.7
+ARG SWAG_VERSION=1.16.4
 ARG GRAALVM_VERSION=21.0.0
 
 ARG BUILD_VERSION_ARG=unset
 
-FROM golang:1.22-bookworm AS buildcontainer
+FROM golang:1.24-bookworm AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
 ARG LIBSIGNAL_CLIENT_VERSION
@@ -16,9 +16,8 @@ ARG GRAALVM_VERSION
 ARG BUILD_VERSION_ARG
 ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION
 
-COPY signal-cli-rest-api/ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
-COPY signal-cli-rest-api/ext/libraries/libsignal-client/signal-cli-native.patch /tmp/signal-cli-native.patch
-COPY signal-cli-rest-api/ext/patches/signal-cli-native-arch.patch /tmp/signal-cli-native-arch.patch
+COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
+COPY ext/libraries/libsignal-client/signal-cli-native.patch /tmp/signal-cli-native.patch
 
 # use architecture specific libsignal_jni.so
 RUN arch="$(uname -m)"; \
@@ -30,11 +29,11 @@ RUN arch="$(uname -m)"; \
         esac;
 
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
-	&& apt-get -qq update \
-	&& apt-get -qqy install --no-install-recommends \
+	&& apt-get update \
+	&& apt-get -y install --no-install-recommends \
 		wget software-properties-common git locales zip unzip \
-		file build-essential libz-dev zlib1g-dev < /dev/null > /dev/null \
-	&& rm -rf /var/lib/apt/lists/*
+		file build-essential libz-dev zlib1g-dev \
+	&& rm -rf /var/lib/apt/lists/* 
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
@@ -44,13 +43,17 @@ ENV JAVA_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
 
 ENV LANG en_US.UTF-8
 
-RUN cd /tmp/ \
-	&& git clone https://github.com/swaggo/swag.git swag-${SWAG_VERSION} \
-	&& cd swag-${SWAG_VERSION} \
-	&& git checkout -q v${SWAG_VERSION} \
-	&& make -s < /dev/null > /dev/null \
-	&& cp /tmp/swag-${SWAG_VERSION}/swag /usr/bin/swag \
-	&& rm -r /tmp/swag-${SWAG_VERSION}
+#RUN cd /tmp/ \
+#	&& git clone https://github.com/swaggo/swag.git swag-${SWAG_VERSION} \
+#	&& cd swag-${SWAG_VERSION} \
+#	&& git checkout -q v${SWAG_VERSION} \
+#	&& make -s < /dev/null > /dev/null \
+#	&& cp /tmp/swag-${SWAG_VERSION}/swag /usr/bin/swag \
+#	&& rm -r /tmp/swag-${SWAG_VERSION}
+
+
+RUN go install github.com/swaggo/swag/cmd/swag@v${SWAG_VERSION}
+
 
 # RUN cd /tmp/ \
 # 	&& wget -nv https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}.tar.gz -O /tmp/signal-cli.tar.gz \
@@ -152,8 +155,30 @@ RUN cd /tmp/signal-cli \
 		&& export GRAALVM_HOME=/tmp/graalvm \
 		&& export PATH=/tmp/graalvm/bin:$PATH \
 		&& git apply /tmp/signal-cli-native.patch \
-		&& git apply /tmp/signal-cli-native-arch.patch \
-		&& ./gradlew -q nativeCompile;
+		&& ./gradlew -q nativeCompile; \
+	elif [ "$(uname -m)" = "aarch64" ] ; then \
+		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64 - many thanks to @morph027" \
+		&& curl -fsSL https://packaging.gitlab.io/signal-cli/gpg.key | apt-key add - \
+		&& echo "deb https://packaging.gitlab.io/signal-cli focal main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
+		&& mkdir -p /tmp/signal-cli-native \
+		&& cd /tmp/signal-cli-native \
+		#&& wget https://gitlab.com/packaging/signal-cli/-/jobs/3716873649/artifacts/download?file_type=archive -O /tmp/signal-cli-native/archive.zip \
+		#&& unzip archive.zip \
+		#&& mv signal-cli-native-arm64/*deb . \
+		&& apt-get update \
+		&& apt-get download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} \
+		&& ar x *.deb \
+		&& tar xf data.tar.gz \
+		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
+		&& cp /tmp/signal-cli-native/usr/bin/signal-cli-native  /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile/signal-cli; \
+    elif [ "$(uname -m)" = "armv7l" ] ; then \
+		echo "GRAALVM doesn't support 32bit" \
+		&& echo "Creating temporary file, otherwise the below copy doesn't work for armv7" \
+		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
+		&& touch /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile/signal-cli; \
+    else \
+		echo "Unknown architecture"; \
+    fi;
 
 # replace libsignal-client
 
@@ -182,20 +207,27 @@ RUN cd /tmp/ \
     && unzip -q /tmp/signal-cli.zip -d /opt \
 	&& rm -f /tmp/signal-cli.zip
 
-COPY signal-cli-rest-api/src/api /tmp/signal-cli-rest-api-src/api
-COPY signal-cli-rest-api/src/client /tmp/signal-cli-rest-api-src/client
-COPY signal-cli-rest-api/src/datastructs /tmp/signal-cli-rest-api-src/datastructs
-COPY signal-cli-rest-api/src/utils /tmp/signal-cli-rest-api-src/utils
-COPY signal-cli-rest-api/src/scripts /tmp/signal-cli-rest-api-src/scripts
-COPY signal-cli-rest-api/src/main.go /tmp/signal-cli-rest-api-src/
-COPY signal-cli-rest-api/src/go.mod /tmp/signal-cli-rest-api-src/
-COPY signal-cli-rest-api/src/go.sum /tmp/signal-cli-rest-api-src/
+COPY src/api /tmp/signal-cli-rest-api-src/api
+COPY src/client /tmp/signal-cli-rest-api-src/client
+COPY src/datastructs /tmp/signal-cli-rest-api-src/datastructs
+COPY src/utils /tmp/signal-cli-rest-api-src/utils
+COPY src/scripts /tmp/signal-cli-rest-api-src/scripts
+COPY src/main.go /tmp/signal-cli-rest-api-src/
+COPY src/go.mod /tmp/signal-cli-rest-api-src/
+COPY src/go.sum /tmp/signal-cli-rest-api-src/
+COPY src/plugin_loader.go /tmp/signal-cli-rest-api-src/
 
 # build signal-cli-rest-api
-RUN cd /tmp/signal-cli-rest-api-src && swag init && go test ./client -v && go build
+RUN ls -la /tmp/signal-cli-rest-api-src
+RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init
+RUN cd /tmp/signal-cli-rest-api-src && go build -o signal-cli-rest-api main.go
+RUN cd /tmp/signal-cli-rest-api-src && go test ./client -v && go test ./utils -v
 
 # build supervisorctl_config_creator
 RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper
+
+# build plugin_loader
+RUN cd /tmp/signal-cli-rest-api-src && go build -buildmode=plugin -o signal-cli-rest-api_plugin_loader.so plugin_loader.go
 
 # Start a fresh container for release container
 
@@ -213,17 +245,19 @@ ARG SIGNAL_CLI_VERSION
 ARG BUILD_VERSION_ARG
 
 ENV BUILD_VERSION=$BUILD_VERSION_ARG
+ENV SIGNAL_CLI_REST_API_PLUGIN_SHARED_OBJ_DIR=/usr/bin/
 
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
-	&& apt-get -qq update \
-	&& apt-get -qq install -y --no-install-recommends util-linux supervisor netcat openjdk-21-jre curl < /dev/null > /dev/null \
-	&& rm -rf /var/lib/apt/lists/*
+	&& apt-get update \
+	&& apt-get install -y --no-install-recommends util-linux supervisor netcat openjdk-21-jre curl locales \
+	&& rm -rf /var/lib/apt/lists/* 
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
 COPY --from=buildcontainer /tmp/signal-cli/build/install/signal-cli /opt/signal-cli-${SIGNAL_CLI_VERSION}
 COPY --from=buildcontainer /tmp/signal-cli/build/native/nativeCompile/signal-cli /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/scripts/jsonrpc2-helper /usr/bin/jsonrpc2-helper
-COPY signal-cli-rest-api/entrypoint.sh /entrypoint.sh
+COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api_plugin_loader.so /usr/bin/signal-cli-rest-api_plugin_loader.so
+COPY entrypoint.sh /entrypoint.sh
 
 
 RUN groupadd -g 1000 signal-api \
@@ -239,11 +273,18 @@ RUN arch="$(uname -m)"; \
             armv7l) echo "GRAALVM doesn't support 32bit" && rm /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native  ;; \
         esac;
 
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    dpkg-reconfigure --frontend=noninteractive locales && \
+    update-locale LANG=en_US.UTF-8
+
+ENV LANG en_US.UTF-8
+
 EXPOSE ${PORT}
 
 ENV SIGNAL_CLI_CONFIG_DIR=/home/.local/share/signal-cli
 ENV SIGNAL_CLI_UID=1000
 ENV SIGNAL_CLI_GID=1000
+ENV SIGNAL_CLI_CHOWN_ON_STARTUP=true
 
 ENTRYPOINT ["/entrypoint.sh"]
 

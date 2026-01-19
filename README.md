@@ -60,11 +60,11 @@ The `signal-cli-rest-api` supports three different modes of execution, which can
 * `json-rpc` Mode: A single, JVM-based `signal-cli` instance is spawned as daemon process. This mode is usually the fastest, but requires more memory as the JVM keeps running.
 
 
-|     mode     |    speed    |    resident memory usage |
-|-------------:|:------------|:------------|
-|   `normal`    |    :heavy_check_mark:       | normal
-|   `native`    |    :heavy_check_mark: :heavy_check_mark:    | normal
-|   `json-rpc`  |    :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: | increased
+|       mode | speed                                                    | resident memory usage |
+| ---------: | :------------------------------------------------------- | :-------------------- |
+|   `normal` | :heavy_check_mark:                                       | normal                |
+|   `native` | :heavy_check_mark: :heavy_check_mark:                    | normal                |
+| `json-rpc` | :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: | increased             |
 
 
 **Example of running `signal-cli-rest` in `native` mode**
@@ -75,7 +75,7 @@ $ sudo docker run -d --name signal-api --restart=always -p 9922:8080 \
               -e 'MODE=native' bbernhard/signal-cli-rest-api
 ```
 
-This launches a instance of the REST service accessible under http://localhost:9922/v2/send. To preserve the Signal number registration, i.e. for updates, the storage location for the `signal-cli` configuration is mapped as Docker Volume into a local `/home/user/signal-api` directory.
+This launches an instance of the REST service accessible under http://localhost:9922/v2/send. To preserve the Signal number registration, i.e. for updates, the storage location for the `signal-cli` configuration is mapped as Docker Volume into a local `/home/user/signal-api` directory.
 
 
 ## Auto Receive Schedule
@@ -115,15 +115,21 @@ The Swagger API documentation can be found [here](https://bbernhard.github.io/si
 - [Running Signal Messenger REST API in Azure Web App for Containers](https://stefanstranger.github.io/2021/06/01/RunningSignalRESTAPIinAppService/) by [@stefanstranger](https://github.com/stefanstranger)
 - [Sending Signal Messages](https://blog.aawadia.dev/2023/04/24/signal-api/) by [@asad-awadia](https://github.com/asad-awadia)
 
-### Clients, Libraries and Scripts
+### Community Projects
 
-|     Name    | Type | Language | Description |Maintainer |
-| ------------- |:------:|:-----:|---|:-----:|
-| [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/) | Library | Python | Small python library | [@bbernhard](https://github.com/bbernhard)
-| [signalbot](https://pypi.org/project/signalbot/) | Library | Python | Framework to build Signal bots | [@filipre](https://github.com/filipre)
-| [signal-cli-to-file](https://github.com/jneidel/signal-cli-to-file) | Script | JavaScript | Save incoming signal messages as files | [@jneidel](https://github.com/jneidel) |
+| Name                                                                     |  Type   |  Language  | Description                            |                     Maintainer                     |
+| ------------------------------------------------------------------------ | :-----: | :--------: | -------------------------------------- | :------------------------------------------------: |
+| [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/)       | Library |   Python   | Small python library                   |     [@bbernhard](https://github.com/bbernhard)     |
+| [signalbot](https://pypi.org/project/signalbot/)                         | Library |   Python   | Framework to build Signal bots         |       [@filipre](https://github.com/filipre)       |
+| [signal-cli-to-file](https://github.com/jneidel/signal-cli-to-file)      | Script  | JavaScript | Save incoming signal messages as files |       [@jneidel](https://github.com/jneidel)       |
+| [signal-rest-ts](https://www.npmjs.com/package/signal-rest-ts)           | Library | TypeScript | TypeScript module to build Signal bots | [@pseudogeneric](https://github.com/pseudogeneric) |
+| [secured-signal-api](https://github.com/codeshelldev/secured-signal-api) |  Proxy  |     Go     | Secure Docker Proxy with many QoL Features |  [@codeshelldev](https://github.com/codeshelldev)  |
 
 In case you need more functionality, please **file a ticket** or **create a PR**.
+
+## Plugins
+
+The plugin mechanism allows to register custom endpoints (with different payloads) without forking the project. Have a look [here](https://github.com/bbernhard/signal-cli-rest-api/tree/master/plugins) for details.
 
 ## Advanced Settings
 There are a bunch of environmental variables that can be set inside the docker container in order to change some technical details. This settings are meant for developers and advanced users. Usually you do *not* need to change anything here - the default values are perfectly fine!
@@ -134,13 +140,23 @@ There are a bunch of environmental variables that can be set inside the docker c
 
 * `SIGNAL_CLI_GID`: Specifies the gid of the `signal-api` group inside the docker container. Defaults to `1000`
 
+* `SIGNAL_CLI_CHOWN_ON_STARTUP`: If set to `false` will skip the sometimes time consuming chown on startup. Defaults to `true`
+
 * `SWAGGER_HOST`: The host that's used in the Swagger UI for the interactive examples (and useful when this runs behind a reverse proxy). Defaults to SWAGGER_IP:PORT.
 
 * `SWAGGER_IP`: The IP that's used in the Swagger UI for the interactive examples. Defaults to the container ip.
 
+* `SWAGGER_USE_HTTPS_AS_PREFERRED_SCHEME`: Use the HTTPS Scheme as preferred scheme in the Swagger UI.
+
 * `PORT`: Defaults to port `8080` unless this env var is set to tell it otherwise.
 
+* `DEFAULT_SIGNAL_TEXT_MODE`: Allows to set the default text mode that should be used when sending a message (supported values: `normal`, `styled`). The setting is only used in case the `text_mode` is not explicitly set in the payload of the `send` method.
 
+* `LOG_LEVEL`: Allows to set the log level. Supported values: `debug`, `info`, `warn`, `error`. If nothing is specified, it defaults to `info`.
+
+* `JSON_RPC_IGNORE_ATTACHMENTS`: When set to `true`, attachments are not automatically downloaded in json-rpc mode (default: `false`)
+* `JSON_RPC_IGNORE_STORIES`: When set to `true`, stories are not automatically downloaded in json-rpc mode (default: `false`)
+* `JSON_RPC_TRUST_NEW_IDENTITIES`: Choose how to trust new identities in json-rpc mode. Supported values: `on-first-use`, `always`, `never`. (default: `on-first-use`)
 
 
 remove-cache:

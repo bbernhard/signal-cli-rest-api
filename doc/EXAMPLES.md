@@ -4,6 +4,7 @@
 - Register a number (with SMS verification)
 
 `curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/register/<number>'`
+> `number` is your cell phone number which you want to link to the docker container.
 
 e.g:
 
@@ -22,7 +23,7 @@ e.g:
   When you try to register a number, if you receive a response like `{"error":"Captcha required for verification (null)\n"}` then Signal is requiring a captcha. To register the number you must do the following:
   1. Go to  [https://signalcaptchas.org/registration/generate.html](https://signalcaptchas.org/registration/generate.html)
   2. Open the developer console
-  3. Find the line that looks like this: `Prevented navigation to “signalcaptcha://{captcha value}” due to an unknown protocol.` Copy the captcha value
+  3. Find the line that looks like this: `Prevented navigation to “signalcaptcha://{captcha value}” due to an unknown protocol.` Copy the captcha value (e.g. `signal-hcaptcha-short.xxxxx.registration.yyyyyy`).  Note: do not include `signalcaptcha://`.
   4. Use it to make the registration call like this:
 
   `curl -X POST -H "Content-Type: application/json" -d '{"captcha":"captcha value"}' 'http://127.0.0.1:8080/v1/register/<number>'`
@@ -70,15 +71,31 @@ e.g:
 
   `curl -X POST -H "Content-Type: application/json" -d '{"message": "Hello World!", "number": "+431212131491291", "recipients": ["group.ckRzaEd4VmRzNnJaASAEsasa", "+4912812812121"]}' 'http://127.0.0.1:8080/v2/send'`
 
+
+- Send a message including a link preview
+
+  `curl -X POST -H "Content-Type: application/json" -d '{"message": "Hey, check out https://www.homeassistant.io", "number": "<number>", "recipients": [<recipient1>], "link_preview": {"url": "https://www.homeassistant.io", "title": "Home Assistant", "base64_thumbnail": "'"$( base64 -w 0 <imagepath>)"'"}}' 'http://127.0.0.1:8080/v2/send'`
+
+  e.g:
+
+  `curl -X POST -H "Content-Type: application/json" -d '{"message": "Hey, check out https://www.homeassistant.io", "number": "+431212131491291", "recipients": [+4354546464654], "link_preview": {"url": "https://www.homeassistant.io", "title": "Home Assistant", "base64_thumbnail": "'"$( base64 -w 0 /tmp/logo.png)"'"}}' 'http://127.0.0.1:8080/v2/send'`
+
 - Receive messages
 
   Fetch all new messages in the inbox of the specified number.
 
   `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/receive/<number>'`
+  > `number`  is the registered phone number for which you want to retrieve incoming messages.
+  
+  > This is a WebSocket connection that remains subscribed to live events. Through this connection, you can observe real-time actions, such as when someone is typing or sending a message.
 
   e.g:
 
   `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/receive/+431212131491291'`
+
+  or with wscat:
+
+  `wscat -c ws://127.0.0.1:8080/v1/receive/+431212131491291 --show-ping-pong --slash`
 
 - Create a new group
 

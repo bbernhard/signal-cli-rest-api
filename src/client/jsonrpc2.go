@@ -7,6 +7,9 @@ import (
 	"net"
 	"sync"
 	"time"
+	"net/http"
+	"bytes"
+	"strconv"
 
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	uuid "github.com/gofrs/uuid"
@@ -176,7 +179,30 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 	return string(resp.Result), nil
 }
 
-func (r *JsonRpc2Client) ReceiveData(number string) {
+func postMessageToWebhook(webhookUrl string, data []byte) error {
+	r, err := http.NewRequest("POST", webhookUrl, bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+
+	r.Header.Add("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(r)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+
+	log.Info(res.StatusCode)
+	if res.StatusCode != 200 && res.StatusCode != 201 {
+		return errors.New("Unexpected status code returned (" + strconv.Itoa(res.StatusCode) + ")")
+	}
+	return nil
+}
+
+func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 	connbuf := bufio.NewReader(r.conn)
 	for {
 		str, err := connbuf.ReadString('\n')
@@ -189,6 +215,13 @@ func (r *JsonRpc2Client) ReceiveData(number string) {
 			continue
 		}
 		log.Debug("json-rpc received data: ", str)
+
+		if receiveWebhookUrl != "" {
+			err = postMessageToWebhook(receiveWebhookUrl, []byte(str))
+			if err != nil {
+				log.Error("Couldn't post data to webhook: ", err)
+			}
+		}
 
 		var resp1 JsonRpc2ReceivedMessage
 		json.Unmarshal([]byte(str), &resp1)
