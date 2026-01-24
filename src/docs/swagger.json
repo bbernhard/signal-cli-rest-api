@@ -803,6 +803,85 @@
                 }
             }
         },
+        "/v1/devices/{number}/local-data": {
+            "delete": {
+                "description": "Delete all local data for the specified account. Only use this after unregistering the account or after removing a linked device.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Delete local account data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Cleanup options",
+                        "name": "data",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/api.DeleteLocalAccountDataRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/devices/{number}/{deviceId}": {
+            "delete": {
+                "description": "Remove a linked device from the primary account.",
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Remove linked device",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Device ID from listDevices",
+                        "name": "deviceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/groups/{number}": {
             "get": {
                 "description": "List all Signal Groups.",
@@ -1518,6 +1597,139 @@
                 }
             }
         },
+        "/v1/polls/{number}": {
+            "post": {
+                "description": "Create a new poll",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Polls"
+                ],
+                "summary": "Create a new poll.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Type",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreatePollRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.CreatePollResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Close a poll",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Polls"
+                ],
+                "summary": "Close a poll.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Type",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ClosePollRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/polls/{number}/vote": {
+            "post": {
+                "description": "Answer a poll",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Polls"
+                ],
+                "summary": "Answer a poll.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Type",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.VoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/profiles/{number}": {
             "put": {
                 "description": "Set your name and optional an avatar.",
@@ -1592,6 +1804,41 @@
                         "description": "Image",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/qrcodelink/raw": {
+            "get": {
+                "description": "Generate the deviceLinkUri string for linking without scanning a QR code.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Get raw device link URI",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device Name",
+                        "name": "device_name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.DeviceLinkUriResponse"
                         }
                     },
                     "400": {
@@ -2355,6 +2602,19 @@
                 }
             }
         },
+        "api.ClosePollRequest": {
+            "type": "object",
+            "properties": {
+                "poll_timestamp": {
+                    "type": "string",
+                    "example": "1769271479"
+                },
+                "recipient": {
+                    "type": "string",
+                    "example": "\u003cphone number\u003e OR \u003cusername\u003e OR \u003cgroup id\u003e"
+                }
+            }
+        },
         "api.Configuration": {
             "type": "object",
             "properties": {
@@ -2398,6 +2658,60 @@
             "type": "object",
             "properties": {
                 "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CreatePollRequest": {
+            "type": "object",
+            "properties": {
+                "allow_multiple_selections": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "answers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "apple",
+                        "banana",
+                        "orange"
+                    ]
+                },
+                "question": {
+                    "type": "string",
+                    "example": "What's your favourite fruit?"
+                },
+                "recipient": {
+                    "type": "string",
+                    "example": "\u003cphone number\u003e OR \u003cusername\u003e OR \u003cgroup id\u003e"
+                }
+            }
+        },
+        "api.CreatePollResponse": {
+            "type": "object",
+            "properties": {
+                "timestamp": {
+                    "type": "string",
+                    "example": "1769271479"
+                }
+            }
+        },
+        "api.DeleteLocalAccountDataRequest": {
+            "type": "object",
+            "properties": {
+                "ignore_registered": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
+        "api.DeviceLinkUriResponse": {
+            "type": "object",
+            "properties": {
+                "device_link_uri": {
                     "type": "string"
                 }
             }
@@ -2794,6 +3108,32 @@
                 }
             }
         },
+        "api.VoteRequest": {
+            "type": "object",
+            "properties": {
+                "poll_author": {
+                    "type": "string",
+                    "example": "\u003cphone number\u003e OR \u003cuuid\u003e"
+                },
+                "poll_timestamp": {
+                    "type": "string",
+                    "example": "1769271479"
+                },
+                "recipient": {
+                    "type": "string",
+                    "example": "\u003cphone number\u003e OR \u003cusername\u003e OR \u003cgroup id\u003e"
+                },
+                "selected_answers": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1
+                    ]
+                }
+            }
+        },
         "client.About": {
             "type": "object",
             "properties": {
@@ -2958,6 +3298,9 @@
             "type": "object",
             "properties": {
                 "creation_timestamp": {
+                    "type": "integer"
+                },
+                "id": {
                     "type": "integer"
                 },
                 "last_seen_timestamp": {

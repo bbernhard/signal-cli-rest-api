@@ -28,6 +28,15 @@ definitions:
           type: string
         type: array
     type: object
+  api.ClosePollRequest:
+    properties:
+      poll_timestamp:
+        example: "1769271479"
+        type: string
+      recipient:
+        example: <phone number> OR <username> OR <group id>
+        type: string
+    type: object
   api.Configuration:
     properties:
       logging:
@@ -57,6 +66,43 @@ definitions:
   api.CreateGroupResponse:
     properties:
       id:
+        type: string
+    type: object
+  api.CreatePollRequest:
+    properties:
+      allow_multiple_selections:
+        example: true
+        type: boolean
+      answers:
+        example:
+        - apple
+        - banana
+        - orange
+        items:
+          type: string
+        type: array
+      question:
+        example: What's your favourite fruit?
+        type: string
+      recipient:
+        example: <phone number> OR <username> OR <group id>
+        type: string
+    type: object
+  api.CreatePollResponse:
+    properties:
+      timestamp:
+        example: "1769271479"
+        type: string
+    type: object
+  api.DeleteLocalAccountDataRequest:
+    properties:
+      ignore_registered:
+        example: false
+        type: boolean
+    type: object
+  api.DeviceLinkUriResponse:
+    properties:
+      device_link_uri:
         type: string
     type: object
   api.Error:
@@ -319,6 +365,24 @@ definitions:
       pin:
         type: string
     type: object
+  api.VoteRequest:
+    properties:
+      poll_author:
+        example: <phone number> OR <uuid>
+        type: string
+      poll_timestamp:
+        example: "1769271479"
+        type: string
+      recipient:
+        example: <phone number> OR <username> OR <group id>
+        type: string
+      selected_answers:
+        example:
+        - 1
+        items:
+          type: integer
+        type: array
+    type: object
   client.About:
     properties:
       build:
@@ -427,6 +491,8 @@ definitions:
   client.ListDevicesResponse:
     properties:
       creation_timestamp:
+        type: integer
+      id:
         type: integer
       last_seen_timestamp:
         type: integer
@@ -1023,6 +1089,59 @@ paths:
       summary: Links another device to this device.
       tags:
       - Devices
+  /v1/devices/{number}/{deviceId}:
+    delete:
+      description: Remove a linked device from the primary account.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Device ID from listDevices
+        in: path
+        name: deviceId
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Remove linked device
+      tags:
+      - Devices
+  /v1/devices/{number}/local-data:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all local data for the specified account. Only use this
+        after unregistering the account or after removing a linked device.
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Cleanup options
+        in: body
+        name: data
+        schema:
+          $ref: '#/definitions/api.DeleteLocalAccountDataRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Delete local account data
+      tags:
+      - Devices
   /v1/groups/{number}:
     get:
       consumes:
@@ -1501,6 +1620,94 @@ paths:
       summary: Trust Identity
       tags:
       - Identities
+  /v1/polls/{number}:
+    delete:
+      consumes:
+      - application/json
+      description: Close a poll
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Type
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.ClosePollRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Close a poll.
+      tags:
+      - Polls
+    post:
+      consumes:
+      - application/json
+      description: Create a new poll
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Type
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreatePollRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.CreatePollResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Create a new poll.
+      tags:
+      - Polls
+  /v1/polls/{number}/vote:
+    post:
+      consumes:
+      - application/json
+      description: Answer a poll
+      parameters:
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Type
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.VoteRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Answer a poll.
+      tags:
+      - Polls
   /v1/profiles/{number}:
     put:
       description: Set your name and optional an avatar.
@@ -1555,6 +1762,30 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: Link device and generate QR code.
+      tags:
+      - Devices
+  /v1/qrcodelink/raw:
+    get:
+      description: Generate the deviceLinkUri string for linking without scanning
+        a QR code.
+      parameters:
+      - description: Device Name
+        in: query
+        name: device_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.DeviceLinkUriResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Get raw device link URI
       tags:
       - Devices
   /v1/reactions/{number}:

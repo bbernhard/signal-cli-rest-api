@@ -225,7 +225,30 @@ type DeleteLocalAccountDataRequest struct {
 }
 
 type DeviceLinkUriResponse struct {
-    DeviceLinkUri string `json:"device_link_uri"`
+	DeviceLinkUri string `json:"device_link_uri"`
+}
+
+type CreatePollRequest struct {
+	Recipient               string   `json:"recipient" example:"<phone number> OR <username> OR <group id>"`
+	Question                string   `json:"question" example:"What's your favourite fruit?"`
+	Answers                 []string `json:"answers" example:"apple,banana,orange"`
+	AllowMultipleSelections *bool    `json:"allow_multiple_selections" example:"true"`
+}
+
+type CreatePollResponse struct {
+	Timestamp string `json:"timestamp" example:"1769271479"`
+}
+
+type VoteRequest struct {
+	Recipient       string  `json:"recipient" example:"<phone number> OR <username> OR <group id>"`
+	PollAuthor      string  `json:"poll_author" example:"<phone number> OR <uuid>"`
+	PollTimestamp   string  `json:"poll_timestamp" example:"1769271479"`
+	SelectedAnswers []int32 `json:"selected_answers" example:"1"`
+}
+
+type ClosePollRequest struct {
+	Recipient     string `json:"recipient" example:"<phone number> OR <username> OR <group id>"`
+	PollTimestamp string `json:"poll_timestamp" example:"1769271479"`
 }
 
 type Api struct {
@@ -2590,4 +2613,183 @@ func (a *Api) RemoteDelete(c *gin.Context) {
 		return
 	}
 	c.JSON(201, RemoteDeleteResponse{Timestamp: strconv.FormatInt(timestamp.Timestamp, 10)})
+}
+
+// @Summary Create a new poll.
+// @Tags Polls
+// @Description Create a new poll
+// @Accept  json
+// @Produce  json
+// @Success 201 {object} CreatePollResponse
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param data body CreatePollRequest true "Type"
+// @Router /v1/polls/{number} [post]
+func (a *Api) CreatePoll(c *gin.Context) {
+	var req CreatePollRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	if req.Recipient == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
+		return
+	}
+
+	if req.Question == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - question missing"})
+		return
+	}
+
+	if len(req.Answers) == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - answers missing"})
+		return
+	}
+
+	allowMultipleSelections := true
+	if req.AllowMultipleSelections != nil {
+		allowMultipleSelections = *req.AllowMultipleSelections
+	}
+
+	timestamp, err := a.signalClient.CreatePoll(number, req.Recipient, req.Question, req.Answers, allowMultipleSelections)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.JSON(201, CreatePollResponse{Timestamp: timestamp})
+}
+
+// @Summary Answer a poll.
+// @Tags Polls
+// @Description Answer a poll
+// @Accept  json
+// @Produce  json
+// @Success 204
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param data body VoteRequest true "Type"
+// @Router /v1/polls/{number}/vote [post]
+func (a *Api) VoteInPoll(c *gin.Context) {
+	var req VoteRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	if req.PollTimestamp == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - poll_timestamp missing"})
+		return
+	}
+
+	if req.PollAuthor == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - poll_author missing"})
+		return
+	}
+
+	if len(req.SelectedAnswers) == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - selected_answers missing"})
+		return
+	}
+
+	if req.Recipient == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
+		return
+	}
+
+	pollTimestamp, err := strconv.ParseInt(req.PollTimestamp, 10, 64)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid timestamp"})
+		return
+	}
+
+	for _, index := range req.SelectedAnswers {
+		if index <= 0 {
+			c.JSON(400, Error{Msg: "Invalid index in selected_answers specified, index needs to be >= 1!"})
+			return
+		}
+	}
+
+	err = a.signalClient.VoteInPoll(number, req.Recipient, req.PollAuthor, pollTimestamp, req.SelectedAnswers)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(204)
+}
+
+// @Summary Close a poll.
+// @Tags Polls
+// @Description Close a poll
+// @Accept  json
+// @Produce  json
+// @Success 204
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param data body ClosePollRequest true "Type"
+// @Router /v1/polls/{number} [delete]
+func (a *Api) ClosePoll(c *gin.Context) {
+	var req ClosePollRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	if req.PollTimestamp == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - poll_timestamp missing"})
+		return
+	}
+
+	if req.Recipient == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - recipient missing"})
+		return
+	}
+
+	pollTimestamp, err := strconv.ParseInt(req.PollTimestamp, 10, 64)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid timestamp"})
+		return
+	}
+
+	err = a.signalClient.ClosePoll(number, req.Recipient, pollTimestamp)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(204)
 }

@@ -2800,3 +2800,250 @@ func (s *SignalClient) RemoteDelete(number string, recipient string, timestamp i
 		return resp, err
 	}
 }
+
+func (s *SignalClient) CreatePoll(number string, recipient string, question string, answers []string, allowMultipleSelections bool) (string, error) {
+	var err error
+	var rawData string
+
+	type Response struct {
+		Timestamp int64 `json:"timestamp"`
+	}
+
+	recp := recipient
+	recipientType, err := getRecipientType(recipient)
+	if err != nil {
+		return "", err
+	}
+
+	if recipientType == ds.Group {
+		recp, err = ConvertGroupIdToInternalGroupId(recipient)
+		if err != nil {
+			return "", errors.New("Invalid group id")
+		}
+	} else if recipientType != ds.Number && recipientType != ds.Username {
+		return "", errors.New("Invalid recipient type")
+	}
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Recipient string   `json:"recipient,omitempty"`
+			GroupId   string   `json:"group-id,omitempty"`
+			Username  string   `json:"username,omitempty"`
+			Question  string   `json:"question"`
+			Option    []string `json:"option"`
+			NoMulti   bool     `json:"no-multi"`
+		}
+
+		req := Request{Question: question, Option: answers, NoMulti: !allowMultipleSelections}
+
+		if recipientType == ds.Number {
+			req.Recipient = recp
+		} else if recipientType == ds.Group {
+			req.GroupId = recp
+		} else if recipientType == ds.Username {
+			req.Username = recp
+		}
+
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return "", err
+		}
+
+		rawData, err = jsonRpc2Client.getRaw("sendPollCreate", &number, req)
+		if err != nil {
+			return "", err
+		}
+
+	} else {
+		cmd := []string{
+			"--config", s.signalCliConfig,
+			"-a", number,
+			"-o", "json",
+			"sendPollCreate",
+		}
+
+		if recipientType == ds.Number {
+			cmd = append(cmd, recp)
+		} else if recipientType == ds.Group {
+			cmd = append(cmd, "-g", recp)
+		} else if recipientType == ds.Username {
+			cmd = append(cmd, "-u", recp)
+		}
+
+		cmd = append(cmd, "-q", question, "-o")
+		cmd = append(cmd, answers...)
+
+		if !allowMultipleSelections {
+			cmd = append(cmd, "--no-multi")
+		}
+
+		rawData, err = s.cliClient.Execute(true, cmd, "")
+		if err != nil {
+			return "", err
+		}
+	}
+
+	var resp Response
+	err = json.Unmarshal([]byte(rawData), &resp)
+	if err != nil {
+		return "", errors.New("Couldn't process request - invalid signal-cli response")
+	}
+
+	return strconv.FormatInt(resp.Timestamp, 10), nil
+}
+
+func (s *SignalClient) VoteInPoll(number string, recipient string, pollAuthor string, pollTimestamp int64, selectedAnswers []int32) error {
+	var err error
+
+	recp := recipient
+	recipientType, err := getRecipientType(recipient)
+	if err != nil {
+		return err
+	}
+
+	if recipientType == ds.Group {
+		recp, err = ConvertGroupIdToInternalGroupId(recipient)
+		if err != nil {
+			return errors.New("Invalid group id")
+		}
+	} else if recipientType != ds.Number && recipientType != ds.Username {
+		return errors.New("Invalid recipient type")
+	}
+
+	// the REST API requires the selected answers indexes to start at 1.
+	// signal-cli however starts with 0, so we need to correct them
+	signalCliSelectedAnswers := []int32{}
+	for _, selectedAnswer := range selectedAnswers {
+		signalCliSelectedAnswers = append(signalCliSelectedAnswers, selectedAnswer-1)
+	}
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Recipient       string  `json:"recipient,omitempty"`
+			GroupId         string  `json:"group-id,omitempty"`
+			Username        string  `json:"username,omitempty"`
+			PollAuthor      string  `json:"poll-author"`
+			PollTimestamp   int64   `json:"poll-timestamp"`
+			SelectedAnswers []int32 `json:"option"`
+			VoteCount       int32   `json:"vote-count"`
+		}
+		req := Request{PollAuthor: pollAuthor, PollTimestamp: pollTimestamp, SelectedAnswers: signalCliSelectedAnswers, VoteCount: 1}
+
+		if recipientType == ds.Number {
+			req.Recipient = recp
+		} else if recipientType == ds.Group {
+			req.GroupId = recp
+		} else if recipientType == ds.Username {
+			req.Username = recp
+		}
+
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+
+		_, err = jsonRpc2Client.getRaw("sendPollVote", &number, req)
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
+		cmd := []string{
+			"--config", s.signalCliConfig,
+			"-a", number,
+			"-o", "json",
+			"sendPollVote",
+		}
+
+		if recipientType == ds.Number {
+			cmd = append(cmd, recp)
+		} else if recipientType == ds.Group {
+			cmd = append(cmd, "-g", recp)
+		} else if recipientType == ds.Username {
+			cmd = append(cmd, "-u", recp)
+		}
+
+		cmd = append(cmd, "--poll-author", pollAuthor, "--poll-timestamp", strconv.FormatInt(pollTimestamp, 10), "--option")
+		for _, val := range signalCliSelectedAnswers {
+			cmd = append(cmd, strconv.Itoa(int(val)))
+		}
+
+		cmd = append(cmd, "--vote-count", "1")
+
+		_, err = s.cliClient.Execute(true, cmd, "")
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+func (s *SignalClient) ClosePoll(number string, recipient string, pollTimestamp int64) error {
+	var err error
+
+	recp := recipient
+	recipientType, err := getRecipientType(recipient)
+	if err != nil {
+		return err
+	}
+
+	if recipientType == ds.Group {
+		recp, err = ConvertGroupIdToInternalGroupId(recipient)
+		if err != nil {
+			return errors.New("Invalid group id")
+		}
+	} else if recipientType != ds.Number && recipientType != ds.Username {
+		return errors.New("Invalid recipient type")
+	}
+
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Recipient     string `json:"recipient,omitempty"`
+			GroupId       string `json:"group-id,omitempty"`
+			Username      string `json:"username,omitempty"`
+			PollTimestamp int64  `json:"poll-timestamp"`
+		}
+		req := Request{PollTimestamp: pollTimestamp}
+
+		if recipientType == ds.Number {
+			req.Recipient = recp
+		} else if recipientType == ds.Group {
+			req.GroupId = recp
+		} else if recipientType == ds.Username {
+			req.Username = recp
+		}
+
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+
+		_, err = jsonRpc2Client.getRaw("sendPollTerminate", &number, req)
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
+		cmd := []string{
+			"--config", s.signalCliConfig,
+			"-a", number,
+			"-o", "json",
+			"sendPollTerminate",
+		}
+
+		if recipientType == ds.Number {
+			cmd = append(cmd, recp)
+		} else if recipientType == ds.Group {
+			cmd = append(cmd, "-g", recp)
+		} else if recipientType == ds.Username {
+			cmd = append(cmd, "-u", recp)
+		}
+
+		cmd = append(cmd, "--poll-timestamp", strconv.FormatInt(pollTimestamp, 10))
+		_, err = s.cliClient.Execute(true, cmd, "")
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+}
