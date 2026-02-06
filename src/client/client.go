@@ -113,16 +113,17 @@ func (g GroupLinkState) FromString(input string) GroupLinkState {
 }
 
 type GroupEntry struct {
-	Name            string   `json:"name"`
-	Description     string   `json:"description"`
-	Id              string   `json:"id"`
-	InternalId      string   `json:"internal_id"`
-	Members         []string `json:"members"`
-	Blocked         bool     `json:"blocked"`
-	PendingInvites  []string `json:"pending_invites"`
-	PendingRequests []string `json:"pending_requests"`
-	InviteLink      string   `json:"invite_link"`
-	Admins          []string `json:"admins"`
+	Name            string              `json:"name"`
+	Description     string              `json:"description"`
+	Id              string              `json:"id"`
+	InternalId      string              `json:"internal_id"`
+	Members         []string            `json:"members"`
+	Blocked         bool                `json:"blocked"`
+	PendingInvites  []string            `json:"pending_invites"`
+	PendingRequests []string            `json:"pending_requests"`
+	InviteLink      string              `json:"invite_link"`
+	Admins          []string            `json:"admins"`
+	Permissions     ds.GroupPermissions `json:"permissions"`
 }
 
 type IdentityEntry struct {
@@ -145,17 +146,20 @@ type SignalCliGroupAdmin struct {
 }
 
 type SignalCliGroupEntry struct {
-	Name              string                 `json:"name"`
-	Description       string                 `json:"description"`
-	Id                string                 `json:"id"`
-	IsMember          bool                   `json:"isMember"`
-	IsBlocked         bool                   `json:"isBlocked"`
-	Members           []SignalCliGroupMember `json:"members"`
-	PendingMembers    []SignalCliGroupMember `json:"pendingMembers"`
-	RequestingMembers []SignalCliGroupMember `json:"requestingMembers"`
-	GroupInviteLink   string                 `json:"groupInviteLink"`
-	Admins            []SignalCliGroupAdmin  `json:"admins"`
-	Uuid              string                 `json:"uuid"`
+	Name                  string                 `json:"name"`
+	Description           string                 `json:"description"`
+	Id                    string                 `json:"id"`
+	IsMember              bool                   `json:"isMember"`
+	IsBlocked             bool                   `json:"isBlocked"`
+	Members               []SignalCliGroupMember `json:"members"`
+	PendingMembers        []SignalCliGroupMember `json:"pendingMembers"`
+	RequestingMembers     []SignalCliGroupMember `json:"requestingMembers"`
+	GroupInviteLink       string                 `json:"groupInviteLink"`
+	Admins                []SignalCliGroupAdmin  `json:"admins"`
+	Uuid                  string                 `json:"uuid"`
+	PermissionEditDetails string                 `json:"permissionEditDetails"`
+	PermissionAddMember   string                 `json:"permissionAddMember"`
+	PermissionSendMessage string                 `json:"permissionSendMessage"`
 }
 
 type SignalCliIdentityEntry struct {
@@ -269,6 +273,16 @@ func getStringInBetween(str string, start string, end string) (result string) {
 		return
 	}
 	return str[i : i+j]
+}
+
+func signalCliGroupPermissionToRestApiGroupPermission(permission string) string {
+	if permission == "EVERY_MEMBER" {
+		return "every-member"
+	} else if permission == "ONLY_ADMINS" {
+		return "only-admins"
+	}
+
+	return ""
 }
 
 func parseWhitespaceDelimitedKeyValueStringList(in string, keys []string) []map[string]string {
@@ -1314,6 +1328,9 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 		groupEntry.Id = convertInternalGroupIdToGroupId(signalCliGroupEntry.Id)
 		groupEntry.Blocked = signalCliGroupEntry.IsBlocked
 		groupEntry.Description = signalCliGroupEntry.Description
+		groupEntry.Permissions.SendMessages = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
+		groupEntry.Permissions.EditGroup = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
+		groupEntry.Permissions.AddMembers = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionAddMember)
 
 		members := []string{}
 		for _, val := range signalCliGroupEntry.Members {

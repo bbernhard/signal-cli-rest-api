@@ -38,28 +38,22 @@ type UpdateContactRequest struct {
 	ExpirationInSeconds *int    `json:"expiration_in_seconds"`
 }
 
-type GroupPermissions struct {
-	AddMembers   string `json:"add_members" enums:"only-admins,every-member"`
-	EditGroup    string `json:"edit_group" enums:"only-admins,every-member"`
-	SendMessages string `json:"send_messages" enums:"only-admins,every-member"`
-}
-
 type CreateGroupRequest struct {
-	Name           string           `json:"name"`
-	Members        []string         `json:"members"`
-	Description    string           `json:"description"`
-	Permissions    GroupPermissions `json:"permissions"`
-	GroupLinkState string           `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
-	ExpirationTime *int             `json:"expiration_time"`
+	Name           string              `json:"name"`
+	Members        []string            `json:"members"`
+	Description    string              `json:"description"`
+	Permissions    ds.GroupPermissions `json:"permissions"`
+	GroupLinkState string              `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
+	ExpirationTime *int                `json:"expiration_time"`
 }
 
 type UpdateGroupRequest struct {
-	Base64Avatar   *string           `json:"base64_avatar"`
-	Description    *string           `json:"description"`
-	Name           *string           `json:"name"`
-	ExpirationTime *int              `json:"expiration_time"`
-	GroupLinkState *string           `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
-	Permissions    *GroupPermissions `json:"permissions"`
+	Base64Avatar   *string              `json:"base64_avatar"`
+	Description    *string              `json:"description"`
+	Name           *string              `json:"name"`
+	ExpirationTime *int                 `json:"expiration_time"`
+	GroupLinkState *string              `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
+	Permissions    *ds.GroupPermissions `json:"permissions"`
 }
 
 type ChangeGroupMembersRequest struct {

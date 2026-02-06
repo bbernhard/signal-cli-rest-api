@@ -28,10 +28,10 @@ type SendMessageRecipient struct {
 }
 
 type LinkPreviewType struct {
-	Url             string 	  `json:"url"`
-	Title           string    `json:"title"`
-	Description     string    `json:"description"`
-	Base64Thumbnail string    `json:"base64_thumbnail"`
+	Url             string `json:"url"`
+	Title           string `json:"title"`
+	Description     string `json:"description"`
+	Base64Thumbnail string `json:"base64_thumbnail"`
 }
 
 type SignalCliSendRequest struct {
@@ -51,4 +51,10 @@ type SignalCliSendRequest struct {
 	NotifySelf        *bool
 	LinkPreview       *LinkPreviewType
 	ViewOnce          *bool
+}
+
+type GroupPermissions struct {
+	AddMembers   string `json:"add_members" enums:"only-admins,every-member"`
+	EditGroup    string `json:"edit_group" enums:"only-admins,every-member"`
+	SendMessages string `json:"send_messages" enums:"only-admins,every-member"`
 }
