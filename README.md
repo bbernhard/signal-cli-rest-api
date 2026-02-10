@@ -120,7 +120,7 @@ The Swagger API documentation can be found [here](https://bbernhard.github.io/si
 | Name                                                                     |  Type   |  Language  | Description                            |                     Maintainer                     |
 | ------------------------------------------------------------------------ | :-----: | :--------: | -------------------------------------- | :------------------------------------------------: |
 | [pysignalclirestapi](https://pypi.org/project/pysignalclirestapi/)       | Library |   Python   | Small python library                   |     [@bbernhard](https://github.com/bbernhard)     |
-| [signalbot](https://pypi.org/project/signalbot/)                         | Library |   Python   | Framework to build Signal bots         |       [@filipre](https://github.com/filipre)       |
+| [signalbot](https://pypi.org/project/signalbot/)                         | Library |   Python   | Framework to build Signal bots         |       [@signalbot-org](https://github.com/orgs/signalbot-org/people)       |
 | [signal-cli-to-file](https://github.com/jneidel/signal-cli-to-file)      | Script  | JavaScript | Save incoming signal messages as files |       [@jneidel](https://github.com/jneidel)       |
 | [signal-rest-ts](https://www.npmjs.com/package/signal-rest-ts)           | Library | TypeScript | TypeScript module to build Signal bots | [@pseudogeneric](https://github.com/pseudogeneric) |
 | [secured-signal-api](https://github.com/codeshelldev/secured-signal-api) |  Proxy  |     Go     | Secure Docker Proxy with many QoL Features |  [@codeshelldev](https://github.com/codeshelldev)  |
