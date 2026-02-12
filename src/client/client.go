@@ -2625,19 +2625,17 @@ type ListContactsSignlCliResponse struct {
 		NickFamilyName    string                   `json:"nickFamilyName"`
 	}
 
-func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, error) {
+func (s *SignalClient) ListContacts(number string, allRecipients bool) ([]ListContactsResponse, error) {
 	resp := []ListContactsResponse{}
-	type Request struct {
-			
-			AllRecipients bool `json:"allRecipients"`
-		}
-	
-		req :=Request{ AllRecipients: true}
-	
+
 	var err error
 	var rawData string
 
 	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			AllRecipients bool `json:"allRecipients"`
+		}
+		req :=Request{ AllRecipients: allRecipients }
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
 			return nil, err
@@ -2648,6 +2646,9 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 		}
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "listContacts"}
+		if !allRecipients {
+			cmd = append(cmd, "--all-recipients")
+		}
 		rawData, err = s.cliClient.Execute(true, cmd, "")
 		if err != nil {
 			return resp, err
@@ -2688,23 +2689,21 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 	return resp, nil
 }
 
-func (s *SignalClient) ListContact(number string, uuid string) ([]ListContactsResponse, error) {
+func (s *SignalClient) ListContact(number string, uuid string, allRecipients bool) (ListContactsResponse, error) {
+	var resp ListContactsResponse
+
+	var err error
+	var rawData string
 	
-	resp := []ListContactsResponse{}
+	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			Recipient string `json:"recipient"`
 			AllRecipients bool `json:"allRecipients"`
 		}
-	
-		req :=Request{ Recipient: uuid, AllRecipients: true}
-
-	var err error
-	var rawData string
-
-	if s.signalCliMode == JsonRpc {
+		req :=Request{ Recipient: uuid, AllRecipients: allRecipients }
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
-			return nil, err
+			return resp, err
 		}
 		rawData, err = jsonRpc2Client.getRaw("listContacts", &number, req)
 		if err != nil {
@@ -2712,6 +2711,10 @@ func (s *SignalClient) ListContact(number string, uuid string) ([]ListContactsRe
 		}
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "listContacts"}
+		if allRecipients {
+			cmd = append(cmd, "--all-recipients")
+		}
+		cmd = append(cmd, uuid)
 		rawData, err = s.cliClient.Execute(true, cmd, "")
 		if err != nil {
 			return resp, err
@@ -2725,31 +2728,33 @@ func (s *SignalClient) ListContact(number string, uuid string) ([]ListContactsRe
 		return resp, errors.New("Couldn't process request - invalid signal-cli response")
 	}
 
-	for _, value := range signalCliResp {
-		entry := ListContactsResponse{
-			Number:            value.Number,
-			Uuid:              value.Uuid,
-			Name:              value.Name,
-			ProfileName:       value.ProfileName,
-			Username:          value.Username,
-			Color:             value.Color,
-			Blocked:           value.Blocked,
-			MessageExpiration: value.MessageExpiration,
-			Note:              value.Note,
-			GivenName:         value.GivenName,
-		}
-		entry.Profile.About = value.Profile.About
-		entry.Profile.HasAvatar = value.Profile.HasAvatar
-		entry.Profile.LastUpdatedTimestamp = value.Profile.LastUpdateTimestamp
-		entry.Profile.GivenName = value.Profile.GivenName
-		entry.Profile.FamilyName = value.Profile.FamilyName
-		entry.Nickname.Name = value.Nickname
-		entry.Nickname.GivenName = value.NickGivenName
-		entry.Nickname.FamilyName = value.NickFamilyName
-		resp = append(resp, entry)
+	if len(signalCliResp) == 0 {
+		return resp, &NotFoundError{Description: "No user with that id (" + uuid + ") found"}
 	}
 
-	return resp, err
+	var value = signalCliResp[0]
+	contact := ListContactsResponse{
+		Number:            value.Number,
+		Uuid:              value.Uuid,
+		Name:              value.Name,
+		ProfileName:       value.ProfileName,
+		Username:          value.Username,
+		Color:             value.Color,
+		Blocked:           value.Blocked,
+		MessageExpiration: value.MessageExpiration,
+		Note:              value.Note,
+		GivenName:         value.GivenName,
+	}
+	contact.Profile.About = value.Profile.About
+	contact.Profile.HasAvatar = value.Profile.HasAvatar
+	contact.Profile.LastUpdatedTimestamp = value.Profile.LastUpdateTimestamp
+	contact.Profile.GivenName = value.Profile.GivenName
+	contact.Profile.FamilyName = value.Profile.FamilyName
+	contact.Nickname.Name = value.Nickname
+	contact.Nickname.GivenName = value.NickGivenName
+	contact.Nickname.FamilyName = value.NickFamilyName
+
+	return contact, nil
 }
 
 func (s *SignalClient) SetPin(number string, registrationLockPin string) error {

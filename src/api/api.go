@@ -2408,6 +2408,7 @@ func (a *Api) AddStickerPack(c *gin.Context) {
 // @Produce  json
 // @Success 200 {object} []client.ListContactsResponse
 // @Param number path string true "Registered Phone Number"
+// @Param all_recipients query string false "Include all known recipients, not only contacts." (default: false)"
 // @Router /v1/contacts/{number} [get]
 func (a *Api) ListContacts(c *gin.Context) {
 	number, err := url.PathUnescape(c.Param("number"))
@@ -2421,8 +2422,12 @@ func (a *Api) ListContacts(c *gin.Context) {
 		return
 	}
 
-	contacts, err := a.signalClient.ListContacts(number)
-
+	allRecipients := c.DefaultQuery("all_recipients", "false")
+	if allRecipients != "true" && allRecipients != "false" {
+		c.JSON(400, Error{Msg: "Couldn't process request - all_recipients parameter needs to be either 'true' or 'false'"})
+		return
+	}
+	contacts, err := a.signalClient.ListContacts(number, StringToBool(allRecipients))
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
@@ -2437,6 +2442,7 @@ func (a *Api) ListContacts(c *gin.Context) {
 // @Produce  json
 // @Success 200 {object} client.ListContactsResponse
 // @Param number path string true "Registered Phone Number"
+// @Param all_recipients query string false "Include all known recipients, not only contacts." (default: false)"
 // @Router /v1/contacts/{number}/{uuid} [get]
 func (a *Api) ListContact(c *gin.Context) {
 	number, err := url.PathUnescape(c.Param("number"))
@@ -2456,7 +2462,13 @@ func (a *Api) ListContact(c *gin.Context) {
 		return
 	}
 
-	contact, err := a.signalClient.ListContact(number, uuid)
+	allRecipients := c.DefaultQuery("all_recipients", "false")
+	if allRecipients != "true" && allRecipients != "false" {
+		c.JSON(400, Error{Msg: "Couldn't process request - all_recipients parameter needs to be either 'true' or 'false'"})
+		return
+	}
+
+	contact, err := a.signalClient.ListContact(number, uuid, StringToBool(allRecipients))
 	if err != nil {
 		switch err.(type) {
 		case *client.NotFoundError:

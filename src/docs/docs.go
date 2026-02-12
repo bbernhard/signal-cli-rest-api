@@ -573,6 +573,12 @@ const docTemplate = `{
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Include all known recipients, not only contacts.",
+                        "name": "all_recipients",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -682,6 +688,12 @@ const docTemplate = `{
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Include all known recipients, not only contacts.",
+                        "name": "all_recipients",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2653,7 +2665,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "permissions": {
-                    "$ref": "#/definitions/api.GroupPermissions"
+                    "$ref": "#/definitions/data.GroupPermissions"
                 }
             }
         },
@@ -2724,32 +2736,6 @@ const docTemplate = `{
             "properties": {
                 "error": {
                     "type": "string"
-                }
-            }
-        },
-        "api.GroupPermissions": {
-            "type": "object",
-            "properties": {
-                "add_members": {
-                    "type": "string",
-                    "enum": [
-                        "only-admins",
-                        "every-member"
-                    ]
-                },
-                "edit_group": {
-                    "type": "string",
-                    "enum": [
-                        "only-admins",
-                        "every-member"
-                    ]
-                },
-                "send_messages": {
-                    "type": "string",
-                    "enum": [
-                        "only-admins",
-                        "every-member"
-                    ]
                 }
             }
         },
@@ -3085,7 +3071,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "permissions": {
-                    "$ref": "#/definitions/api.GroupPermissions"
+                    "$ref": "#/definitions/data.GroupPermissions"
                 }
             }
         },
@@ -3230,6 +3216,9 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "permissions": {
+                    "$ref": "#/definitions/data.GroupPermissions"
                 }
             }
         },
@@ -3356,6 +3345,32 @@ const docTemplate = `{
                 },
                 "username_link": {
                     "type": "string"
+                }
+            }
+        },
+        "data.GroupPermissions": {
+            "type": "object",
+            "properties": {
+                "add_members": {
+                    "type": "string",
+                    "enum": [
+                        "only-admins",
+                        "every-member"
+                    ]
+                },
+                "edit_group": {
+                    "type": "string",
+                    "enum": [
+                        "only-admins",
+                        "every-member"
+                    ]
+                },
+                "send_messages": {
+                    "type": "string",
+                    "enum": [
+                        "only-admins",
+                        "every-member"
+                    ]
                 }
             }
         },

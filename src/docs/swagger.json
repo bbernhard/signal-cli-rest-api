@@ -570,6 +570,12 @@
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Include all known recipients, not only contacts.",
+                        "name": "all_recipients",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -679,6 +685,12 @@
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Include all known recipients, not only contacts.",
+                        "name": "all_recipients",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2650,7 +2662,7 @@
                     "type": "string"
                 },
                 "permissions": {
-                    "$ref": "#/definitions/api.GroupPermissions"
+                    "$ref": "#/definitions/data.GroupPermissions"
                 }
             }
         },
@@ -2721,32 +2733,6 @@
             "properties": {
                 "error": {
                     "type": "string"
-                }
-            }
-        },
-        "api.GroupPermissions": {
-            "type": "object",
-            "properties": {
-                "add_members": {
-                    "type": "string",
-                    "enum": [
-                        "only-admins",
-                        "every-member"
-                    ]
-                },
-                "edit_group": {
-                    "type": "string",
-                    "enum": [
-                        "only-admins",
-                        "every-member"
-                    ]
-                },
-                "send_messages": {
-                    "type": "string",
-                    "enum": [
-                        "only-admins",
-                        "every-member"
-                    ]
                 }
             }
         },
@@ -3082,7 +3068,7 @@
                     "type": "string"
                 },
                 "permissions": {
-                    "$ref": "#/definitions/api.GroupPermissions"
+                    "$ref": "#/definitions/data.GroupPermissions"
                 }
             }
         },
@@ -3227,6 +3213,9 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "permissions": {
+                    "$ref": "#/definitions/data.GroupPermissions"
                 }
             }
         },
@@ -3353,6 +3342,32 @@
                 },
                 "username_link": {
                     "type": "string"
+                }
+            }
+        },
+        "data.GroupPermissions": {
+            "type": "object",
+            "properties": {
+                "add_members": {
+                    "type": "string",
+                    "enum": [
+                        "only-admins",
+                        "every-member"
+                    ]
+                },
+                "edit_group": {
+                    "type": "string",
+                    "enum": [
+                        "only-admins",
+                        "every-member"
+                    ]
+                },
+                "send_messages": {
+                    "type": "string",
+                    "enum": [
+                        "only-admins",
+                        "every-member"
+                    ]
                 }
             }
         },
