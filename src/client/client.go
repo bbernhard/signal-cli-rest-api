@@ -214,31 +214,6 @@ type ContactProfile struct {
 	LastUpdatedTimestamp int64  `json:"last_updated_timestamp"`
 }
 
-type SignalCliProfileResponse struct {
-	LastUpdateTimestamp int64  `json:"lastUpdateTimestamp"`
-	GivenName           string `json:"givenName"`
-	FamilyName          string `json:"familyName"`
-	About               string `json:"about"`
-	HasAvatar           bool   `json:"hasAvatar"`
-}
-
-type ListContactsSignalCliResponse struct {
-	Number            string                   `json:"number"`
-	Uuid              string                   `json:"uuid"`
-	Name              string                   `json:"name"`
-	ProfileName       string                   `json:"profileName"`
-	Username          string                   `json:"username"`
-	Color             string                   `json:"color"`
-	Blocked           bool                     `json:"blocked"`
-	MessageExpiration string                   `json:"messageExpiration"`
-	Note              string                   `json:"note"`
-	GivenName         string                   `json:"givenName"`
-	Profile           SignalCliProfileResponse `json:"profile"`
-	Nickname          string                   `json:"nickName"`
-	NickGivenName     string                   `json:"nickGivenName"`
-	NickFamilyName    string                   `json:"nickFamilyName"`
-}
-
 type Nickname struct {
 	Name       string `json:"name"`
 	GivenName  string `json:"given_name"`
@@ -2628,6 +2603,31 @@ func (s *SignalClient) AddStickerPack(number string, packId string, packKey stri
 }
 
 func (s *SignalClient) ListContacts(number string, allRecipients bool, recipient string) ([]ListContactsResponse, error) {
+	type SignalCliProfileResponse struct {
+		LastUpdateTimestamp int64  `json:"lastUpdateTimestamp"`
+		GivenName           string `json:"givenName"`
+		FamilyName          string `json:"familyName"`
+		About               string `json:"about"`
+		HasAvatar           bool   `json:"hasAvatar"`
+	}
+
+	type ListContactsSignalCliResponse struct {
+		Number            string                   `json:"number"`
+		Uuid              string                   `json:"uuid"`
+		Name              string                   `json:"name"`
+		ProfileName       string                   `json:"profileName"`
+		Username          string                   `json:"username"`
+		Color             string                   `json:"color"`
+		Blocked           bool                     `json:"blocked"`
+		MessageExpiration string                   `json:"messageExpiration"`
+		Note              string                   `json:"note"`
+		GivenName         string                   `json:"givenName"`
+		Profile           SignalCliProfileResponse `json:"profile"`
+		Nickname          string                   `json:"nickName"`
+		NickGivenName     string                   `json:"nickGivenName"`
+		NickFamilyName    string                   `json:"nickFamilyName"`
+	}
+
 	resp := []ListContactsResponse{}
 
 	var err error
