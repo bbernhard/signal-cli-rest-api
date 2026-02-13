@@ -157,3 +157,15 @@ There are a bunch of environmental variables that can be set inside the docker c
 * `JSON_RPC_IGNORE_ATTACHMENTS`: When set to `true`, attachments are not automatically downloaded in json-rpc mode (default: `false`)
 * `JSON_RPC_IGNORE_STORIES`: When set to `true`, stories are not automatically downloaded in json-rpc mode (default: `false`)
 * `JSON_RPC_TRUST_NEW_IDENTITIES`: Choose how to trust new identities in json-rpc mode. Supported values: `on-first-use`, `always`, `never`. (default: `on-first-use`)
+
+
+remove-cache:
+	docker builder prune --all --force
+	docker buildx prune --all -f
+
+
+docker builder prune --all --force
+
+
+
+docker buildx build --memory=8g --memory-swap=8g --platform linux/amd64 -f ./Dockerfile -t jailsondias/signal:latest .. --progress=plain

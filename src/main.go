@@ -214,6 +214,8 @@ func main() {
 		{
 			groups.POST(":number", api.CreateGroup)
 			groups.GET(":number", api.GetGroups)
+			groups.POST(":number/join_by_invite_link", api.JoinGroupByInviteLink)
+			groups.GET(":number/join_info_by_invite_link", api.GetJoinGroupInfoByInviteLink)
 			groups.GET(":number/:groupid", api.GetGroup)
 			groups.GET(":number/:groupid/avatar", api.GetGroupAvatar)
 			groups.DELETE(":number/:groupid", api.DeleteGroup)

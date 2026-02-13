@@ -1892,6 +1892,32 @@ func (s *SignalClient) JoinGroup(number string, groupId string) error {
 	return err
 }
 
+func (s *SignalClient) JoinGroupByInviteLink(number string, inviteLink string) error {
+	var err error
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			InviteLink string `json:"uri"`
+		}
+		request := Request{InviteLink: inviteLink}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("joinGroup", &number, request)
+	} else {
+		_, err = s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-a", number, "joinGroup", "--uri", inviteLink}, "")
+	}
+	return err
+}
+
+func (s *SignalClient) GetJoinGroupInfoByInviteLink(number string, inviteLink string) (string, error) {
+	if s.signalCliMode == JsonRpc {
+		return "", errors.New("Not implemented")
+	}
+
+	return s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "--output", "json", "-a", number, "getJoinGroupInfo", "--uri", inviteLink}, "")
+}
+
 func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	var err error
 	if s.signalCliMode == JsonRpc {
