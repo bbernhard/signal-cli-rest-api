@@ -2427,7 +2427,7 @@ func (a *Api) ListContacts(c *gin.Context) {
 		c.JSON(400, Error{Msg: "Couldn't process request - all_recipients parameter needs to be either 'true' or 'false'"})
 		return
 	}
-	contacts, err := a.signalClient.ListContacts(number, StringToBool(allRecipients))
+	contacts, err := a.signalClient.ListContacts(number, StringToBool(allRecipients), "")
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
@@ -2468,7 +2468,7 @@ func (a *Api) ListContact(c *gin.Context) {
 		return
 	}
 
-	contact, err := a.signalClient.ListContact(number, uuid, StringToBool(allRecipients))
+	contacts, err := a.signalClient.ListContacts(number, StringToBool(allRecipients), uuid)
 	if err != nil {
 		switch err.(type) {
 		case *client.NotFoundError:
@@ -2480,7 +2480,7 @@ func (a *Api) ListContact(c *gin.Context) {
 		}
 	}
 
-	c.JSON(200, contact)
+	c.JSON(200, contacts[0])
 }
 
 // @Summary Returns the avatar of a contact

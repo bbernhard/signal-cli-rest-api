@@ -2627,7 +2627,7 @@ func (s *SignalClient) AddStickerPack(number string, packId string, packKey stri
 	}
 }
 
-func (s *SignalClient) ListContacts(number string, allRecipients bool) ([]ListContactsResponse, error) {
+func (s *SignalClient) ListContacts(number string, allRecipients bool, recipient string) ([]ListContactsResponse, error) {
 	resp := []ListContactsResponse{}
 
 	var err error
@@ -2635,9 +2635,17 @@ func (s *SignalClient) ListContacts(number string, allRecipients bool) ([]ListCo
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			AllRecipients bool `json:"allRecipients"`
+			AllRecipients bool `json:"allRecipients,omitempty"`
+			Recipient string `json:"recipient,omitempty"`
 		}
-		req :=Request{ AllRecipients: allRecipients }
+		req := Request{}
+		if allRecipients {
+			req.AllRecipients = allRecipients
+		}
+		if recipient != "" {
+			req.Recipient = recipient
+		}
+
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
 			return nil, err
@@ -2648,8 +2656,11 @@ func (s *SignalClient) ListContacts(number string, allRecipients bool) ([]ListCo
 		}
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "listContacts"}
-		if !allRecipients {
+		if allRecipients {
 			cmd = append(cmd, "--all-recipients")
+		}
+		if recipient != "" {
+			cmd = append(cmd, recipient)
 		}
 		rawData, err = s.cliClient.Execute(true, cmd, "")
 		if err != nil {
@@ -2662,6 +2673,10 @@ func (s *SignalClient) ListContacts(number string, allRecipients bool) ([]ListCo
 	if err != nil {
 		log.Error("Couldn't list contacts", err.Error())
 		return resp, errors.New("Couldn't process request - invalid signal-cli response")
+	}
+
+	if recipient != "" && len(signalCliResp) == 0 {
+		return resp, &NotFoundError{Description: "No user with that id (" + recipient + ") found"}
 	}
 
 	for _, value := range signalCliResp {
@@ -2691,73 +2706,6 @@ func (s *SignalClient) ListContacts(number string, allRecipients bool) ([]ListCo
 	return resp, nil
 }
 
-func (s *SignalClient) ListContact(number string, uuid string, allRecipients bool) (ListContactsResponse, error) {
-	var resp ListContactsResponse
-
-	var err error
-	var rawData string
-	
-	if s.signalCliMode == JsonRpc {
-		type Request struct {
-			Recipient string `json:"recipient"`
-			AllRecipients bool `json:"allRecipients"`
-		}
-		req :=Request{ Recipient: uuid, AllRecipients: allRecipients }
-		jsonRpc2Client, err := s.getJsonRpc2Client()
-		if err != nil {
-			return resp, err
-		}
-		rawData, err = jsonRpc2Client.getRaw("listContacts", &number, req)
-		if err != nil {
-			return resp, err
-		}
-	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "listContacts"}
-		if allRecipients {
-			cmd = append(cmd, "--all-recipients")
-		}
-		cmd = append(cmd, uuid)
-		rawData, err = s.cliClient.Execute(true, cmd, "")
-		if err != nil {
-			return resp, err
-		}
-	}
-
-	var signalCliResp []ListContactsSignalCliResponse
-	err = json.Unmarshal([]byte(rawData), &signalCliResp)
-	if err != nil {
-		log.Error("Couldn't list contacts", err.Error())
-		return resp, errors.New("Couldn't process request - invalid signal-cli response")
-	}
-
-	if len(signalCliResp) == 0 {
-		return resp, &NotFoundError{Description: "No user with that id (" + uuid + ") found"}
-	}
-
-	var value = signalCliResp[0]
-	contact := ListContactsResponse{
-		Number:            value.Number,
-		Uuid:              value.Uuid,
-		Name:              value.Name,
-		ProfileName:       value.ProfileName,
-		Username:          value.Username,
-		Color:             value.Color,
-		Blocked:           value.Blocked,
-		MessageExpiration: value.MessageExpiration,
-		Note:              value.Note,
-		GivenName:         value.GivenName,
-	}
-	contact.Profile.About = value.Profile.About
-	contact.Profile.HasAvatar = value.Profile.HasAvatar
-	contact.Profile.LastUpdatedTimestamp = value.Profile.LastUpdateTimestamp
-	contact.Profile.GivenName = value.Profile.GivenName
-	contact.Profile.FamilyName = value.Profile.FamilyName
-	contact.Nickname.Name = value.Nickname
-	contact.Nickname.GivenName = value.NickGivenName
-	contact.Nickname.FamilyName = value.NickFamilyName
-
-	return contact, nil
-}
 
 func (s *SignalClient) SetPin(number string, registrationLockPin string) error {
 	if s.signalCliMode == JsonRpc {
