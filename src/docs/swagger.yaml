@@ -61,7 +61,7 @@ definitions:
       name:
         type: string
       permissions:
-        $ref: '#/definitions/api.GroupPermissions'
+        $ref: '#/definitions/data.GroupPermissions'
     type: object
   api.CreateGroupResponse:
     properties:
@@ -108,24 +108,6 @@ definitions:
   api.Error:
     properties:
       error:
-        type: string
-    type: object
-  api.GroupPermissions:
-    properties:
-      add_members:
-        enum:
-        - only-admins
-        - every-member
-        type: string
-      edit_group:
-        enum:
-        - only-admins
-        - every-member
-        type: string
-      send_messages:
-        enum:
-        - only-admins
-        - every-member
         type: string
     type: object
   api.LoggingConfiguration:
@@ -349,7 +331,7 @@ definitions:
       name:
         type: string
       permissions:
-        $ref: '#/definitions/api.GroupPermissions'
+        $ref: '#/definitions/data.GroupPermissions'
     type: object
   api.UpdateProfileRequest:
     properties:
@@ -445,6 +427,8 @@ definitions:
         items:
           type: string
         type: array
+      permissions:
+        $ref: '#/definitions/data.GroupPermissions'
     type: object
   client.IdentityEntry:
     properties:
@@ -526,6 +510,24 @@ definitions:
       username:
         type: string
       username_link:
+        type: string
+    type: object
+  data.GroupPermissions:
+    properties:
+      add_members:
+        enum:
+        - only-admins
+        - every-member
+        type: string
+      edit_group:
+        enum:
+        - only-admins
+        - every-member
+        type: string
+      send_messages:
+        enum:
+        - only-admins
+        - every-member
         type: string
     type: object
   data.LinkPreviewType:
@@ -928,6 +930,10 @@ paths:
         name: number
         required: true
         type: string
+      - description: Include all known recipients, not only contacts.
+        in: query
+        name: all_recipients
+        type: string
       produces:
       - application/json
       responses:
@@ -977,6 +983,10 @@ paths:
         in: path
         name: number
         required: true
+        type: string
+      - description: Include all known recipients, not only contacts.
+        in: query
+        name: all_recipients
         type: string
       produces:
       - application/json

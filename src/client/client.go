@@ -2602,7 +2602,7 @@ func (s *SignalClient) AddStickerPack(number string, packId string, packKey stri
 	}
 }
 
-func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, error) {
+func (s *SignalClient) ListContacts(number string, allRecipients bool, recipient string) ([]ListContactsResponse, error) {
 	type SignalCliProfileResponse struct {
 		LastUpdateTimestamp int64  `json:"lastUpdateTimestamp"`
 		GivenName           string `json:"givenName"`
@@ -2611,7 +2611,7 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 		HasAvatar           bool   `json:"hasAvatar"`
 	}
 
-	type ListContactsSignlCliResponse struct {
+	type ListContactsSignalCliResponse struct {
 		Number            string                   `json:"number"`
 		Uuid              string                   `json:"uuid"`
 		Name              string                   `json:"name"`
@@ -2634,27 +2634,49 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 	var rawData string
 
 	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			AllRecipients bool `json:"allRecipients,omitempty"`
+			Recipient string `json:"recipient,omitempty"`
+		}
+		req := Request{}
+		if allRecipients {
+			req.AllRecipients = allRecipients
+		}
+		if recipient != "" {
+			req.Recipient = recipient
+		}
+
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
 			return nil, err
 		}
-		rawData, err = jsonRpc2Client.getRaw("listContacts", &number, nil)
+		rawData, err = jsonRpc2Client.getRaw("listContacts", &number, req)
 		if err != nil {
 			return resp, err
 		}
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "listContacts"}
+		if allRecipients {
+			cmd = append(cmd, "--all-recipients")
+		}
+		if recipient != "" {
+			cmd = append(cmd, recipient)
+		}
 		rawData, err = s.cliClient.Execute(true, cmd, "")
 		if err != nil {
 			return resp, err
 		}
 	}
 
-	var signalCliResp []ListContactsSignlCliResponse
+	var signalCliResp []ListContactsSignalCliResponse
 	err = json.Unmarshal([]byte(rawData), &signalCliResp)
 	if err != nil {
 		log.Error("Couldn't list contacts", err.Error())
 		return resp, errors.New("Couldn't process request - invalid signal-cli response")
+	}
+
+	if recipient != "" && len(signalCliResp) == 0 {
+		return resp, &NotFoundError{Description: "No user with that id (" + recipient + ") found"}
 	}
 
 	for _, value := range signalCliResp {
@@ -2684,20 +2706,6 @@ func (s *SignalClient) ListContacts(number string) ([]ListContactsResponse, erro
 	return resp, nil
 }
 
-func (s *SignalClient) ListContact(number string, uuid string) (ListContactsResponse, error) {
-	contacts, err := s.ListContacts(number)
-	if err != nil {
-		return ListContactsResponse{}, err
-	}
-
-	for _, contact := range contacts {
-		if contact.Uuid == uuid {
-			return contact, nil
-		}
-	}
-
-	return ListContactsResponse{}, &NotFoundError{Description: "No contact with that id (" + uuid + ") found"}
-}
 
 func (s *SignalClient) SetPin(number string, registrationLockPin string) error {
 	if s.signalCliMode == JsonRpc {
