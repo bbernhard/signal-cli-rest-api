@@ -157,3 +157,28 @@ There are a bunch of environmental variables that can be set inside the docker c
 * `JSON_RPC_IGNORE_ATTACHMENTS`: When set to `true`, attachments are not automatically downloaded in json-rpc mode (default: `false`)
 * `JSON_RPC_IGNORE_STORIES`: When set to `true`, stories are not automatically downloaded in json-rpc mode (default: `false`)
 * `JSON_RPC_TRUST_NEW_IDENTITIES`: Choose how to trust new identities in json-rpc mode. Supported values: `on-first-use`, `always`, `never`. (default: `on-first-use`)
+
+## OpenTelemetry Support
+
+The application supports optional OpenTelemetry tracing using the autoexport package. By default, telemetry is **disabled**. To enable it, configure one of the standard OpenTelemetry environment variables:
+
+* `OTEL_EXPORTER_OTLP_ENDPOINT`: The OTLP endpoint URL (e.g., `http://localhost:4318`)
+* `OTEL_TRACES_EXPORTER`: The traces exporter to use (e.g., `otlp`, `console`)
+* `OTEL_SERVICE_NAME`: The service name for telemetry (defaults to the service name if not set)
+
+When enabled, the application automatically instruments:
+- All HTTP requests through the Gin framework (using `otelgin`)
+- Trace context propagation across service boundaries
+
+Example with OTLP exporter:
+
+```bash
+$ sudo docker run -d --name signal-api --restart=always -p 8080:8080 \
+      -v $HOME/.local/share/signal-api:/home/.local/share/signal-cli \
+      -e 'MODE=native' \
+      -e 'OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318' \
+      -e 'OTEL_SERVICE_NAME=signal-cli-rest-api' \
+      bbernhard/signal-cli-rest-api
+```
+
+For more OpenTelemetry configuration options, see the [OpenTelemetry Environment Variable Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
