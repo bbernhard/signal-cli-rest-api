@@ -1207,6 +1207,7 @@ func (s *SignalClient) updateGroupMembers(number string, groupId string, members
 			return err
 		}
 		_, err = jsonRpc2Client.getRaw("updateGroup", &number, request)
+		return err
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-g", internalGroupId}
 
@@ -1218,8 +1219,8 @@ func (s *SignalClient) updateGroupMembers(number string, groupId string, members
 		cmd = append(cmd, members...)
 
 		_, err = s.cliClient.Execute(true, cmd, "")
+		return err
 	}
-	return err
 }
 
 func (s *SignalClient) AddMembersToGroup(number string, groupId string, members []string) error {
