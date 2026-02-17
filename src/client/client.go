@@ -1168,7 +1168,6 @@ func prefixUsernameMembers(members []string) []string {
 }
 
 func (s *SignalClient) updateGroupMembers(number string, groupId string, members []string, add bool) error {
-	var err error
 
 	if len(members) == 0 {
 		return nil
