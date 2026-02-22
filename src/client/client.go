@@ -1231,8 +1231,6 @@ func (s *SignalClient) RemoveMembersFromGroup(number string, groupId string, mem
 }
 
 func (s *SignalClient) updateGroupAdmins(number string, groupId string, admins []string, add bool) error {
-	var err error
-
 	if len(admins) == 0 {
 		return nil
 	}
@@ -1270,6 +1268,7 @@ func (s *SignalClient) updateGroupAdmins(number string, groupId string, admins [
 			return err
 		}
 		_, err = jsonRpc2Client.getRaw("updateGroup", &number, request)
+		return err
 	} else {
 		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-g", internalGroupId}
 
@@ -1281,8 +1280,8 @@ func (s *SignalClient) updateGroupAdmins(number string, groupId string, admins [
 		cmd = append(cmd, admins...)
 
 		_, err = s.cliClient.Execute(true, cmd, "")
+		return err
 	}
-	return err
 }
 
 func (s *SignalClient) AddAdminsToGroup(number string, groupId string, admins []string) error {
