@@ -1349,7 +1349,7 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 			}
 			pendingMembers = append(pendingMembers, identifier)
 		}
-		groupEntry.PendingRequests = pendingMembers
+		groupEntry.PendingInvites = pendingMembers
 
 		requestingMembers := []string{}
 		for _, val := range signalCliGroupEntry.RequestingMembers {
@@ -1359,7 +1359,7 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 			}
 			requestingMembers = append(requestingMembers, identifier)
 		}
-		groupEntry.PendingInvites = requestingMembers
+		groupEntry.PendingRequests = requestingMembers
 
 		admins := []string{}
 		for _, val := range signalCliGroupEntry.Admins {
