@@ -40,8 +40,7 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     update-locale LANG=en_US.UTF-8
 
 ENV JAVA_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
-
-ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
 RUN go install github.com/swaggo/swag/cmd/swag@v${SWAG_VERSION}
 
@@ -192,7 +191,7 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
     update-locale LANG=en_US.UTF-8
 
-ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
 EXPOSE ${PORT}
 

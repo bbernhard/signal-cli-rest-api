@@ -1321,7 +1321,10 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 			if identifier == "" {
 				identifier = val.Uuid
 			}
-			members = append(members, identifier)
+
+			if identifier == number {
+				members = append(members, identifier)
+			}
 		}
 		groupEntry.Members = members
 
