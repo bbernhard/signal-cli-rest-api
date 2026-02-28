@@ -1,0 +1,89 @@
+Fix Signal Desktop v8.0.0 binary ACI encoding compatibility.
+
+Signal Desktop v8.0.0 switched from string ACI fields to binary ACI encoding
+in protobuf messages. This causes null ServiceId values when the library
+cannot parse the new format, breaking reactions, mentions, quotes, and other
+message features.
+
+Two-part fix:
+1. Bump signal-service-java from unofficial_137 to unofficial_138 which adds
+   dual-format ACI parsing (string + binary fallback).
+2. Add defensive null guards in MessageEnvelope.java for cases where ServiceId
+   resolution still fails (e.g. ACI.UNKNOWN), preserving message content with
+   UNKNOWN_UUID fallback rather than dropping entire message components.
+
+See: https://github.com/AsamK/signal-cli/pull/1944
+
+diff --git a/gradle/libs.versions.toml b/gradle/libs.versions.toml
+index 9b1bd5f4..0000001 100644
+--- a/gradle/libs.versions.toml
++++ b/gradle/libs.versions.toml
+@@ -11,7 +11,7 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+ slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
+ logback = "ch.qos.logback:logback-classic:1.5.25"
+
+-signalservice = "com.github.turasa:signal-service-java:2.15.3_unofficial_137"
++signalservice = "com.github.turasa:signal-service-java:2.15.3_unofficial_138"
+ sqlite = "org.xerial:sqlite-jdbc:3.51.1.0"
+ hikari = "com.zaxxer:HikariCP:7.0.2"
+ junit-jupiter-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+diff --git a/lib/src/main/java/org/asamk/signal/manager/api/MessageEnvelope.java b/lib/src/main/java/org/asamk/signal/manager/api/MessageEnvelope.java
+index 37946057..57a5a0f4 100644
+--- a/lib/src/main/java/org/asamk/signal/manager/api/MessageEnvelope.java
++++ b/lib/src/main/java/org/asamk/signal/manager/api/MessageEnvelope.java
+@@ -132,6 +132,7 @@ public record MessageEnvelope(
+             return new Data(dataMessage.getTimestamp(),
+                     dataMessage.getGroupContext().map(GroupContext::from),
+                     dataMessage.getStoryContext()
++                            .filter(s -> s.getAuthorServiceId() != null)
+                             .map((SignalServiceDataMessage.StoryContext storyContext) -> StoryContext.from(storyContext,
+                                     recipientResolver,
+                                     addressResolver)),
+@@ -143,9 +144,10 @@ public record MessageEnvelope(
+                     dataMessage.isEndSession(),
+                     dataMessage.isProfileKeyUpdate(),
+                     dataMessage.getProfileKey().isPresent(),
+-                    dataMessage.getReaction().map(r -> Reaction.from(r, recipientResolver, addressResolver)),
++                    dataMessage.getReaction()
++                            .filter(r -> r.getTargetAuthor() != null)
++                            .map(r -> Reaction.from(r, recipientResolver, addressResolver)),
+                     dataMessage.getQuote()
+-                            .filter(q -> q.getAuthor() != null && q.getAuthor().isValid())
+                             .map(q -> Quote.from(q, recipientResolver, addressResolver, fileProvider)),
+                     dataMessage.getPayment().map(p -> p.getPaymentNotification().isPresent() ? Payment.from(p) : null),
+                     dataMessage.getAttachments()
+@@ -159,10 +161,15 @@ public record MessageEnvelope(
+                                     .toList())
+                             .orElse(List.of()),
+                     dataMessage.getPollCreate().map(PollCreate::from),
+-                    dataMessage.getPollVote().map(p -> PollVote.from(p, recipientResolver, addressResolver)),
++                    dataMessage.getPollVote()
++                            .filter(p -> p.getTargetAuthor() != null)
++                            .map(p -> PollVote.from(p, recipientResolver, addressResolver)),
+                     dataMessage.getPollTerminate().map(PollTerminate::from),
+                     dataMessage.getMentions()
+-                            .map(a -> a.stream().map(m -> Mention.from(m, recipientResolver, addressResolver)).toList())
++                            .map(a -> a.stream()
++                                    .filter(m -> m.getServiceId() != null)
++                                    .map(m -> Mention.from(m, recipientResolver, addressResolver))
++                                    .toList())
+                             .orElse(List.of()),
+                     dataMessage.getPreviews()
+                             .map(a -> a.stream().map(preview -> Preview.from(preview, fileProvider)).toList())
+@@ -241,10 +248,13 @@ public record MessageEnvelope(
+                     RecipientAddressResolver addressResolver,
+                     final AttachmentFileProvider fileProvider
+             ) {
++                final var author = quote.getAuthor() != null && quote.getAuthor().isValid()
++                        ? addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(quote.getAuthor()))
++                                .toApiRecipientAddress()
++                        : new RecipientAddress(RecipientAddress.UNKNOWN_UUID);
+                 return new Quote(quote.getId(),
+-                        addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(quote.getAuthor()))
+-                                .toApiRecipientAddress(),
+-                        Optional.of(quote.getText()),
++                        author,
++                        Optional.ofNullable(quote.getText()),
+                         quote.getMentions() == null
+                                 ? List.of()
+                                 : quote.getMentions()
