@@ -84,14 +84,14 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& sed -i 's/Signal-Android\/5.22.3/Signal-Android\/5.51.7/g' src/main/java/org/asamk/signal/BaseConfig.java \
 		&& ./gradlew build \
 		&& ./gradlew installDist \
-		&& BUILT_LIBSIGNAL_JAR=$(ls build/install/signal-cli/lib/libsignal-client-*.jar | head -1) \
-		&& echo "Built libsignal-client jar: ${BUILT_LIBSIGNAL_JAR}" \
+		&& BUILT_LIBSIGNAL_JAR_NAME=$(ls build/install/signal-cli/lib/ | grep 'libsignal-client-.*\.jar' | head -1) \
+		&& echo "Built libsignal-client jar: ${BUILT_LIBSIGNAL_JAR_NAME}" \
 		&& rm -rf /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
 		&& cp -a build/install/signal-cli /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
 		&& cd /tmp \
-		&& cp "${BUILT_LIBSIGNAL_JAR}" libsignal-client.jar \
+		&& cp /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/${BUILT_LIBSIGNAL_JAR_NAME} libsignal-client.jar \
 		&& zip -qu libsignal-client.jar libsignal_jni.so \
-		&& cp libsignal-client.jar /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/$(basename "${BUILT_LIBSIGNAL_JAR}") \
+		&& cp libsignal-client.jar /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/${BUILT_LIBSIGNAL_JAR_NAME} \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& git apply /tmp/signal-cli-native.patch \
 		&& ./gradlew -q nativeCompile; \
