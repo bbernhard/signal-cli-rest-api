@@ -74,18 +74,20 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		cd /tmp \
 		&& git clone https://github.com/AsamK/signal-cli.git signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& cd signal-cli-${SIGNAL_CLI_VERSION}-source \
-		&& git checkout -q v${SIGNAL_CLI_VERSION} \
 		&& cd /tmp && mkdir -p /tmp/graalvm && tar xf gvm.tar.gz -C /tmp/graalvm --strip-components=1 \
 		&& export GRAALVM_HOME=/tmp/graalvm \
 		&& export PATH=/tmp/graalvm/bin:$PATH \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
-		&& sed -i 's/Signal-Android\/5.22.3/Signal-Android\/5.51.7/g' src/main/java/org/asamk/signal/BaseConfig.java \
 		&& ./gradlew build \
 		&& ./gradlew installDist \
-		&& ls build/install/signal-cli/lib/libsignal-client-${LIBSIGNAL_CLIENT_VERSION}.jar || (echo "\n\nsignal-client jar file with version ${LIBSIGNAL_CLIENT_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls build/install/signal-cli/lib/libsignal-client-* && echo "\n\n" && exit 1) \
+		&& BUILT_LIBSIGNAL_JAR=$(ls build/install/signal-cli/lib/ | grep 'libsignal-client-.*\.jar' | head -1) \
+		&& echo "Built libsignal-client jar: ${BUILT_LIBSIGNAL_JAR}" \
+		&& rm -rf /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
+		&& cp -a build/install/signal-cli /tmp/signal-cli-${SIGNAL_CLI_VERSION} \
 		&& cd /tmp \
-		&& cp signal-cli-${SIGNAL_CLI_VERSION}-source/build/install/signal-cli/lib/libsignal-client-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal-client.jar \
+		&& cp /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/${BUILT_LIBSIGNAL_JAR} libsignal-client.jar \
 		&& zip -qu libsignal-client.jar libsignal_jni.so \
+		&& cp libsignal-client.jar /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/${BUILT_LIBSIGNAL_JAR} \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& git apply /tmp/signal-cli-native.patch \
 		&& ./gradlew -q nativeCompile; \
@@ -113,20 +115,27 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		echo "Unknown architecture"; \
     fi;
 
-# replace libsignal-client
+# Post-processing: inject native libsignal_jni.so and apply BaseConfig workaround.
+# On x86_64 the source build (above) already produced a patched installDist with
+# the native lib injected, so we only need to package it.  On other architectures
+# the release tarball is still used — apply the BaseConfig sed workaround and
+# inject the native lib there.
 
-RUN ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/libsignal-client-${LIBSIGNAL_CLIENT_VERSION}.jar || (echo "\n\nsignal-client jar file with version ${LIBSIGNAL_CLIENT_VERSION} not found. Maybe the version needs to be bumped in the signal-cli-rest-api Dockerfile?\n\n" && echo "Available version: \n" && ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/libsignal-client-* && echo "\n\n" && exit 1)
-
-# workaround until upstream is fixed
-RUN cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib \
-	&& unzip signal-cli-${SIGNAL_CLI_VERSION}.jar \
-	&& sed -i 's/Signal-Android\/5.22.3/Signal-Android\/5.51.7/g' org/asamk/signal/BaseConfig.class \
-	&& zip -r signal-cli-${SIGNAL_CLI_VERSION}.jar org/ META-INF/ \
-	&& rm -rf META-INF \
-	&& rm -rf org
+RUN if [ "$(uname -m)" != "x86_64" ]; then \
+		ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/libsignal-client-${LIBSIGNAL_CLIENT_VERSION}.jar \
+			|| (echo "\n\nsignal-client jar file with version ${LIBSIGNAL_CLIENT_VERSION} not found.\n\n" \
+				&& ls /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/libsignal-client-* && exit 1) \
+		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib \
+		&& unzip signal-cli-${SIGNAL_CLI_VERSION}.jar \
+		&& sed -i 's/Signal-Android\/5.22.3/Signal-Android\/5.51.7/g' org/asamk/signal/BaseConfig.class \
+		&& zip -r signal-cli-${SIGNAL_CLI_VERSION}.jar org/ META-INF/ \
+		&& rm -rf META-INF \
+		&& rm -rf org \
+		&& cd /tmp/ \
+		&& zip -qu /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/libsignal-client-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal_jni.so; \
+	fi
 
 RUN cd /tmp/ \
-	&& zip -qu /tmp/signal-cli-${SIGNAL_CLI_VERSION}/lib/libsignal-client-${LIBSIGNAL_CLIENT_VERSION}.jar libsignal_jni.so \
 	&& zip -qr signal-cli-${SIGNAL_CLI_VERSION}.zip signal-cli-${SIGNAL_CLI_VERSION}/* \
     && unzip -q /tmp/signal-cli-${SIGNAL_CLI_VERSION}.zip -d /opt \
 	&& rm -f /tmp/signal-cli-${SIGNAL_CLI_VERSION}.zip
