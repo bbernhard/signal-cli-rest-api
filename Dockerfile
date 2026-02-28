@@ -167,7 +167,7 @@ RUN cd /tmp/signal-cli-rest-api-src && go build -buildmode=plugin -o signal-cli-
 # is fixed we use the standard ubuntu image
 #FROM eclipse-temurin:21-jre-jammy
 
-FROM ubuntu:jammy
+FROM ubuntu:noble
 
 ENV GIN_MODE=release
 
@@ -181,7 +181,7 @@ ENV SIGNAL_CLI_REST_API_PLUGIN_SHARED_OBJ_DIR=/usr/bin/
 
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get update \
-	&& apt-get install -y --no-install-recommends util-linux supervisor netcat openjdk-21-jre curl locales \
+	&& apt-get install -y --no-install-recommends util-linux supervisor netcat-openbsd openjdk-25-jre curl locales \
 	&& rm -rf /var/lib/apt/lists/* 
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
@@ -192,7 +192,8 @@ COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api_plug
 COPY entrypoint.sh /entrypoint.sh
 
 
-RUN groupadd -g 1000 signal-api \
+RUN userdel -r ubuntu 2>/dev/null || true \
+	&& groupadd -f -g 1000 signal-api \
 	&& useradd --no-log-init -M -d /home -s /bin/bash -u 1000 -g 1000 signal-api \
 	&& ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli /usr/bin/signal-cli \
 	&& ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native \
