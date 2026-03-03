@@ -7,7 +7,7 @@ ARG GRAALVM_VERSION=25.0.2
 
 ARG BUILD_VERSION_ARG=unset
 
-FROM golang:1.24-bookworm AS buildcontainer
+FROM golang:1.24 AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
 ARG LIBSIGNAL_CLIENT_VERSION
@@ -31,7 +31,7 @@ RUN arch="$(uname -m)"; \
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get update \
 	&& apt-get -y install --no-install-recommends \
-		wget software-properties-common git locales zip unzip \
+		wget git locales zip unzip \
 		file build-essential libz-dev zlib1g-dev \
 	&& rm -rf /var/lib/apt/lists/* 
 

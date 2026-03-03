@@ -2634,8 +2634,8 @@ func (s *SignalClient) ListContacts(number string, allRecipients bool, recipient
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			AllRecipients bool `json:"allRecipients,omitempty"`
-			Recipient string `json:"recipient,omitempty"`
+			AllRecipients bool   `json:"allRecipients,omitempty"`
+			Recipient     string `json:"recipient,omitempty"`
 		}
 		req := Request{}
 		if allRecipients {
@@ -2704,7 +2704,6 @@ func (s *SignalClient) ListContacts(number string, allRecipients bool, recipient
 
 	return resp, nil
 }
-
 
 func (s *SignalClient) SetPin(number string, registrationLockPin string) error {
 	if s.signalCliMode == JsonRpc {

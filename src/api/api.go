@@ -215,7 +215,7 @@ type RemoteDeleteRequest struct {
 }
 
 type DeleteLocalAccountDataRequest struct {
-    IgnoreRegistered bool `json:"ignore_registered" example:"false"`
+	IgnoreRegistered bool `json:"ignore_registered" example:"false"`
 }
 
 type DeviceLinkUriResponse struct {
@@ -364,30 +364,30 @@ func (a *Api) UnregisterNumber(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/devices/{number}/local-data [delete]
 func (a *Api) DeleteLocalAccountData(c *gin.Context) {
-    number, err := url.PathUnescape(c.Param("number"))
-    if err != nil {
-        c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
-        return
-    }
-    if number == "" {
-        c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
-        return
-    }
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
 
-    req := DeleteLocalAccountDataRequest{}
-    if c.Request.Body != nil && c.Request.ContentLength != 0 {
-        if err := c.BindJSON(&req); err != nil {
-            c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
-            return
-        }
-    }
+	req := DeleteLocalAccountDataRequest{}
+	if c.Request.Body != nil && c.Request.ContentLength != 0 {
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+			return
+		}
+	}
 
-    if err := a.signalClient.DeleteLocalAccountData(number, req.IgnoreRegistered); err != nil {
-        c.JSON(400, Error{Msg: err.Error()})
-        return
-    }
+	if err := a.signalClient.DeleteLocalAccountData(number, req.IgnoreRegistered); err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
 
-    c.Status(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 }
 
 // @Summary Verify a registered phone number.
@@ -843,6 +843,7 @@ func (a *Api) AddMembersToGroup(c *gin.Context) {
 
 	err = a.signalClient.AddMembersToGroup(number, groupId, req.Members)
 	if err != nil {
+		log.Info("ERR NOT NULL")
 		switch err.(type) {
 		case *client.NotFoundError:
 			c.JSON(404, Error{Msg: err.Error()})
@@ -1174,19 +1175,19 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Router /v1/qrcodelink/raw [get]
 func (a *Api) GetQrCodeLinkUri(c *gin.Context) {
-    deviceName := c.Query("device_name")
-    if deviceName == "" {
-        c.JSON(400, Error{Msg: "Please provide a name for the device"})
-        return
-    }
+	deviceName := c.Query("device_name")
+	if deviceName == "" {
+		c.JSON(400, Error{Msg: "Please provide a name for the device"})
+		return
+	}
 
-    deviceLinkUri, err := a.signalClient.GetDeviceLinkUri(deviceName)
-    if err != nil {
-        c.JSON(400, Error{Msg: err.Error()})
-        return
-    }
+	deviceLinkUri, err := a.signalClient.GetDeviceLinkUri(deviceName)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
 
-    c.JSON(200, DeviceLinkUriResponse{DeviceLinkUri: deviceLinkUri})
+	c.JSON(200, DeviceLinkUriResponse{DeviceLinkUri: deviceLinkUri})
 }
 
 // @Summary List all accounts
@@ -2080,7 +2081,7 @@ func (a *Api) RemoveDevice(c *gin.Context) {
 	}
 
 	deviceIdStr := c.Param("deviceId")
-    deviceId, err := strconv.ParseInt(deviceIdStr, 10, 64)
+	deviceId, err := strconv.ParseInt(deviceIdStr, 10, 64)
 	if err != nil {
 		c.JSON(400, Error{Msg: "deviceId must be numeric"})
 		return
