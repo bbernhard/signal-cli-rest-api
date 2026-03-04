@@ -90,8 +90,8 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& ./gradlew -q nativeCompile; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
 		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64 - many thanks to @morph027" \
-		&& curl -fsSL https://packaging.gitlab.io/signal-cli/gpg.key | apt-key add - \
-		&& echo "deb https://packaging.gitlab.io/signal-cli focal main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
+		&& curl -fsSL https://packaging.gitlab.io/signal-cli/gpg.key | gpg -o /usr/share/keyrings/signal-cli-native.pgp --dearmor \
+		&& echo "deb [signed-by=/usr/share/keyrings/signal-cli-native.pgp] https://packaging.gitlab.io/signal-cli signalcli main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
 		&& mkdir -p /tmp/signal-cli-native \
 		&& cd /tmp/signal-cli-native \
 		#&& wget https://gitlab.com/packaging/signal-cli/-/jobs/3716873649/artifacts/download?file_type=archive -O /tmp/signal-cli-native/archive.zip \
