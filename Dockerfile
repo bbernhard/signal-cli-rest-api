@@ -6,6 +6,8 @@ ARG SWAG_VERSION=1.16.4
 ARG GRAALVM_VERSION=21.0.0
 #ARG GRAALVM_VERSION=25.0.2
 
+ARG S6_OVERLAY_VERSION=v3.2.2.0
+
 ARG BUILD_VERSION_ARG=unset
 
 FROM golang:1.24-bookworm AS buildcontainer
@@ -154,13 +156,12 @@ RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper
 RUN cd /tmp/signal-cli-rest-api-src && go build -buildmode=plugin -o signal-cli-rest-api_plugin_loader.so plugin_loader.go
 
 # Start a fresh container for release container
-
 FROM debian:trixie-slim
 
 ARG TARGETARCH # set by buildx
-ARG S6_OVERLAY_VERSION=v3.2.2.0
 ARG SIGNAL_CLI_VERSION
 ARG BUILD_VERSION_ARG
+ENV GIN_MODE=release
 
 # Set environment variables to keep the image clean
 ENV DEBIAN_FRONTEND=noninteractive
