@@ -7,7 +7,7 @@ ARG GRAALVM_VERSION=25.0.2
 
 ARG BUILD_VERSION_ARG=unset
 
-FROM golang:1.24-bookworm AS buildcontainer
+FROM golang:1.26-trixie AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
 ARG LIBSIGNAL_CLIENT_VERSION
@@ -32,7 +32,7 @@ RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get update \
 	&& apt-get -y install --no-install-recommends \
 		wget git locales zip unzip \
-		file build-essential libz-dev zlib1g-dev \
+		file build-essential libz-dev zlib1g-dev binutils \
 	&& rm -rf /var/lib/apt/lists/* 
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
