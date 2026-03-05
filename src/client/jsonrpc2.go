@@ -228,6 +228,8 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 				log.Fatal("Unable to reconnect to signal-cli: ", err.Error(), "...aborting")
 			}
 			connbuf = bufio.NewReader(r.conn)
+			log.Info("Successfully reconnected to signal-cli")
+			continue
 		}
 		log.Debug("json-rpc received data: ", str)
 
