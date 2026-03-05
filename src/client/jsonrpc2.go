@@ -2,14 +2,14 @@ package client
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"net"
+	"net/http"
+	"strconv"
 	"sync"
 	"time"
-	"net/http"
-	"bytes"
-	"strconv"
 
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	uuid "github.com/gofrs/uuid"
@@ -60,11 +60,12 @@ type JsonRpc2Client struct {
 	conn                     net.Conn
 	receivedResponsesById    map[string]chan JsonRpc2MessageResponse
 	receivedMessagesChannels map[string]chan JsonRpc2ReceivedMessage
-	lastTimeErrorMessageSent time.Time
-	signalCliApiConfig       *utils.SignalCliApiConfig
-	number                   string
-	receivedMessagesMutex    sync.Mutex
-	receivedResponsesMutex   sync.Mutex
+	//lastTimeErrorMessageSent time.Time
+	signalCliApiConfig     *utils.SignalCliApiConfig
+	number                 string
+	receivedMessagesMutex  sync.Mutex
+	receivedResponsesMutex sync.Mutex
+	address                string
 }
 
 func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string) *JsonRpc2Client {
@@ -76,10 +77,24 @@ func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number stri
 	}
 }
 
-func (r *JsonRpc2Client) Dial(address string) error {
+func (r *JsonRpc2Client) Dial(address string, maxRetries int) error {
 	var err error
-	r.conn, err = net.Dial("tcp", address)
-	if err != nil {
+	r.address = address
+	connected := false
+	for i := 0; i < maxRetries; i++ {
+		r.conn, err = net.Dial("tcp", address)
+		if err != nil {
+			log.Info("Waiting for signal-cli to start up in daemon mode...")
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		connected = true
+		log.Info("Successfully connected to signal-cli in daemon mode")
+		break
+	}
+
+	if !connected {
 		return err
 	}
 

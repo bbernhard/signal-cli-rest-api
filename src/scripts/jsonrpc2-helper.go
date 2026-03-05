@@ -14,7 +14,7 @@ import (
 const supervisorctlConfigTemplate = `
 [program:%s]
 process_name=%s
-command=bash -c "nc -l -p %d <%s | signal-cli --output=json --config %s%s jsonRpc%s%s >%s"
+command=signal-cli --output=json --config %s%s daemon %s%s --tcp 127.0.0.1:%d
 autostart=true
 autorestart=true
 startretries=10
@@ -96,7 +96,7 @@ func main() {
 	supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-1.conf"
 
 	supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
-		tcpPort, fifoPathname, signalCliConfigDir, trustNewIdentities, signalCliIgnoreAttachments, signalCliIgnoreStories, fifoPathname,
+		signalCliConfigDir, trustNewIdentities, signalCliIgnoreAttachments, signalCliIgnoreStories, tcpPort,
 		supervisorctlProgramName, supervisorctlProgramName)
 
 	err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
