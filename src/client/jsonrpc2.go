@@ -60,12 +60,11 @@ type JsonRpc2Client struct {
 	conn                     net.Conn
 	receivedResponsesById    map[string]chan JsonRpc2MessageResponse
 	receivedMessagesChannels map[string]chan JsonRpc2ReceivedMessage
-	//lastTimeErrorMessageSent time.Time
-	signalCliApiConfig     *utils.SignalCliApiConfig
-	number                 string
-	receivedMessagesMutex  sync.Mutex
-	receivedResponsesMutex sync.Mutex
-	address                string
+	signalCliApiConfig       *utils.SignalCliApiConfig
+	number                   string
+	receivedMessagesMutex    sync.Mutex
+	receivedResponsesMutex   sync.Mutex
+	address                  string
 }
 
 func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string) *JsonRpc2Client {
@@ -222,12 +221,13 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 	for {
 		str, err := connbuf.ReadString('\n')
 		if err != nil {
-			elapsed := time.Since(r.lastTimeErrorMessageSent)
-			if (elapsed) > time.Duration(5*time.Minute) { //avoid spamming the log file and only log the message at max every 5 minutes
-				log.Error("Couldn't read data for number ", number, ": ", err.Error(), ". Is the number properly registered?")
-				r.lastTimeErrorMessageSent = time.Now()
+			log.Error("Lost connection to signal-cli...attempting to reconnect (", err.Error(), ")")
+			r.conn.Close()
+			err = r.Dial(r.address, 15)
+			if err != nil {
+				log.Fatal("Unable to reconnect to signal-cli: ", err.Error(), "...aborting")
 			}
-			continue
+			connbuf = bufio.NewReader(r.conn)
 		}
 		log.Debug("json-rpc received data: ", str)
 
@@ -263,7 +263,7 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 				}
 			}
 		} else {
-			log.Error("Received unparsable message: ", str)
+			log.Warn("Received unparsable message: ", str)
 		}
 	}
 }
