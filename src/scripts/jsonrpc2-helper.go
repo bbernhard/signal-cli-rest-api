@@ -14,7 +14,7 @@ import (
 const supervisorctlConfigTemplate = `
 [program:%s]
 process_name=%s
-command=signal-cli --output=json --config %s%s daemon %s%s --tcp 127.0.0.1:%d
+command=signal-cli%s --output=json --config %s%s daemon %s%s --tcp 127.0.0.1:%d
 autostart=true
 autorestart=true
 startretries=10
@@ -78,6 +78,11 @@ func main() {
 		log.Fatal("Couldn't create log folder ", supervisorctlLogFolder, ": ", err.Error())
 	}
 
+	verbose := ""
+	if utils.GetEnv("LOG_LEVEL", "") == "debug" {
+		verbose = " --verbose"
+	}
+
 	trustNewIdentities := ""
 	trustNewIdentitiesEnv := utils.GetEnv("JSON_RPC_TRUST_NEW_IDENTITIES", "")
 	if trustNewIdentitiesEnv == "on-first-use" {
@@ -96,7 +101,7 @@ func main() {
 	supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-1.conf"
 
 	supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
-		signalCliConfigDir, trustNewIdentities, signalCliIgnoreAttachments, signalCliIgnoreStories, tcpPort,
+		verbose, signalCliConfigDir, trustNewIdentities, signalCliIgnoreAttachments, signalCliIgnoreStories, tcpPort,
 		supervisorctlProgramName, supervisorctlProgramName)
 
 	err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
