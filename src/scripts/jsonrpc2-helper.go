@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -41,23 +40,8 @@ func main() {
 	jsonRpc2ClientConfig := utils.NewJsonRpc2ClientConfig()
 
 	var tcpPort int64 = 6001
-	fifoPathname := "/tmp/sigsocket1"
 
-	jsonRpc2ClientConfig.AddEntry(utils.MULTI_ACCOUNT_NUMBER, utils.JsonRpc2ClientConfigEntry{TcpPort: tcpPort, FifoPathname: fifoPathname})
-
-	os.Remove(fifoPathname) //remove any existing named pipe
-
-	_, err := exec.Command("mkfifo", fifoPathname).Output()
-	if err != nil {
-		log.Fatal("Couldn't create fifo with name ", fifoPathname, ": ", err.Error())
-	}
-
-	uid := utils.GetEnv("SIGNAL_CLI_UID", "1000")
-	gid := utils.GetEnv("SIGNAL_CLI_GID", "1000")
-	_, err = exec.Command("chown", uid+":"+gid, fifoPathname).Output()
-	if err != nil {
-		log.Fatal("Couldn't change permissions of fifo with name ", fifoPathname, ": ", err.Error())
-	}
+	jsonRpc2ClientConfig.AddEntry(utils.MULTI_ACCOUNT_NUMBER, utils.JsonRpc2ClientConfigEntry{TcpPort: tcpPort})
 
 	signalCliIgnoreAttachments := ""
 	ignoreAttachments := utils.GetEnv("JSON_RPC_IGNORE_ATTACHMENTS", "")
@@ -73,7 +57,7 @@ func main() {
 
 	supervisorctlProgramName := "signal-cli-json-rpc-1"
 	supervisorctlLogFolder := "/var/log/" + supervisorctlProgramName
-	_, err = exec.Command("mkdir", "-p", supervisorctlLogFolder).Output()
+	_, err := exec.Command("mkdir", "-p", supervisorctlLogFolder).Output()
 	if err != nil {
 		log.Fatal("Couldn't create log folder ", supervisorctlLogFolder, ": ", err.Error())
 	}

@@ -2,15 +2,15 @@ package utils
 
 import (
 	"errors"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"gopkg.in/yaml.v2"
 )
 
 const MULTI_ACCOUNT_NUMBER string = "<multi-account>"
 
 type JsonRpc2ClientConfigEntry struct {
-	TcpPort      int64  `yaml:"tcp_port"`
-	FifoPathname string `yaml:"fifo_pathname"`
+	TcpPort int64 `yaml:"tcp_port"`
 }
 
 type JsonRpc2ClientConfigEntries struct {
@@ -45,14 +45,6 @@ func (c *JsonRpc2ClientConfig) GetTcpPortForNumber(number string) (int64, error)
 	}
 
 	return 0, errors.New("Number " + number + " not found in local map")
-}
-
-func (c *JsonRpc2ClientConfig) GetFifoPathnameForNumber(number string) (string, error) {
-	if val, ok := c.config.Entries[number]; ok {
-		return val.FifoPathname, nil
-	}
-
-	return "", errors.New("Number " + number + " not found in local map")
 }
 
 func (c *JsonRpc2ClientConfig) GetTcpPortsForNumbers() map[string]int64 {
