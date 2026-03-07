@@ -172,7 +172,7 @@ ENV SIGNAL_CLI_REST_API_PLUGIN_SHARED_OBJ_DIR=/usr/bin/
 
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get update \
-	&& apt-get install -y --no-install-recommends util-linux supervisor netcat-openbsd openjdk-25-jre curl locales \
+	&& apt-get install -y --no-install-recommends util-linux supervisor openjdk-25-jre curl locales \
 	&& rm -rf /var/lib/apt/lists/* 
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
