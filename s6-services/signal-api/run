@@ -1,0 +1,3 @@
+#!/command/with-contenv sh
+# Use with-contenv to import environment variables like SIGNAL_CLI_CONFIG_DIR
+exec signal-cli-rest-api -signal-cli-config="${SIGNAL_CLI_CONFIG_DIR}"
