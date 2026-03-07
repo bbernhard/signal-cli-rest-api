@@ -2045,6 +2045,18 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Specify whether avatar downloads should be ignored when receiving messages",
+                        "name": "ignore_avatars",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Specify whether sticker pack downloads should be ignored when receiving messages",
+                        "name": "ignore_stickers",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Specify the maximum number of messages to receive (default: unlimited)",
                         "name": "max_messages",
                         "in": "query"

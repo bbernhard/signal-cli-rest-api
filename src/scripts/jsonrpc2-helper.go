@@ -42,12 +42,22 @@ func main() {
 
 	ignoreAttachments := utils.GetEnv("JSON_RPC_IGNORE_ATTACHMENTS", "")
 	if ignoreAttachments == "true" {
-		args = append(args, " --ignore-attachments")
+		args = append(args, "--ignore-attachments")
 	}
 
 	ignoreStories := utils.GetEnv("JSON_RPC_IGNORE_STORIES", "")
 	if ignoreStories == "true" {
-		args = append(args, " --ignore-stories")
+		args = append(args, "--ignore-stories")
+	}
+
+	ignoreAvatars := utils.GetEnv("JSON_RPC_IGNORE_AVATARS", "")
+	if ignoreAvatars == "true" {
+		args = append(args, "--ignore-avatars")
+	}
+
+	ignoreStickers := utils.GetEnv("JSON_RPC_IGNORE_STICKERS", "")
+	if ignoreStickers == "true" {
+		args = append(args, "--ignore-stickers")
 	}
 
 	args = append(args, []string{"--tcp", "127.0.0.1:" + strconv.FormatInt(tcpPort, 10)}...)
