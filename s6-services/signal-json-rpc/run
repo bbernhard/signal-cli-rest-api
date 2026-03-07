@@ -1,67 +1,10 @@
 #!/command/with-contenv sh
 # File: /etc/s6-overlay/s6-rc.d/signal-json-rpc/run
 
-PIPE=/tmp/sigsocket1
-PORT=6001
-
 if [ "$MODE" != "json-rpc" ]; then
     echo "Running as mode: $MODE - skipping json-rpc setup"
     sleep infinity # do nothing, but keep service running
     exit 0 
 fi
 
-## general parameters for signal-cli
-# set SIGNAL_CLI_CONFIG_DIR if not set
-if [ -z "$SIGNAL_CLI_CONFIG_DIR" ]; then
-    SIGNAL_CLI_CONFIG_DIR="/home/.local/share/signal-cli/"
-fi
-
-jsonRpcConfig="${SIGNAL_CLI_CONFIG_DIR%/}/jsonrpc2.yml"
-
-# here file to write config
-cat > "$jsonRpcConfig" <<EOL
-config:
-  <multi-account>:
-    tcp_port: $PORT
-    fifo_pathname: $PIPE
-EOL
-
-#  Trust Identities
-trustNewIdentitiesEnv="${JSON_RPC_TRUST_NEW_IDENTITIES:-}"
-trustNewIdentities=""
-
-if [ "$trustNewIdentitiesEnv" = "on-first-use" ]; then
-    trustNewIdentities=" --trust-new-identities on-first-use"
-elif [ "$trustNewIdentitiesEnv" = "always" ]; then
-    trustNewIdentities=" --trust-new-identities always"
-elif [ "$trustNewIdentitiesEnv" = "never" ]; then
-    trustNewIdentities=" --trust-new-identities never"
-elif [ -n "$trustNewIdentitiesEnv" ]; then
-    # This mirrors your log.Fatal check
-    echo "Invalid JSON_RPC_TRUST_NEW_IDENTITIES environment variable set!" >&2
-    exit 1
-fi
-
-## parameters for jsonrpc mode
-# Attachments
-ignoreAttachments="${JSON_RPC_IGNORE_ATTACHMENTS:-}"
-signalCliIgnoreAttachments=""
-if [ "$ignoreAttachments" = "true" ]; then
-    signalCliIgnoreAttachments=" --ignore-attachments"
-fi
-
-# Stories
-ignoreStories="${JSON_RPC_IGNORE_STORIES:-}"
-signalCliIgnoreStories=""
-if [ "$ignoreStories" = "true" ]; then
-    signalCliIgnoreStories=" --ignore-stories"
-fi
-
-# Load the pipe
-[ -p "$PIPE" ] || mkfifo "$PIPE"
-
-# Ensure permissions are correct for non-root
-chmod 600 "$PIPE"
-
-# Launch the circular communication
-exec sh -c "nc -l -p "${PORT}" < $PIPE | signal-cli --output=json --config "${SIGNAL_CLI_CONFIG_DIR}" "${trustNewIdentities}" jsonRpc ${signalCliIgnoreAttachments} ${signalCliIgnoreStories} > $PIPE"
+exec jsonrpc2-helper
