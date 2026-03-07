@@ -210,8 +210,6 @@ ENV SIGNAL_CLI_UID=1000
 ENV SIGNAL_CLI_GID=1000
 ENV SIGNAL_CLI_CHOWN_ON_STARTUP=true
 
-RUN chown -R 1000:1000 /var/log/
-
 ENTRYPOINT ["/entrypoint.sh"]
 
 HEALTHCHECK --interval=20s --timeout=10s --retries=3 \
