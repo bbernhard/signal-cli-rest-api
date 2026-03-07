@@ -395,6 +395,8 @@ func main() {
 		autoReceiveScheduleReceiveTimeout := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_RECEIVE_TIMEOUT", "10")
 		autoReceiveScheduleIgnoreAttachments := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_IGNORE_ATTACHMENTS", "false")
 		autoReceiveScheduleIgnoreStories := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_IGNORE_STORIES", "false")
+		autoReceiveScheduleIgnoreAvatars := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_IGNORE_AVATARS", "false")
+		autoReceiveScheduleIgnoreStickers := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_IGNORE_STICKERS", "false")
 		autoReceiveScheduleSendReadReceipts := utils.GetEnv("AUTO_RECEIVE_SCHEDULE_SEND_READ_RECEIPTS", "false")
 
 		c := cron.New()
@@ -424,6 +426,8 @@ func main() {
 					q.Add("timeout", autoReceiveScheduleReceiveTimeout)
 					q.Add("ignore_attachments", autoReceiveScheduleIgnoreAttachments)
 					q.Add("ignore_stories", autoReceiveScheduleIgnoreStories)
+					q.Add("ignore_avatars", autoReceiveScheduleIgnoreAvatars)
+					q.Add("ignore_stickers", autoReceiveScheduleIgnoreStickers)
 					q.Add("send_read_receipts", autoReceiveScheduleSendReadReceipts)
 					req.URL.RawQuery = q.Encode()
 

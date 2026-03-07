@@ -1916,6 +1916,16 @@ paths:
         in: query
         name: ignore_stories
         type: string
+      - description: Specify whether avatar downloads should be ignored when receiving
+          messages
+        in: query
+        name: ignore_avatars
+        type: string
+      - description: Specify whether sticker pack downloads should be ignored when
+          receiving messages
+        in: query
+        name: ignore_stickers
+        type: string
       - description: 'Specify the maximum number of messages to receive (default:
           unlimited)'
         in: query
