@@ -1,24 +1,11 @@
 services:
   signal-cli-rest-api:
-    #image: bbernhard/signal-cli-rest-api:latest-dev
-    build: "."
+    image: bbernhard/signal-cli-rest-api:latest
     environment:
-      - MODE=normal #supported modes: json-rpc, json-rpc-native, native, normal
-      - ENABLE_PLUGINS=true
-      - DEFAULT_SIGNAL_TEXT_MODE=styled
-      - SWAGGER_IP=127.0.0.1
-      - PODMAN_USERNS=keep-id
-      #- JSON_RPC_IGNORE_ATTACHMENTS=true
-      #- JSON_RPC_IGNORE_STORIES=true
-      #- JSON_RPC_IGNORE_AVATARS=true
-      #- JSON_RPC_IGNORE_STICKERS=true
-      #- RECEIVE_WEBHOOK_URL=http://127.0.0.1:8089/webhook
-      #- JSON_RPC_TRUST_NEW_IDENTITIES=always
-      #- RECEIVE_WEBHOOK_URL=http://127.0.0.1:8080/v1/plugins/abc
+      - MODE=normal #supported modes: json-rpc, native, normal
       #- AUTO_RECEIVE_SCHEDULE=0 22 * * * #enable this parameter on demand (see description below)
-    #network_mode: host
     ports:
       - "8080:8080" #map docker port 8080 to host port 8080.
     volumes:
       - "./signal-cli-config:/home/.local/share/signal-cli" #map "signal-cli-config" folder on host system into docker container. the folder contains the password and cryptographic keys when a new number is registered
-      - "./plugins:/plugins"
+

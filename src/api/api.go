@@ -857,7 +857,6 @@ func (a *Api) AddMembersToGroup(c *gin.Context) {
 
 	err = a.signalClient.AddMembersToGroup(number, groupId, req.Members)
 	if err != nil {
-		log.Info("ERR NOT NULL")
 		switch err.(type) {
 		case *client.NotFoundError:
 			c.JSON(404, Error{Msg: err.Error()})
