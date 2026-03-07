@@ -89,6 +89,10 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 		args = append([]string{"--trust-new-identities", trustModeStr}, args...)
 	}
 
+	if log.GetLevel() >= log.DebugLevel {
+		args = append([]string{"--verbose"}, args...)
+	}
+
 	fullCmd := ""
 	if stdin != "" {
 		fullCmd += "echo '" + stdin + "' | "
