@@ -670,6 +670,8 @@ func StringToBool(input string) bool {
 // @Param timeout query string false "Receive timeout in seconds (default: 1)"
 // @Param ignore_attachments query string false "Specify whether the attachments of the received message should be ignored" (default: false)"
 // @Param ignore_stories query string false "Specify whether stories should be ignored when receiving messages" (default: false)"
+// @Param ignore_avatars query string false "Specify whether avatar downloads should be ignored when receiving messages" (default: false)"
+// @Param ignore_stickers query string false "Specify whether sticker pack downloads should be ignored when receiving messages" (default: false)"
 // @Param max_messages query string false "Specify the maximum number of messages to receive (default: unlimited)". Not available in json-rpc mode.
 // @Param send_read_receipts query string false "Specify whether read receipts should be sent when receiving messages" (default: false)"
 // @Router /v1/receive/{number} [get]
@@ -718,13 +720,25 @@ func (a *Api) Receive(c *gin.Context) {
 			return
 		}
 
+		ignoreAvatars := c.DefaultQuery("ignore_avatars", "false")
+		if ignoreAvatars != "true" && ignoreAvatars != "false" {
+			c.JSON(400, Error{Msg: "Couldn't process request - ignore_avatars parameter needs to be either 'true' or 'false'"})
+			return
+		}
+
+		ignoreStickers := c.DefaultQuery("ignore_stickers", "false")
+		if ignoreStickers != "true" && ignoreStickers != "false" {
+			c.JSON(400, Error{Msg: "Couldn't process request - ignore_stickers parameter needs to be either 'true' or 'false'"})
+			return
+		}
+
 		sendReadReceipts := c.DefaultQuery("send_read_receipts", "false")
 		if sendReadReceipts != "true" && sendReadReceipts != "false" {
 			c.JSON(400, Error{Msg: "Couldn't process request - send_read_receipts parameter needs to be either 'true' or 'false'"})
 			return
 		}
 
-		jsonStr, err := a.signalClient.Receive(number, timeoutInt, StringToBool(ignoreAttachments), StringToBool(ignoreStories), maxMessagesInt, StringToBool(sendReadReceipts))
+		jsonStr, err := a.signalClient.Receive(number, timeoutInt, StringToBool(ignoreAttachments), StringToBool(ignoreStories), StringToBool(ignoreAvatars), StringToBool(ignoreStickers), maxMessagesInt, StringToBool(sendReadReceipts))
 		if err != nil {
 			c.JSON(400, Error{Msg: err.Error()})
 			return

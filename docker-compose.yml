@@ -10,6 +10,8 @@ services:
       - PODMAN_USERNS=keep-id
       #- JSON_RPC_IGNORE_ATTACHMENTS=true
       #- JSON_RPC_IGNORE_STORIES=true
+      #- JSON_RPC_IGNORE_AVATARS=true
+      #- JSON_RPC_IGNORE_STICKERS=true
       #- RECEIVE_WEBHOOK_URL=http://127.0.0.1:8089/webhook
       #- JSON_RPC_TRUST_NEW_IDENTITIES=always
       #- RECEIVE_WEBHOOK_URL=http://127.0.0.1:8080/v1/plugins/abc

@@ -13,7 +13,7 @@ import (
 const supervisorctlConfigTemplate = `
 [program:%s]
 process_name=%s
-command=signal-cli --output=json --config %s%s daemon %s%s --tcp 127.0.0.1:%d
+command=signal-cli --output=json --config %s%s daemon %s%s%s%s --tcp 127.0.0.1:%d
 autostart=true
 autorestart=true
 startretries=10
@@ -55,6 +55,18 @@ func main() {
 		signalCliIgnoreStories = " --ignore-stories"
 	}
 
+	signalCliIgnoreAvatars := ""
+	ignoreAvatars := utils.GetEnv("JSON_RPC_IGNORE_AVATARS", "")
+	if ignoreAvatars == "true" {
+		signalCliIgnoreAvatars = " --ignore-avatars"
+	}
+
+	signalCliIgnoreStickers := ""
+	ignoreStickers := utils.GetEnv("JSON_RPC_IGNORE_STICKERS", "")
+	if ignoreStickers == "true" {
+		signalCliIgnoreStickers = " --ignore-stickers"
+	}
+
 	supervisorctlProgramName := "signal-cli-json-rpc-1"
 	supervisorctlLogFolder := "/var/log/" + supervisorctlProgramName
 	_, err := exec.Command("mkdir", "-p", supervisorctlLogFolder).Output()
@@ -80,7 +92,8 @@ func main() {
 	supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-1.conf"
 
 	supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
-		signalCliConfigDir, trustNewIdentities, signalCliIgnoreAttachments, signalCliIgnoreStories, tcpPort,
+		signalCliConfigDir, trustNewIdentities, signalCliIgnoreAttachments, signalCliIgnoreStories,
+		signalCliIgnoreAvatars, signalCliIgnoreStickers, tcpPort,
 		supervisorctlProgramName, supervisorctlProgramName)
 
 	err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
