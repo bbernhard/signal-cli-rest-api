@@ -160,6 +160,7 @@ FROM debian:trixie-slim
 ARG TARGETARCH # set by buildx
 ARG SIGNAL_CLI_VERSION
 ARG BUILD_VERSION_ARG
+ARG S6_OVERLAY_VERSION
 ENV GIN_MODE=release
 
 # Set environment variables to keep the image clean
