@@ -2,14 +2,14 @@ package client
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"net"
+	"net/http"
+	"strconv"
 	"sync"
 	"time"
-	"net/http"
-	"bytes"
-	"strconv"
 
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	uuid "github.com/gofrs/uuid"
@@ -60,11 +60,11 @@ type JsonRpc2Client struct {
 	conn                     net.Conn
 	receivedResponsesById    map[string]chan JsonRpc2MessageResponse
 	receivedMessagesChannels map[string]chan JsonRpc2ReceivedMessage
-	lastTimeErrorMessageSent time.Time
 	signalCliApiConfig       *utils.SignalCliApiConfig
 	number                   string
 	receivedMessagesMutex    sync.Mutex
 	receivedResponsesMutex   sync.Mutex
+	address                  string
 }
 
 func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string) *JsonRpc2Client {
@@ -76,10 +76,24 @@ func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number stri
 	}
 }
 
-func (r *JsonRpc2Client) Dial(address string) error {
+func (r *JsonRpc2Client) Dial(address string, maxRetries int) error {
 	var err error
-	r.conn, err = net.Dial("tcp", address)
-	if err != nil {
+	r.address = address
+	connected := false
+	for i := 0; i < maxRetries; i++ {
+		r.conn, err = net.Dial("tcp", address)
+		if err != nil {
+			log.Info("Waiting for signal-cli to start up in daemon mode...")
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		connected = true
+		log.Info("Successfully connected to signal-cli in daemon mode")
+		break
+	}
+
+	if !connected {
 		return err
 	}
 
@@ -207,11 +221,14 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 	for {
 		str, err := connbuf.ReadString('\n')
 		if err != nil {
-			elapsed := time.Since(r.lastTimeErrorMessageSent)
-			if (elapsed) > time.Duration(5*time.Minute) { //avoid spamming the log file and only log the message at max every 5 minutes
-				log.Error("Couldn't read data for number ", number, ": ", err.Error(), ". Is the number properly registered?")
-				r.lastTimeErrorMessageSent = time.Now()
+			log.Error("Lost connection to signal-cli...attempting to reconnect (", err.Error(), ")")
+			r.conn.Close()
+			err = r.Dial(r.address, 15)
+			if err != nil {
+				log.Fatal("Unable to reconnect to signal-cli: ", err.Error(), "...aborting")
 			}
+			connbuf = bufio.NewReader(r.conn)
+			log.Info("Successfully reconnected to signal-cli")
 			continue
 		}
 		log.Debug("json-rpc received data: ", str)
@@ -248,7 +265,7 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 				}
 			}
 		} else {
-			log.Error("Received unparsable message: ", str)
+			log.Warn("Received unparsable message: ", str)
 		}
 	}
 }

@@ -1,16 +1,15 @@
-ARG SIGNAL_CLI_VERSION=0.13.24
-ARG LIBSIGNAL_CLIENT_VERSION=0.87.0
-ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.13.24+morph027+2
+ARG SIGNAL_CLI_VERSION=0.14.0
+ARG LIBSIGNAL_CLIENT_VERSION=0.87.4
+ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.14.0+morph027+5
 
 ARG SWAG_VERSION=1.16.4
-ARG GRAALVM_VERSION=21.0.0
-#ARG GRAALVM_VERSION=25.0.2
+ARG GRAALVM_VERSION=25.0.2
 
 ARG S6_OVERLAY_VERSION=v3.2.2.0
 
 ARG BUILD_VERSION_ARG=unset
 
-FROM golang:1.24-bookworm AS buildcontainer
+FROM golang:1.26-trixie AS buildcontainer
 
 ARG SIGNAL_CLI_VERSION
 ARG LIBSIGNAL_CLIENT_VERSION
@@ -34,8 +33,8 @@ RUN arch="$(uname -m)"; \
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get update \
 	&& apt-get -y install --no-install-recommends \
-		wget software-properties-common git locales zip unzip \
-		file build-essential libz-dev zlib1g-dev \
+		wget git locales zip unzip \
+		file build-essential libz-dev zlib1g-dev binutils \
 	&& rm -rf /var/lib/apt/lists/* 
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
@@ -93,8 +92,8 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& ./gradlew -q nativeCompile; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
 		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64 - many thanks to @morph027" \
-		&& curl -fsSL https://packaging.gitlab.io/signal-cli/gpg.key | apt-key add - \
-		&& echo "deb https://packaging.gitlab.io/signal-cli focal main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
+		&& curl -fsSL https://packaging.gitlab.io/signal-cli/gpg.key | gpg -o /usr/share/keyrings/signal-cli-native.pgp --dearmor \
+		&& echo "deb [signed-by=/usr/share/keyrings/signal-cli-native.pgp] https://packaging.gitlab.io/signal-cli signalcli main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
 		&& mkdir -p /tmp/signal-cli-native \
 		&& cd /tmp/signal-cli-native \
 		#&& wget https://gitlab.com/packaging/signal-cli/-/jobs/3716873649/artifacts/download?file_type=archive -O /tmp/signal-cli-native/archive.zip \
@@ -171,8 +170,9 @@ ENV PORT=8080
 ENV BUILD_VERSION=$BUILD_VERSION_ARG
 ENV SIGNAL_CLI_REST_API_PLUGIN_SHARED_OBJ_DIR=/usr/bin/
 
-RUN apt-get update \
-	&& apt-get install -y --no-install-recommends netcat-traditional openjdk-21-jre curl locales xz-utils\
+RUN dpkg-reconfigure debconf --frontend=noninteractive \
+	&& apt-get update \
+	&& apt-get install -y --no-install-recommends util-linux openjdk-25-jre curl locales xz-utils \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/* 
 

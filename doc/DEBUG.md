@@ -4,6 +4,8 @@ This can be done by putting the docker container into debug mode with the follow
 
 ```curl -X POST -H "Content-Type: application/json" -d '{"logging": {"level": "debug"}}' 'http://127.0.0.1:8080/v1/configuration'```
 
+Alternatively, you can set the `LOG_LEVEL` environment variable.
+
 Once the docker container is in debug mode, execute the REST API command you want to debug. 
 
 e.g Let's assume we are experiencing some problems with sending messages. So, let's send a Signal message with  

@@ -410,7 +410,7 @@ func (s *SignalClient) GetSignalCliMode() SignalCliMode {
 	return s.signalCliMode
 }
 
-func (s *SignalClient) Init() error {
+func (s *SignalClient) Init(maxRetries int) error {
 	s.signalCliApiConfig = utils.NewSignalCliApiConfig()
 	err := s.signalCliApiConfig.Load(s.signalCliApiConfigPath)
 	if err != nil {
@@ -427,7 +427,7 @@ func (s *SignalClient) Init() error {
 		tcpPortsNumberMapping := s.jsonRpc2ClientConfig.GetTcpPortsForNumbers()
 		for number, tcpPort := range tcpPortsNumberMapping {
 			s.jsonRpc2Clients[number] = NewJsonRpc2Client(s.signalCliApiConfig, number)
-			err := s.jsonRpc2Clients[number].Dial("127.0.0.1:" + strconv.FormatInt(tcpPort, 10))
+			err := s.jsonRpc2Clients[number].Dial("127.0.0.1:"+strconv.FormatInt(tcpPort, 10), maxRetries)
 			if err != nil {
 				return err
 			}
@@ -1349,7 +1349,7 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 			}
 			pendingMembers = append(pendingMembers, identifier)
 		}
-		groupEntry.PendingRequests = pendingMembers
+		groupEntry.PendingInvites = pendingMembers
 
 		requestingMembers := []string{}
 		for _, val := range signalCliGroupEntry.RequestingMembers {
@@ -1359,7 +1359,7 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 			}
 			requestingMembers = append(requestingMembers, identifier)
 		}
-		groupEntry.PendingInvites = requestingMembers
+		groupEntry.PendingRequests = requestingMembers
 
 		admins := []string{}
 		for _, val := range signalCliGroupEntry.Admins {
@@ -2634,8 +2634,8 @@ func (s *SignalClient) ListContacts(number string, allRecipients bool, recipient
 
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			AllRecipients bool `json:"allRecipients,omitempty"`
-			Recipient string `json:"recipient,omitempty"`
+			AllRecipients bool   `json:"allRecipients,omitempty"`
+			Recipient     string `json:"recipient,omitempty"`
 		}
 		req := Request{}
 		if allRecipients {
@@ -2704,7 +2704,6 @@ func (s *SignalClient) ListContacts(number string, allRecipients bool, recipient
 
 	return resp, nil
 }
-
 
 func (s *SignalClient) SetPin(number string, registrationLockPin string) error {
 	if s.signalCliMode == JsonRpc {
