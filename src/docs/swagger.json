@@ -914,6 +914,12 @@
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Use UUIDs instead of phone numbers as identifier for (pending|requesting) members",
+                        "name": "use_only_uuid_as_identifier",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1007,6 +1013,12 @@
                         "name": "groupid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Use UUIDs instead of phone numbers as identifier for (pending|requesting) members",
+                        "name": "use_only_uuid_as_identifier",
+                        "in": "query"
                     }
                 ],
                 "responses": {
