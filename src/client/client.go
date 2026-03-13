@@ -341,6 +341,18 @@ func getSignalCliModeString(signalCliMode SignalCliMode) string {
 	return "unknown"
 }
 
+func pickGroupMemberIdentifier(number string, uuid string, useOnlyUuidAsIdentifier bool) string {
+	if useOnlyUuidAsIdentifier {
+		return uuid
+	}
+
+	if number != "" {
+		return number
+	}
+
+	return uuid
+}
+
 func getRecipientType(s string) (ds.RecpType, error) {
 	// check if the provided recipient is of type 'group'
 	if strings.HasPrefix(s, groupPrefix) { // if the recipient starts with 'group.' it is either a group or a username that starts with 'group.'
@@ -1181,7 +1193,7 @@ func (s *SignalClient) updateGroupMembers(number string, groupId string, members
 		return nil
 	}
 
-	group, err := s.GetGroup(number, groupId)
+	group, err := s.GetGroup(number, groupId, false)
 	if err != nil {
 		return err
 	}
@@ -1243,7 +1255,7 @@ func (s *SignalClient) updateGroupAdmins(number string, groupId string, admins [
 		return nil
 	}
 
-	group, err := s.GetGroup(number, groupId)
+	group, err := s.GetGroup(number, groupId, false)
 	if err != nil {
 		return err
 	}
@@ -1300,7 +1312,7 @@ func (s *SignalClient) RemoveAdminsFromGroup(number string, groupId string, admi
 	return s.updateGroupAdmins(number, groupId, admins, false)
 }
 
-func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
+func (s *SignalClient) GetGroups(number string, useOnlyUuidAsIdentifier bool) ([]GroupEntry, error) {
 	groupEntries := []GroupEntry{}
 
 	var signalCliGroupEntries []SignalCliGroupEntry
@@ -1341,40 +1353,28 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 
 		members := []string{}
 		for _, val := range signalCliGroupEntry.Members {
-			identifier := val.Number
-			if identifier == "" {
-				identifier = val.Uuid
-			}
+			identifier := pickGroupMemberIdentifier(val.Number, val.Uuid, useOnlyUuidAsIdentifier)
 			members = append(members, identifier)
 		}
 		groupEntry.Members = members
 
 		pendingMembers := []string{}
 		for _, val := range signalCliGroupEntry.PendingMembers {
-			identifier := val.Number
-			if identifier == "" {
-				identifier = val.Uuid
-			}
+			identifier := pickGroupMemberIdentifier(val.Number, val.Uuid, useOnlyUuidAsIdentifier)
 			pendingMembers = append(pendingMembers, identifier)
 		}
 		groupEntry.PendingInvites = pendingMembers
 
 		requestingMembers := []string{}
 		for _, val := range signalCliGroupEntry.RequestingMembers {
-			identifier := val.Number
-			if identifier == "" {
-				identifier = val.Uuid
-			}
+			identifier := pickGroupMemberIdentifier(val.Number, val.Uuid, useOnlyUuidAsIdentifier)
 			requestingMembers = append(requestingMembers, identifier)
 		}
 		groupEntry.PendingRequests = requestingMembers
 
 		admins := []string{}
 		for _, val := range signalCliGroupEntry.Admins {
-			identifier := val.Number
-			if identifier == "" {
-				identifier = val.Uuid
-			}
+			identifier := pickGroupMemberIdentifier(val.Number, val.Uuid, useOnlyUuidAsIdentifier)
 			admins = append(admins, identifier)
 		}
 		groupEntry.Admins = admins
@@ -1387,9 +1387,9 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 	return groupEntries, nil
 }
 
-func (s *SignalClient) GetGroup(number string, groupId string) (*GroupEntry, error) {
+func (s *SignalClient) GetGroup(number string, groupId string, useOnlyUuidAsIdentifier bool) (*GroupEntry, error) {
 	groupEntry := GroupEntry{}
-	groups, err := s.GetGroups(number)
+	groups, err := s.GetGroups(number, useOnlyUuidAsIdentifier)
 	if err != nil {
 		return nil, err
 	}
