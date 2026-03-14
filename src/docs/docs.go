@@ -917,6 +917,12 @@ const docTemplate = `{
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Use UUIDs instead of phone numbers as identifier for (pending|requesting) members",
+                        "name": "use_only_uuid_as_identifier",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1010,6 +1016,12 @@ const docTemplate = `{
                         "name": "groupid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Use UUIDs instead of phone numbers as identifier for (pending|requesting) members",
+                        "name": "use_only_uuid_as_identifier",
+                        "in": "query"
                     }
                 ],
                 "responses": {
