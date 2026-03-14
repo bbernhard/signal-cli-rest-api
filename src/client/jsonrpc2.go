@@ -233,13 +233,6 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 		}
 		log.Debug("json-rpc received data: ", str)
 
-		if receiveWebhookUrl != "" {
-			err = postMessageToWebhook(receiveWebhookUrl, []byte(str))
-			if err != nil {
-				log.Error("Couldn't post data to webhook: ", err)
-			}
-		}
-
 		var resp1 JsonRpc2ReceivedMessage
 		json.Unmarshal([]byte(str), &resp1)
 		if resp1.Method == "receive" {
@@ -254,6 +247,13 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 				continue
 			}
 			r.receivedMessagesMutex.Unlock()
+
+			if receiveWebhookUrl != "" {
+				err = postMessageToWebhook(receiveWebhookUrl, []byte(str))
+				if err != nil {
+					log.Error("Couldn't post data to webhook: ", err)
+				}
+			}
 		}
 
 		var resp2 JsonRpc2MessageResponse
