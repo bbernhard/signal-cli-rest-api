@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"io/ioutil"
@@ -18,6 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 // @title Signal Cli REST API
@@ -79,6 +81,13 @@ func main() {
 		}
 	}
 
+	// Setup telemetry (optional, disabled by default)
+	shutdown, err := utils.SetupTelemetry(context.Background())
+	if err != nil {
+		log.Error("Failed to setup telemetry: ", err.Error())
+	}
+	defer utils.GracefulShutdown(shutdown)
+
 	if utils.GetEnv("SWAGGER_USE_HTTPS_AS_PREFERRED_SCHEME", "false") == "false" {
 		docs.SwaggerInfo.Schemes = []string{"http", "https"}
 	} else {
@@ -91,6 +100,9 @@ func main() {
 	}))
 
 	router.Use(gin.Recovery())
+
+	// Add OpenTelemetry instrumentation for Gin
+	router.Use(otelgin.Middleware("signal-cli-rest-api"))
 
 	port := utils.GetEnv("PORT", "8080")
 	if _, err := strconv.Atoi(port); err != nil {
@@ -109,7 +121,7 @@ func main() {
 		supportsSignalCliNative = "1"
 	}
 
-	err := os.Setenv("SUPPORTS_NATIVE", supportsSignalCliNative)
+	err = os.Setenv("SUPPORTS_NATIVE", supportsSignalCliNative)
 	if err != nil {
 		log.Fatal("Couldn't set env variable: ", err.Error())
 	}
