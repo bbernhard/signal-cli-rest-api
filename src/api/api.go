@@ -1024,7 +1024,6 @@ func (a *Api) RemoveAdminsFromGroup(c *gin.Context) {
 // @Success 200 {object} []client.GroupEntry
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
-// @Param use_only_uuid_as_identifier query bool false "Use UUIDs instead of phone numbers as identifier for (pending|requesting) members"
 // @Router /v1/groups/{number} [get]
 func (a *Api) GetGroups(c *gin.Context) {
 	number, err := url.PathUnescape(c.Param("number"))
@@ -1033,13 +1032,7 @@ func (a *Api) GetGroups(c *gin.Context) {
 		return
 	}
 
-	useOnlyUuidAsIdentifier := c.DefaultQuery("use_only_uuid_as_identifier", "false")
-	if useOnlyUuidAsIdentifier != "true" && useOnlyUuidAsIdentifier != "false" {
-		c.JSON(400, Error{Msg: "Couldn't process request - use_only_uuid_as_identifier parameter needs to be either 'true' or 'false'"})
-		return
-	}
-
-	groups, err := a.signalClient.GetGroups(number, StringToBool(useOnlyUuidAsIdentifier))
+	groups, err := a.signalClient.GetGroups(number)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
@@ -1057,7 +1050,6 @@ func (a *Api) GetGroups(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param groupid path string true "Group ID"
-// @Param use_only_uuid_as_identifier query bool false "Use UUIDs instead of phone numbers as identifier for (pending|requesting) members"
 // @Router /v1/groups/{number}/{groupid} [get]
 func (a *Api) GetGroup(c *gin.Context) {
 	number, err := url.PathUnescape(c.Param("number"))
@@ -1067,13 +1059,7 @@ func (a *Api) GetGroup(c *gin.Context) {
 	}
 	groupId := c.Param("groupid")
 
-	useOnlyUuidAsIdentifier := c.DefaultQuery("use_only_uuid_as_identifier", "false")
-	if useOnlyUuidAsIdentifier != "true" && useOnlyUuidAsIdentifier != "false" {
-		c.JSON(400, Error{Msg: "Couldn't process request - use_only_uuid_as_identifier parameter needs to be either 'true' or 'false'"})
-		return
-	}
-
-	groupEntry, err := a.signalClient.GetGroup(number, groupId, StringToBool(useOnlyUuidAsIdentifier))
+	groupEntry, err := a.signalClient.GetGroup(number, groupId)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
