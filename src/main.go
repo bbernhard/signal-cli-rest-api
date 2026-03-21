@@ -123,7 +123,7 @@ func main() {
 	mode := utils.GetEnv("MODE", "normal")
 	if mode == "normal" {
 		signalCliMode = client.Normal
-	} else if mode == "json-rpc" {
+	} else if mode == "json-rpc" || mode == "json-rpc-native" {
 		signalCliMode = client.JsonRpc
 	} else if mode == "native" {
 		signalCliMode = client.Native

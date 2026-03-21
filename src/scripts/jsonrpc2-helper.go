@@ -13,7 +13,7 @@ import (
 const supervisorctlConfigTemplate = `
 [program:%s]
 process_name=%s
-command=signal-cli --output=json --config %s%s daemon %s%s%s%s --tcp 127.0.0.1:%d
+command=%s --output=json --config %s%s daemon %s%s%s%s --tcp 127.0.0.1:%d
 autostart=true
 autorestart=true
 startretries=10
@@ -42,6 +42,12 @@ func main() {
 	var tcpPort int64 = 6001
 
 	jsonRpc2ClientConfig.AddEntry(utils.MULTI_ACCOUNT_NUMBER, utils.JsonRpc2ClientConfigEntry{TcpPort: tcpPort})
+
+	signalCliBinary := "signal-cli"
+	signalMode := utils.GetEnv("MODE", "json-rpc")
+	if signalMode == "json-rpc-native" {
+		signalCliBinary = "signal-cli-native"
+	}
 
 	signalCliIgnoreAttachments := ""
 	ignoreAttachments := utils.GetEnv("JSON_RPC_IGNORE_ATTACHMENTS", "")
@@ -91,7 +97,7 @@ func main() {
 	//write supervisorctl config
 	supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-1.conf"
 
-	supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName,
+	supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName, signalCliBinary,
 		signalCliConfigDir, trustNewIdentities, signalCliIgnoreAttachments, signalCliIgnoreStories,
 		signalCliIgnoreAvatars, signalCliIgnoreStickers, tcpPort,
 		supervisorctlProgramName, supervisorctlProgramName)

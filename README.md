@@ -58,13 +58,14 @@ The `signal-cli-rest-api` supports three different modes of execution, which can
 * **`normal` Mode: (Default)** The `signal-cli` executable is invoked for every REST API request. Being a Java application, each REST call requires a new startup of the JVM (Java Virtual Machine), increasing the latency and hence leading to the slowest mode of operation.
 * **`native` Mode:** A precompiled binary `signal-cli-native` (using GraalVM) is used for every REST API request. This results in a much lower latency & memory usage on each call. On the `armv7` platform this mode is not available and falls back to `normal`. The native mode may also be less stable, due to the experimental state of GraalVM compiler.
 * `json-rpc` Mode: A single, JVM-based `signal-cli` instance is spawned as daemon process. This mode is usually the fastest, but requires more memory as the JVM keeps running.
-
+* `json-rpc-native` Mode: Uses the `signal-cli-native` binary and starts it in daemon mode (this mode basically combines the advantages of the `native` mode and the `json-rpc` mode). 
 
 |       mode | speed                                                    | resident memory usage |
 | ---------: | :------------------------------------------------------- | :-------------------- |
 |   `normal` | :heavy_check_mark:                                       | normal                |
 |   `native` | :heavy_check_mark: :heavy_check_mark:                    | normal                |
 | `json-rpc` | :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: | increased             |
+| `json-rpc-native` | :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: :heavy_check_mark: | normal             |
 
 
 **Example of running `signal-cli-rest` in `native` mode**
