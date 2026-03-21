@@ -1024,6 +1024,7 @@ func (a *Api) RemoveAdminsFromGroup(c *gin.Context) {
 // @Success 200 {object} []client.GroupEntry
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
+// @Param expand query bool false "Expand the response to show more details (default: false)"
 // @Router /v1/groups/{number} [get]
 func (a *Api) GetGroups(c *gin.Context) {
 	number, err := url.PathUnescape(c.Param("number"))
@@ -1032,12 +1033,26 @@ func (a *Api) GetGroups(c *gin.Context) {
 		return
 	}
 
-	groups, err := a.signalClient.GetGroups(number)
-	if err != nil {
-		c.JSON(400, Error{Msg: err.Error()})
+	expand := c.DefaultQuery("expand", "false")
+	if expand != "true" && expand != "false" {
+		c.JSON(400, Error{Msg: "Couldn't process request - expand parameter needs to be either 'true' or 'false'"})
 		return
 	}
 
+	var groups any
+	if StringToBool(expand) {
+		groups, err = a.signalClient.GetGroupsExpanded(number)
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+	} else {
+		groups, err = a.signalClient.GetGroups(number)
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+	}
 	c.JSON(200, groups)
 }
 
@@ -1050,6 +1065,7 @@ func (a *Api) GetGroups(c *gin.Context) {
 // @Failure 400 {object} Error
 // @Param number path string true "Registered Phone Number"
 // @Param groupid path string true "Group ID"
+// @Param expand query bool false "Expand the response to show more details (default: false)"
 // @Router /v1/groups/{number}/{groupid} [get]
 func (a *Api) GetGroup(c *gin.Context) {
 	number, err := url.PathUnescape(c.Param("number"))
@@ -1059,10 +1075,25 @@ func (a *Api) GetGroup(c *gin.Context) {
 	}
 	groupId := c.Param("groupid")
 
-	groupEntry, err := a.signalClient.GetGroup(number, groupId)
-	if err != nil {
-		c.JSON(400, Error{Msg: err.Error()})
+	expand := c.DefaultQuery("expand", "false")
+	if expand != "true" && expand != "false" {
+		c.JSON(400, Error{Msg: "Couldn't process request - expand parameter needs to be either 'true' or 'false'"})
 		return
+	}
+
+	var groupEntry any
+	if StringToBool(expand) {
+		groupEntry, err = a.signalClient.GetGroupExpanded(number, groupId)
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
+	} else {
+		groupEntry, err = a.signalClient.GetGroup(number, groupId)
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
 	}
 
 	if groupEntry != nil {

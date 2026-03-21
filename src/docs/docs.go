@@ -917,6 +917,12 @@ const docTemplate = `{
                         "name": "number",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Expand the response to show more details (default: false)",
+                        "name": "expand",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1010,6 +1016,12 @@ const docTemplate = `{
                         "name": "groupid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Expand the response to show more details (default: false)",
+                        "name": "expand",
+                        "in": "query"
                     }
                 ],
                 "responses": {

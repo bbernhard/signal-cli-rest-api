@@ -1163,6 +1163,10 @@ paths:
         name: number
         required: true
         type: string
+      - description: 'Expand the response to show more details (default: false)'
+        in: query
+        name: expand
+        type: boolean
       produces:
       - application/json
       responses:
@@ -1254,6 +1258,10 @@ paths:
         name: groupid
         required: true
         type: string
+      - description: 'Expand the response to show more details (default: false)'
+        in: query
+        name: expand
+        type: boolean
       produces:
       - application/json
       responses:
