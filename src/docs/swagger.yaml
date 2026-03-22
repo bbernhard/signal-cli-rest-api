@@ -1163,10 +1163,9 @@ paths:
         name: number
         required: true
         type: string
-      - description: Use UUIDs instead of phone numbers as identifier for (pending|requesting)
-          members
+      - description: 'Expand the response to show more details (default: false)'
         in: query
-        name: use_only_uuid_as_identifier
+        name: expand
         type: boolean
       produces:
       - application/json
@@ -1259,10 +1258,9 @@ paths:
         name: groupid
         required: true
         type: string
-      - description: Use UUIDs instead of phone numbers as identifier for (pending|requesting)
-          members
+      - description: 'Expand the response to show more details (default: false)'
         in: query
-        name: use_only_uuid_as_identifier
+        name: expand
         type: boolean
       produces:
       - application/json

@@ -27,6 +27,12 @@ func main() {
 
 	args := []string{"--output=json", "--config", signalCliConfigDir}
 
+	signalCliBinary := "signal-cli"
+	signalMode := utils.GetEnv("MODE", "json-rpc")
+	if signalMode == "json-rpc-native" {
+		signalCliBinary = "signal-cli-native"
+	}
+
 	trustNewIdentitiesEnv := utils.GetEnv("JSON_RPC_TRUST_NEW_IDENTITIES", "")
 	if trustNewIdentitiesEnv == "on-first-use" {
 		args = append(args, []string{"--trust-new-identities", "on-first-use"}...)
@@ -39,11 +45,6 @@ func main() {
 	}
 
 	args = append(args, "daemon")
-
-	ignoreAttachments := utils.GetEnv("JSON_RPC_IGNORE_ATTACHMENTS", "")
-	if ignoreAttachments == "true" {
-		args = append(args, "--ignore-attachments")
-	}
 
 	ignoreStories := utils.GetEnv("JSON_RPC_IGNORE_STORIES", "")
 	if ignoreStories == "true" {
@@ -60,6 +61,11 @@ func main() {
 		args = append(args, "--ignore-stickers")
 	}
 
+	ignoreAttachments := utils.GetEnv("JSON_RPC_IGNORE_ATTACHMENTS", "")
+	if ignoreAttachments == "true" {
+		args = append(args, "--ignore-attachments")
+	}
+
 	args = append(args, []string{"--tcp", "127.0.0.1:" + strconv.FormatInt(tcpPort, 10)}...)
 
 	// write jsonrpc.yml config file
@@ -72,7 +78,7 @@ func main() {
 
 	env := os.Environ()
 
-	err = syscall.Exec("/usr/bin/signal-cli", args, env)
+	err = syscall.Exec("/usr/bin/"+signalCliBinary, args, env)
 	if err != nil {
 		log.Fatal("Couldn't start signal-cli in json-rpc mode: ", err.Error())
 	}

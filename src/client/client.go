@@ -126,6 +126,30 @@ type GroupEntry struct {
 	Permissions     ds.GroupPermissions `json:"permissions"`
 }
 
+type GroupMember struct {
+	Number string `json:"number"`
+	Uuid   string `json:"uuid"`
+}
+
+type GroupAdmin struct {
+	Number string `json:"number"`
+	Uuid   string `json:"uuid"`
+}
+
+type ExpandedGroupEntry struct {
+	Name            string              `json:"name"`
+	Description     string              `json:"description"`
+	Id              string              `json:"id"`
+	InternalId      string              `json:"internal_id"`
+	Members         []GroupMember       `json:"members"`
+	Blocked         bool                `json:"blocked"`
+	PendingInvites  []GroupMember       `json:"pending_invites"`
+	PendingRequests []GroupMember       `json:"pending_requests"`
+	InviteLink      string              `json:"invite_link"`
+	Admins          []GroupAdmin        `json:"admins"`
+	Permissions     ds.GroupPermissions `json:"permissions"`
+}
+
 type IdentityEntry struct {
 	Number       string `json:"number"`
 	Status       string `json:"status"`
@@ -135,31 +159,21 @@ type IdentityEntry struct {
 	Uuid         string `json:"uuid"`
 }
 
-type SignalCliGroupMember struct {
-	Number string `json:"number"`
-	Uuid   string `json:"uuid"`
-}
-
-type SignalCliGroupAdmin struct {
-	Number string `json:"number"`
-	Uuid   string `json:"uuid"`
-}
-
 type SignalCliGroupEntry struct {
-	Name                  string                 `json:"name"`
-	Description           string                 `json:"description"`
-	Id                    string                 `json:"id"`
-	IsMember              bool                   `json:"isMember"`
-	IsBlocked             bool                   `json:"isBlocked"`
-	Members               []SignalCliGroupMember `json:"members"`
-	PendingMembers        []SignalCliGroupMember `json:"pendingMembers"`
-	RequestingMembers     []SignalCliGroupMember `json:"requestingMembers"`
-	GroupInviteLink       string                 `json:"groupInviteLink"`
-	Admins                []SignalCliGroupAdmin  `json:"admins"`
-	Uuid                  string                 `json:"uuid"`
-	PermissionEditDetails string                 `json:"permissionEditDetails"`
-	PermissionAddMember   string                 `json:"permissionAddMember"`
-	PermissionSendMessage string                 `json:"permissionSendMessage"`
+	Name                  string        `json:"name"`
+	Description           string        `json:"description"`
+	Id                    string        `json:"id"`
+	IsMember              bool          `json:"isMember"`
+	IsBlocked             bool          `json:"isBlocked"`
+	Members               []GroupMember `json:"members"`
+	PendingMembers        []GroupMember `json:"pendingMembers"`
+	RequestingMembers     []GroupMember `json:"requestingMembers"`
+	GroupInviteLink       string        `json:"groupInviteLink"`
+	Admins                []GroupAdmin  `json:"admins"`
+	Uuid                  string        `json:"uuid"`
+	PermissionEditDetails string        `json:"permissionEditDetails"`
+	PermissionAddMember   string        `json:"permissionAddMember"`
+	PermissionSendMessage string        `json:"permissionSendMessage"`
 }
 
 type SignalCliIdentityEntry struct {
@@ -339,18 +353,6 @@ func getSignalCliModeString(signalCliMode SignalCliMode) string {
 		return "json-rpc"
 	}
 	return "unknown"
-}
-
-func pickGroupMemberIdentifier(number string, uuid string, useOnlyUuidAsIdentifier bool) string {
-	if useOnlyUuidAsIdentifier {
-		return uuid
-	}
-
-	if number != "" {
-		return number
-	}
-
-	return uuid
 }
 
 func getRecipientType(s string) (ds.RecpType, error) {
@@ -1193,7 +1195,7 @@ func (s *SignalClient) updateGroupMembers(number string, groupId string, members
 		return nil
 	}
 
-	group, err := s.GetGroup(number, groupId, false)
+	group, err := s.GetGroup(number, groupId)
 	if err != nil {
 		return err
 	}
@@ -1255,7 +1257,7 @@ func (s *SignalClient) updateGroupAdmins(number string, groupId string, admins [
 		return nil
 	}
 
-	group, err := s.GetGroup(number, groupId, false)
+	group, err := s.GetGroup(number, groupId)
 	if err != nil {
 		return err
 	}
@@ -1312,8 +1314,8 @@ func (s *SignalClient) RemoveAdminsFromGroup(number string, groupId string, admi
 	return s.updateGroupAdmins(number, groupId, admins, false)
 }
 
-func (s *SignalClient) GetGroups(number string, useOnlyUuidAsIdentifier bool) ([]GroupEntry, error) {
-	groupEntries := []GroupEntry{}
+func (s *SignalClient) GetGroupsExpanded(number string) ([]ExpandedGroupEntry, error) {
+	groupEntries := []ExpandedGroupEntry{}
 
 	var signalCliGroupEntries []SignalCliGroupEntry
 	var err error
@@ -1341,7 +1343,7 @@ func (s *SignalClient) GetGroups(number string, useOnlyUuidAsIdentifier bool) ([
 	}
 
 	for _, signalCliGroupEntry := range signalCliGroupEntries {
-		var groupEntry GroupEntry
+		var groupEntry ExpandedGroupEntry
 		groupEntry.InternalId = signalCliGroupEntry.Id
 		groupEntry.Name = signalCliGroupEntry.Name
 		groupEntry.Id = convertInternalGroupIdToGroupId(signalCliGroupEntry.Id)
@@ -1350,35 +1352,10 @@ func (s *SignalClient) GetGroups(number string, useOnlyUuidAsIdentifier bool) ([
 		groupEntry.Permissions.SendMessages = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
 		groupEntry.Permissions.EditGroup = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
 		groupEntry.Permissions.AddMembers = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionAddMember)
-
-		members := []string{}
-		for _, val := range signalCliGroupEntry.Members {
-			identifier := pickGroupMemberIdentifier(val.Number, val.Uuid, useOnlyUuidAsIdentifier)
-			members = append(members, identifier)
-		}
-		groupEntry.Members = members
-
-		pendingMembers := []string{}
-		for _, val := range signalCliGroupEntry.PendingMembers {
-			identifier := pickGroupMemberIdentifier(val.Number, val.Uuid, useOnlyUuidAsIdentifier)
-			pendingMembers = append(pendingMembers, identifier)
-		}
-		groupEntry.PendingInvites = pendingMembers
-
-		requestingMembers := []string{}
-		for _, val := range signalCliGroupEntry.RequestingMembers {
-			identifier := pickGroupMemberIdentifier(val.Number, val.Uuid, useOnlyUuidAsIdentifier)
-			requestingMembers = append(requestingMembers, identifier)
-		}
-		groupEntry.PendingRequests = requestingMembers
-
-		admins := []string{}
-		for _, val := range signalCliGroupEntry.Admins {
-			identifier := pickGroupMemberIdentifier(val.Number, val.Uuid, useOnlyUuidAsIdentifier)
-			admins = append(admins, identifier)
-		}
-		groupEntry.Admins = admins
-
+		groupEntry.Members = signalCliGroupEntry.Members
+		groupEntry.PendingInvites = signalCliGroupEntry.PendingMembers
+		groupEntry.PendingRequests = signalCliGroupEntry.RequestingMembers
+		groupEntry.Admins = signalCliGroupEntry.Admins
 		groupEntry.InviteLink = signalCliGroupEntry.GroupInviteLink
 
 		groupEntries = append(groupEntries, groupEntry)
@@ -1387,9 +1364,84 @@ func (s *SignalClient) GetGroups(number string, useOnlyUuidAsIdentifier bool) ([
 	return groupEntries, nil
 }
 
-func (s *SignalClient) GetGroup(number string, groupId string, useOnlyUuidAsIdentifier bool) (*GroupEntry, error) {
+func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
+	expandedGroupEntries, err := s.GetGroupsExpanded(number)
+	if err != nil {
+		return []GroupEntry{}, err
+	}
+
+	groupEntries := []GroupEntry{}
+	for _, expandedGroupEntry := range expandedGroupEntries {
+		groupEntry := GroupEntry{InternalId: expandedGroupEntry.InternalId, Name: expandedGroupEntry.Name,
+			Id: expandedGroupEntry.Id, Blocked: expandedGroupEntry.Blocked, Description: expandedGroupEntry.Description,
+			Permissions: expandedGroupEntry.Permissions, InviteLink: expandedGroupEntry.InviteLink}
+
+		members := []string{}
+		for _, val := range expandedGroupEntry.Members {
+			identifier := val.Number
+			if identifier == "" {
+				identifier = val.Uuid
+			}
+			members = append(members, identifier)
+		}
+		groupEntry.Members = members
+
+		pendingInvites := []string{}
+		for _, val := range expandedGroupEntry.PendingInvites {
+			identifier := val.Number
+			if identifier == "" {
+				identifier = val.Uuid
+			}
+			pendingInvites = append(pendingInvites, identifier)
+		}
+		groupEntry.PendingInvites = pendingInvites
+
+		pendingRequests := []string{}
+		for _, val := range expandedGroupEntry.PendingRequests {
+			identifier := val.Number
+			if identifier == "" {
+				identifier = val.Uuid
+			}
+			pendingRequests = append(pendingRequests, identifier)
+		}
+		groupEntry.PendingRequests = pendingRequests
+
+		admins := []string{}
+		for _, val := range expandedGroupEntry.Admins {
+			identifier := val.Number
+			if identifier == "" {
+				identifier = val.Uuid
+			}
+			admins = append(admins, identifier)
+		}
+		groupEntry.Admins = admins
+
+		groupEntries = append(groupEntries, groupEntry)
+	}
+
+	return groupEntries, nil
+}
+
+func (s *SignalClient) GetGroup(number string, groupId string) (*GroupEntry, error) {
 	groupEntry := GroupEntry{}
-	groups, err := s.GetGroups(number, useOnlyUuidAsIdentifier)
+	groups, err := s.GetGroups(number)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, group := range groups {
+		if group.Id == groupId {
+			groupEntry = group
+			return &groupEntry, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (s *SignalClient) GetGroupExpanded(number string, groupId string) (*ExpandedGroupEntry, error) {
+	groupEntry := ExpandedGroupEntry{}
+	groups, err := s.GetGroupsExpanded(number)
 	if err != nil {
 		return nil, err
 	}

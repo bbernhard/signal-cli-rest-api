@@ -920,8 +920,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
-                        "description": "Use UUIDs instead of phone numbers as identifier for (pending|requesting) members",
-                        "name": "use_only_uuid_as_identifier",
+                        "description": "Expand the response to show more details (default: false)",
+                        "name": "expand",
                         "in": "query"
                     }
                 ],
@@ -1019,8 +1019,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
-                        "description": "Use UUIDs instead of phone numbers as identifier for (pending|requesting) members",
-                        "name": "use_only_uuid_as_identifier",
+                        "description": "Expand the response to show more details (default: false)",
+                        "name": "expand",
                         "in": "query"
                     }
                 ],
