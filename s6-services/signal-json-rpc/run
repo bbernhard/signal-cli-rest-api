@@ -1,7 +1,7 @@
 #!/command/with-contenv sh
 # File: /etc/s6-overlay/s6-rc.d/signal-json-rpc/run
 
-if [ "$MODE" != "json-rpc" ]; then
+if [ "$MODE" != "json-rpc" ] && [ "$MODE" != "json-rpc-native" ]; then
     echo "Running as mode: $MODE - skipping json-rpc setup"
     sleep infinity # do nothing, but keep service running
     exit 0 
