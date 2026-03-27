@@ -225,6 +225,8 @@ func main() {
 			groups.DELETE(":number/:groupid/members", api.RemoveMembersFromGroup)
 			groups.POST(":number/:groupid/admins", api.AddAdminsToGroup)
 			groups.DELETE(":number/:groupid/admins", api.RemoveAdminsFromGroup)
+			groups.POST(":number/:groupid/pin-message", api.PinMessageInGroup)
+			groups.DELETE(":number/:groupid/pin-message", api.UnpinMessageInGroup)
 		}
 
 		link := v1.Group("qrcodelink")

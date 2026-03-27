@@ -56,6 +56,17 @@ type UpdateGroupRequest struct {
 	Permissions    *ds.GroupPermissions `json:"permissions"`
 }
 
+type PinMessageInGroupRequest struct {
+	TargetAuthor string `json:"target_author"`
+	Timestamp    int64  `json:"timestamp"`
+	Duration     *int   `json:"duration"`
+}
+
+type UnpinMessageInGroupRequest struct {
+	TargetAuthor string `json:"target_author"`
+	Timestamp    int64  `json:"timestamp"`
+}
+
 type ChangeGroupMembersRequest struct {
 	Members []string `json:"members"`
 }
@@ -1171,6 +1182,103 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
+}
+
+// @Summary Pin a message in a Signal Group.
+// @Tags Groups
+// @Description Pin a message in a Signal Group.
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} Error
+// @Param data body PinMessageInGroupRequest true "Pin"
+// @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group Id"
+// @Router /v1/groups/{number}/{groupid}/pin-message [post]
+func (a *Api) PinMessageInGroup(c *gin.Context) {
+	base64EncodedGroupId := c.Param("groupid")
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if base64EncodedGroupId == "" {
+		c.JSON(400, Error{Msg: "Please specify a group id"})
+		return
+	}
+
+	groupId, err := client.ConvertGroupIdToInternalGroupId(base64EncodedGroupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	var req PinMessageInGroupRequest
+	err = c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	duration := -1
+	if req.Duration != nil {
+		duration = *req.Duration
+	}
+
+	err = a.signalClient.PinMessageInGroup(number, groupId, req.TargetAuthor, req.Timestamp, duration)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(201)
+}
+
+// @Summary Unpin a message in a Signal Group.
+// @Tags Groups
+// @Description Unpin a message in a Signal Group.
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} Error
+// @Param data body UnpinMessageInGroupRequest true "Unpin"
+// @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group Id"
+// @Router /v1/groups/{number}/{groupid}/pin-message [delete]
+func (a *Api) UnpinMessageInGroup(c *gin.Context) {
+	base64EncodedGroupId := c.Param("groupid")
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if base64EncodedGroupId == "" {
+		c.JSON(400, Error{Msg: "Please specify a group id"})
+		return
+	}
+
+	groupId, err := client.ConvertGroupIdToInternalGroupId(base64EncodedGroupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	var req UnpinMessageInGroupRequest
+	err = c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	err = a.signalClient.UnpinMessageInGroup(number, groupId, req.TargetAuthor, req.Timestamp)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(201)
 }
 
 // @Summary Link device and generate QR code.

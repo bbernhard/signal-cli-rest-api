@@ -1456,6 +1456,65 @@ func (s *SignalClient) GetGroupExpanded(number string, groupId string) (*Expande
 	return nil, nil
 }
 
+func (s *SignalClient) PinMessageInGroup(number string, groupId string, targetAuthor string, timestamp int64, duration int) error {
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			TargetAuthor    string `json:"target-author"`
+			TargetTimestamp int64  `json:"target-timestamp"`
+			PinDuration     int    `json:"pin-duration"`
+			GroupId         string `json:"group-id"`
+		}
+
+		req := Request{TargetAuthor: targetAuthor, TargetTimestamp: timestamp, PinDuration: duration, GroupId: groupId}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("sendPinMessage", &number, req)
+		if err != nil {
+			return err
+		}
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "sendPinMessage", "-g", groupId,
+			"-a", targetAuthor, "-t", strconv.FormatInt(timestamp, 10), "-d", strconv.Itoa(duration)}
+
+		_, err := s.cliClient.Execute(true, cmd, "")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *SignalClient) UnpinMessageInGroup(number string, groupId string, targetAuthor string, timestamp int64) error {
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			TargetAuthor    string `json:"target-author"`
+			TargetTimestamp int64  `json:"target-timestamp"`
+			GroupId         string `json:"group-id"`
+		}
+
+		req := Request{TargetAuthor: targetAuthor, TargetTimestamp: timestamp, GroupId: groupId}
+		jsonRpc2Client, err := s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("sendUnpinMessage", &number, req)
+		if err != nil {
+			return err
+		}
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-o", "json", "-a", number, "sendUnpinMessage", "-g", groupId,
+			"-a", targetAuthor, "-t", strconv.FormatInt(timestamp, 10)}
+
+		_, err := s.cliClient.Execute(true, cmd, "")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *SignalClient) GetAvatar(number string, id string, avatarType AvatarType) ([]byte, error) {
 	var err error
 	var rawData string
