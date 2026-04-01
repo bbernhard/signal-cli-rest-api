@@ -163,7 +163,7 @@ func main() {
 	jsonRpc2ClientConfigPathPath := *signalCliConfig + "/jsonrpc2.yml"
 	signalCliApiConfigPath := *signalCliConfig + "/api-config.yml"
 	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath, signalCliApiConfigPath, webhookUrl)
-	err = signalClient.Init(15)
+	err = signalClient.Init(60)
 	if err != nil {
 		log.Fatal("Couldn't init Signal Client: ", err.Error())
 	}
