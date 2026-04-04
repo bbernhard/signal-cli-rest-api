@@ -1,22 +1,23 @@
 diff --git a/build.gradle.kts b/build.gradle.kts
-index d8e36ea4..dba4dae3 100644
+index 5d127e4c..7ca155f9 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -91,6 +91,7 @@ dependencies {
      implementation(libs.logback)
      implementation(libs.zxing)
      implementation(project(":libsignal-cli"))
-+	implementation(files("/tmp/libsignal-client.jar")) 
- }
++	implementation(files("/tmp/libsignal-client.jar"))
  
- configurations {
-@@ -99,6 +100,9 @@ configurations {
+     testImplementation(libs.junit.jupiter)
+     testImplementation(platform(libs.junit.jupiter.bom))
+@@ -107,6 +108,10 @@ configurations {
      }
  }
  
 +configurations.all {
 +    exclude(group = "org.signal", module = "libsignal-client")
 +}
++
  
  tasks.withType<AbstractArchiveTask>().configureEach {
      isPreserveFileTimestamps = false
