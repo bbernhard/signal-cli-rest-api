@@ -84,6 +84,7 @@ func main() {
 	} else {
 		docs.SwaggerInfo.Schemes = []string{"https", "http"}
 	}
+	docs.SwaggerInfo.Version = utils.GetEnv("BUILD_VERSION", "1.0")
 
 	router := gin.New()
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
