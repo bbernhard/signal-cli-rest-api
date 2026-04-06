@@ -97,9 +97,16 @@ type VerifyNumberSettings struct {
 	Pin string `json:"pin,omitempty"`
 }
 
-type Reaction struct {
+type SendReactionRequest struct {
 	Recipient    string `json:"recipient"`
 	Reaction     string `json:"reaction"`
+	TargetAuthor string `json:"target_author"`
+	Timestamp    int64  `json:"timestamp"`
+}
+
+type RemoveReactionRequest struct {
+	Recipient    string `json:"recipient"`
+	Reaction     string `json:"reaction,omitempty"`
 	TargetAuthor string `json:"target_author"`
 	Timestamp    int64  `json:"timestamp"`
 }
@@ -1847,11 +1854,11 @@ func (a *Api) UpdateGroup(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
-// @Param data body Reaction true "Reaction"
+// @Param data body SendReactionRequest true "Reaction"
 // @Param number path string true "Registered phone number"
 // @Router /v1/reactions/{number} [post]
 func (a *Api) SendReaction(c *gin.Context) {
-	var req Reaction
+	var req SendReactionRequest
 	err := c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
@@ -1900,11 +1907,11 @@ func (a *Api) SendReaction(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
-// @Param data body Reaction true "Reaction"
+// @Param data body RemoveReactionRequest true "Reaction"
 // @Param number path string true "Registered phone number"
 // @Router /v1/reactions/{number} [delete]
 func (a *Api) RemoveReaction(c *gin.Context) {
-	var req Reaction
+	var req RemoveReactionRequest
 	err := c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})

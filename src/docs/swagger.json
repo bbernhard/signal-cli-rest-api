@@ -2000,7 +2000,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Reaction"
+                            "$ref": "#/definitions/api.SendReactionRequest"
                         }
                     },
                     {
@@ -2045,7 +2045,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Reaction"
+                            "$ref": "#/definitions/api.RemoveReactionRequest"
                         }
                     },
                     {
@@ -2953,29 +2953,6 @@
                 }
             }
         },
-        "api.Reaction": {
-            "type": "object",
-            "required": [
-                "reaction",
-                "recipient",
-                "target_author",
-                "timestamp"
-            ],
-            "properties": {
-                "reaction": {
-                    "type": "string"
-                },
-                "recipient": {
-                    "type": "string"
-                },
-                "target_author": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "integer"
-                }
-            }
-        },
         "api.Receipt": {
             "type": "object",
             "required": [
@@ -3033,6 +3010,28 @@
             "properties": {
                 "timestamp": {
                     "type": "string"
+                }
+            }
+        },
+        "api.RemoveReactionRequest": {
+            "type": "object",
+            "required": [
+                "recipient",
+                "target_author",
+                "timestamp"
+            ],
+            "properties": {
+                "reaction": {
+                    "type": "string"
+                },
+                "recipient": {
+                    "type": "string"
+                },
+                "target_author": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
                 }
             }
         },
@@ -3185,6 +3184,29 @@
                 },
                 "view_once": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api.SendReactionRequest": {
+            "type": "object",
+            "required": [
+                "reaction",
+                "recipient",
+                "target_author",
+                "timestamp"
+            ],
+            "properties": {
+                "reaction": {
+                    "type": "string"
+                },
+                "recipient": {
+                    "type": "string"
+                },
+                "target_author": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
                 }
             }
         },
