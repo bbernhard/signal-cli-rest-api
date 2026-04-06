@@ -9,7 +9,7 @@ docker run --rm -v $(pwd):/code ghcr.io/swaggo/swag:latest init
 Or, if you have `swag` installed:
 
 ```bash
-swag init
+swag init --requiredByDefault
 ```
 
 Then run the app in `/src`
