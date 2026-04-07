@@ -2003,7 +2003,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Reaction"
+                            "$ref": "#/definitions/api.SendReactionRequest"
                         }
                     },
                     {
@@ -2048,7 +2048,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Reaction"
+                            "$ref": "#/definitions/api.RemoveReactionRequest"
                         }
                     },
                     {
@@ -2956,29 +2956,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Reaction": {
-            "type": "object",
-            "required": [
-                "reaction",
-                "recipient",
-                "target_author",
-                "timestamp"
-            ],
-            "properties": {
-                "reaction": {
-                    "type": "string"
-                },
-                "recipient": {
-                    "type": "string"
-                },
-                "target_author": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "integer"
-                }
-            }
-        },
         "api.Receipt": {
             "type": "object",
             "required": [
@@ -3036,6 +3013,28 @@ const docTemplate = `{
             "properties": {
                 "timestamp": {
                     "type": "string"
+                }
+            }
+        },
+        "api.RemoveReactionRequest": {
+            "type": "object",
+            "required": [
+                "recipient",
+                "target_author",
+                "timestamp"
+            ],
+            "properties": {
+                "reaction": {
+                    "type": "string"
+                },
+                "recipient": {
+                    "type": "string"
+                },
+                "target_author": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
                 }
             }
         },
@@ -3188,6 +3187,29 @@ const docTemplate = `{
                 },
                 "view_once": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api.SendReactionRequest": {
+            "type": "object",
+            "required": [
+                "reaction",
+                "recipient",
+                "target_author",
+                "timestamp"
+            ],
+            "properties": {
+                "reaction": {
+                    "type": "string"
+                },
+                "recipient": {
+                    "type": "string"
+                },
+                "target_author": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
                 }
             }
         },

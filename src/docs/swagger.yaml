@@ -170,22 +170,6 @@ definitions:
     - captcha
     - challenge_token
     type: object
-  api.Reaction:
-    properties:
-      reaction:
-        type: string
-      recipient:
-        type: string
-      target_author:
-        type: string
-      timestamp:
-        type: integer
-    required:
-    - reaction
-    - recipient
-    - target_author
-    - timestamp
-    type: object
   api.Receipt:
     properties:
       receipt_type:
@@ -224,6 +208,21 @@ definitions:
       timestamp:
         type: string
     required:
+    - timestamp
+    type: object
+  api.RemoveReactionRequest:
+    properties:
+      reaction:
+        type: string
+      recipient:
+        type: string
+      target_author:
+        type: string
+      timestamp:
+        type: integer
+    required:
+    - recipient
+    - target_author
     - timestamp
     type: object
   api.SearchResponse:
@@ -330,6 +329,22 @@ definitions:
     - message
     - number
     - recipients
+    type: object
+  api.SendReactionRequest:
+    properties:
+      reaction:
+        type: string
+      recipient:
+        type: string
+      target_author:
+        type: string
+      timestamp:
+        type: integer
+    required:
+    - reaction
+    - recipient
+    - target_author
+    - timestamp
     type: object
   api.SetPinRequest:
     properties:
@@ -2068,7 +2083,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/api.Reaction'
+          $ref: '#/definitions/api.RemoveReactionRequest'
       - description: Registered phone number
         in: path
         name: number
@@ -2098,7 +2113,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/api.Reaction'
+          $ref: '#/definitions/api.SendReactionRequest'
       - description: Registered phone number
         in: path
         name: number
