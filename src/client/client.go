@@ -1319,10 +1319,11 @@ func (s *SignalClient) GetGroupsExpanded(number string) ([]ExpandedGroupEntry, e
 
 	var signalCliGroupEntries []SignalCliGroupEntry
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	var rawData string
 
 	if s.signalCliMode == JsonRpc {
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return groupEntries, err
 		}
@@ -1517,6 +1518,7 @@ func (s *SignalClient) UnpinMessageInGroup(number string, groupId string, target
 
 func (s *SignalClient) GetAvatar(number string, id string, avatarType AvatarType) ([]byte, error) {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	var rawData string
 
 	if avatarType == GroupAvatar {
@@ -1543,7 +1545,7 @@ func (s *SignalClient) GetAvatar(number string, id string, avatarType AvatarType
 			request.Profile = id
 		}
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return []byte{}, err
 		}
@@ -1727,9 +1729,10 @@ func (s *SignalClient) GetAccounts() ([]string, error) {
 	accounts := make([]string, 0)
 	var rawData string
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 
 	if s.signalCliMode == JsonRpc {
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return accounts, err
 		}
@@ -1899,10 +1902,11 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 
 func (s *SignalClient) ListIdentities(number string) (*[]IdentityEntry, error) {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	var rawData string
 	identityEntries := []IdentityEntry{}
 	if s.signalCliMode == JsonRpc {
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return nil, err
 		}
@@ -1937,6 +1941,7 @@ func (s *SignalClient) ListIdentities(number string) (*[]IdentityEntry, error) {
 
 func (s *SignalClient) TrustIdentity(number string, numberToTrust string, verifiedSafetyNumber *string, trustAllKnownKeys *bool) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			VerifiedSafetyNumber string `json:"verified-safety-number,omitempty"`
@@ -1953,7 +1958,7 @@ func (s *SignalClient) TrustIdentity(number string, numberToTrust string, verifi
 			request.TrustAllKnownKeys = *trustAllKnownKeys
 		}
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -1976,12 +1981,13 @@ func (s *SignalClient) TrustIdentity(number string, numberToTrust string, verifi
 
 func (s *SignalClient) BlockGroup(number string, groupId string) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			GroupId string `json:"groupId"`
 		}
 		request := Request{GroupId: groupId}
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -1994,12 +2000,13 @@ func (s *SignalClient) BlockGroup(number string, groupId string) error {
 
 func (s *SignalClient) JoinGroup(number string, groupId string) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			GroupId string `json:"groupId"`
 		}
 		request := Request{GroupId: groupId}
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -2012,12 +2019,13 @@ func (s *SignalClient) JoinGroup(number string, groupId string) error {
 
 func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			GroupId string `json:"groupId"`
 		}
 		request := Request{GroupId: groupId}
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -2160,6 +2168,7 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 func (s *SignalClient) SendReaction(number string, recipient string, emoji string, target_author string, timestamp int64, remove bool) error {
 	// see https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc#sendreaction
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	recp := recipient
 	isGroup := false
 	if strings.HasPrefix(recipient, groupPrefix) {
@@ -2194,7 +2203,7 @@ func (s *SignalClient) SendReaction(number string, recipient string, emoji strin
 		if remove {
 			request.Remove = remove
 		}
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -2223,6 +2232,7 @@ func (s *SignalClient) SendReaction(number string, recipient string, emoji strin
 func (s *SignalClient) SendReceipt(number string, recipient string, receipt_type string, timestamp int64) error {
 	// see https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc#sendreceipt
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	recp := recipient
 
 	if s.signalCliMode == JsonRpc {
@@ -2236,7 +2246,7 @@ func (s *SignalClient) SendReceipt(number string, recipient string, receipt_type
 		request.ReceiptType = receipt_type
 		request.Timestamp = timestamp
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -2259,6 +2269,7 @@ func (s *SignalClient) SendReceipt(number string, recipient string, receipt_type
 
 func (s *SignalClient) SendStartTyping(number string, recipient string) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	recp := recipient
 	isGroup := false
 	if strings.HasPrefix(recipient, groupPrefix) {
@@ -2281,7 +2292,7 @@ func (s *SignalClient) SendStartTyping(number string, recipient string) error {
 			request.GroupId = recp
 		}
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -2301,6 +2312,7 @@ func (s *SignalClient) SendStartTyping(number string, recipient string) error {
 
 func (s *SignalClient) SendStopTyping(number string, recipient string) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	recp := recipient
 	isGroup := false
 	if strings.HasPrefix(recipient, groupPrefix) {
@@ -2324,7 +2336,7 @@ func (s *SignalClient) SendStopTyping(number string, recipient string) error {
 			request.GroupId = recp
 		}
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -2402,8 +2414,9 @@ func (s *SignalClient) SearchForNumbers(number string, numbers []string) ([]Sear
 
 func (s *SignalClient) SendContacts(number string) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	if s.signalCliMode == JsonRpc {
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -2417,6 +2430,7 @@ func (s *SignalClient) SendContacts(number string) error {
 
 func (s *SignalClient) UpdateContact(number string, recipient string, name *string, expirationInSeconds *int) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			Recipient  string `json:"recipient"`
@@ -2430,7 +2444,7 @@ func (s *SignalClient) UpdateContact(number string, recipient string, name *stri
 		if expirationInSeconds != nil {
 			request.Expiration = *expirationInSeconds
 		}
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -2450,12 +2464,13 @@ func (s *SignalClient) UpdateContact(number string, recipient string, name *stri
 
 func (s *SignalClient) AddDevice(number string, uri string) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			Uri string `json:"uri"`
 		}
 		request := Request{Uri: uri}
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -2478,9 +2493,10 @@ func (s *SignalClient) ListDevices(number string) ([]ListDevicesResponse, error)
 	}
 
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	var rawData string
 	if s.signalCliMode == JsonRpc {
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return resp, err
 		}
@@ -2515,12 +2531,13 @@ func (s *SignalClient) ListDevices(number string) ([]ListDevicesResponse, error)
 
 func (s *SignalClient) RemoveDevice(number string, deviceId int64) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			DeviceId int64 `json:"deviceId"`
 		}
 		request := Request{DeviceId: deviceId}
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -2577,13 +2594,14 @@ func (s *SignalClient) SetUsername(number string, username string) (SetUsernameR
 
 	var resp SetUsernameResponse
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	var rawData string
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			Username string `json:"username"`
 		}
 		request := Request{Username: username}
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return resp, err
 		}
@@ -2666,9 +2684,10 @@ func (s *SignalClient) ListInstalledStickerPacks(number string) ([]ListInstalled
 	resp := []ListInstalledStickerPacksResponse{}
 
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	var rawData string
 	if s.signalCliMode == JsonRpc {
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return resp, err
 		}
@@ -2749,6 +2768,7 @@ func (s *SignalClient) ListContacts(number string, allRecipients bool, recipient
 	resp := []ListContactsResponse{}
 
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	var rawData string
 
 	if s.signalCliMode == JsonRpc {
@@ -2764,7 +2784,7 @@ func (s *SignalClient) ListContacts(number string, allRecipients bool, recipient
 			req.Recipient = recipient
 		}
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return nil, err
 		}
@@ -2871,6 +2891,7 @@ func (s *SignalClient) RemovePin(number string) error {
 func (s *SignalClient) RemoteDelete(number string, recipient string, timestamp int64) (RemoteDeleteResponse, error) {
 	// see https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc#remotedelete
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	var resp RemoteDeleteResponse
 	var rawData string
 
@@ -2906,7 +2927,7 @@ func (s *SignalClient) RemoteDelete(number string, recipient string, timestamp i
 		}
 		request.Timestamp = timestamp
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return resp, err
 		}
@@ -2945,6 +2966,7 @@ func (s *SignalClient) RemoteDelete(number string, recipient string, timestamp i
 
 func (s *SignalClient) CreatePoll(number string, recipient string, question string, answers []string, allowMultipleSelections bool) (string, error) {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	var rawData string
 
 	type Response struct {
@@ -2986,7 +3008,7 @@ func (s *SignalClient) CreatePoll(number string, recipient string, question stri
 			req.Username = recp
 		}
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return "", err
 		}
@@ -3036,6 +3058,7 @@ func (s *SignalClient) CreatePoll(number string, recipient string, question stri
 
 func (s *SignalClient) VoteInPoll(number string, recipient string, pollAuthor string, pollTimestamp int64, selectedAnswers []int32) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 
 	recp := recipient
 	recipientType, err := getRecipientType(recipient)
@@ -3079,7 +3102,7 @@ func (s *SignalClient) VoteInPoll(number string, recipient string, pollAuthor st
 			req.Username = recp
 		}
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
@@ -3122,6 +3145,7 @@ func (s *SignalClient) VoteInPoll(number string, recipient string, pollAuthor st
 
 func (s *SignalClient) ClosePoll(number string, recipient string, pollTimestamp int64) error {
 	var err error
+	var jsonRpc2Client *JsonRpc2Client
 
 	recp := recipient
 	recipientType, err := getRecipientType(recipient)
@@ -3155,7 +3179,7 @@ func (s *SignalClient) ClosePoll(number string, recipient string, pollTimestamp 
 			req.Username = recp
 		}
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
