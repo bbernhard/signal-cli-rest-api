@@ -1059,12 +1059,12 @@ func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments b
 	}
 }
 
-func (s *SignalClient) GetReceiveChannel() (chan JsonRpc2ReceivedMessage, string, error) {
+func (s *SignalClient) GetReceiveChannel(number string) (chan JsonRpc2ReceivedMessage, string, error) {
 	jsonRpc2Client, err := s.getJsonRpc2Client()
 	if err != nil {
 		return nil, "", err
 	}
-	return jsonRpc2Client.GetReceiveChannel()
+	return jsonRpc2Client.GetReceiveChannel(number)
 }
 
 func (s *SignalClient) RemoveReceiveChannel(channelUuid string) {
