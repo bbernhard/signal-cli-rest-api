@@ -2790,10 +2790,6 @@ const docTemplate = `{
         },
         "api.CreateGroupRequest": {
             "type": "object",
-            "required": [
-                "members",
-                "name"
-            ],
             "properties": {
                 "description": {
                     "type": "string"
