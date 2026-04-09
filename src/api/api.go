@@ -39,8 +39,8 @@ type UpdateContactRequest struct {
 }
 
 type CreateGroupRequest struct {
-	Name           string              `json:"name"`
-	Members        []string            `json:"members"`
+	Name           string              `json:"name,omitempty"`
+	Members        []string            `json:"members,omitempty"`
 	Description    string              `json:"description,omitempty"`
 	Permissions    ds.GroupPermissions `json:"permissions,omitempty"`
 	GroupLinkState string              `json:"group_link,omitempty" enums:"disabled,enabled,enabled-with-approval"`

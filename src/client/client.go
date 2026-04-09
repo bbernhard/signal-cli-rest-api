@@ -1080,8 +1080,8 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 	var internalGroupId string
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Name                    string   `json:"name"`
-			Members                 []string `json:"members"`
+			Name                    string   `json:"name,omitempty"`
+			Members                 []string `json:"members,omitempty"`
 			Link                    string   `json:"link,omitempty"`
 			Description             string   `json:"description,omitempty"`
 			EditGroupPermissions    string   `json:"setPermissionEditDetails,omitempty"`
@@ -1135,8 +1135,16 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 		}
 		internalGroupId = resp.GroupId
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-n", name, "-m"}
-		cmd = append(cmd, prefixUsernameMembers(members)...)
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup"}
+
+		if name != "" {
+			cmd = append(cmd, []string{"--n", name}...)
+		}
+
+		if len(members) > 0 {
+			cmd = append(cmd, "-m")
+			cmd = append(cmd, prefixUsernameMembers(members)...)
+		}
 
 		if addMembersPermission != DefaultGroupPermission {
 			cmd = append(cmd, []string{"--set-permission-add-member", addMembersPermission.String()}...)

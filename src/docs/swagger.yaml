@@ -76,9 +76,6 @@ definitions:
         type: string
       permissions:
         $ref: '#/definitions/data.GroupPermissions'
-    required:
-    - members
-    - name
     type: object
   api.CreateGroupResponse:
     properties:
