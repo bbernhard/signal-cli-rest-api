@@ -873,6 +873,11 @@ func (a *Api) AddMembersToGroup(c *gin.Context) {
 		return
 	}
 
+	if len(req.Members) == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - group members missing"})
+		return
+	}
+
 	err = a.signalClient.AddMembersToGroup(number, groupId, req.Members)
 	if err != nil {
 		switch err.(type) {
@@ -1276,6 +1281,16 @@ func (a *Api) UnpinMessageInGroup(c *gin.Context) {
 	err = c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	if req.TargetAuthor == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - target author missing"})
+		return
+	}
+
+	if req.Timestamp == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - timestamp missing"})
 		return
 	}
 
@@ -2382,6 +2397,16 @@ func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
 	err = c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	if req.ChallengeToken == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - challenge token missing"})
+		return
+	}
+
+	if req.Captcha == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - captcha missing"})
 		return
 	}
 
