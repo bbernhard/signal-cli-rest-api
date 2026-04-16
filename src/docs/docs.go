@@ -1482,6 +1482,112 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/groups/{number}/{groupid}/pin-message": {
+            "post": {
+                "description": "Pin a message in a Signal Group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Pin a message in a Signal Group.",
+                "parameters": [
+                    {
+                        "description": "Pin",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.PinMessageInGroupRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group Id",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Unpin a message in a Signal Group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Unpin a message in a Signal Group.",
+                "parameters": [
+                    {
+                        "description": "Unpin",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UnpinMessageInGroupRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Registered Phone Number",
+                        "name": "number",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group Id",
+                        "name": "groupid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/groups/{number}/{groupid}/quit": {
             "post": {
                 "description": "Quit the specified Signal Group.",
@@ -1897,7 +2003,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Reaction"
+                            "$ref": "#/definitions/api.SendReactionRequest"
                         }
                     },
                     {
@@ -1942,7 +2048,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.Reaction"
+                            "$ref": "#/definitions/api.RemoveReactionRequest"
                         }
                     },
                     {
@@ -2600,6 +2706,9 @@ const docTemplate = `{
     "definitions": {
         "api.AddDeviceRequest": {
             "type": "object",
+            "required": [
+                "uri"
+            ],
             "properties": {
                 "uri": {
                     "type": "string"
@@ -2608,6 +2717,10 @@ const docTemplate = `{
         },
         "api.AddStickerPackRequest": {
             "type": "object",
+            "required": [
+                "pack_id",
+                "pack_key"
+            ],
             "properties": {
                 "pack_id": {
                     "type": "string",
@@ -2621,6 +2734,9 @@ const docTemplate = `{
         },
         "api.ChangeGroupAdminsRequest": {
             "type": "object",
+            "required": [
+                "admins"
+            ],
             "properties": {
                 "admins": {
                     "type": "array",
@@ -2632,6 +2748,9 @@ const docTemplate = `{
         },
         "api.ChangeGroupMembersRequest": {
             "type": "object",
+            "required": [
+                "members"
+            ],
             "properties": {
                 "members": {
                     "type": "array",
@@ -2643,6 +2762,10 @@ const docTemplate = `{
         },
         "api.ClosePollRequest": {
             "type": "object",
+            "required": [
+                "poll_timestamp",
+                "recipient"
+            ],
             "properties": {
                 "poll_timestamp": {
                     "type": "string",
@@ -2656,6 +2779,9 @@ const docTemplate = `{
         },
         "api.Configuration": {
             "type": "object",
+            "required": [
+                "logging"
+            ],
             "properties": {
                 "logging": {
                     "$ref": "#/definitions/api.LoggingConfiguration"
@@ -2695,6 +2821,9 @@ const docTemplate = `{
         },
         "api.CreateGroupResponse": {
             "type": "object",
+            "required": [
+                "id"
+            ],
             "properties": {
                 "id": {
                     "type": "string"
@@ -2703,6 +2832,11 @@ const docTemplate = `{
         },
         "api.CreatePollRequest": {
             "type": "object",
+            "required": [
+                "answers",
+                "question",
+                "recipient"
+            ],
             "properties": {
                 "allow_multiple_selections": {
                     "type": "boolean",
@@ -2731,6 +2865,9 @@ const docTemplate = `{
         },
         "api.CreatePollResponse": {
             "type": "object",
+            "required": [
+                "timestamp"
+            ],
             "properties": {
                 "timestamp": {
                     "type": "string",
@@ -2749,6 +2886,9 @@ const docTemplate = `{
         },
         "api.DeviceLinkUriResponse": {
             "type": "object",
+            "required": [
+                "device_link_uri"
+            ],
             "properties": {
                 "device_link_uri": {
                     "type": "string"
@@ -2757,6 +2897,9 @@ const docTemplate = `{
         },
         "api.Error": {
             "type": "object",
+            "required": [
+                "error"
+            ],
             "properties": {
                 "error": {
                     "type": "string"
@@ -2765,14 +2908,39 @@ const docTemplate = `{
         },
         "api.LoggingConfiguration": {
             "type": "object",
+            "required": [
+                "Level"
+            ],
             "properties": {
                 "Level": {
                     "type": "string"
                 }
             }
         },
+        "api.PinMessageInGroupRequest": {
+            "type": "object",
+            "required": [
+                "target_author",
+                "timestamp"
+            ],
+            "properties": {
+                "duration": {
+                    "type": "integer"
+                },
+                "target_author": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.RateLimitChallengeRequest": {
             "type": "object",
+            "required": [
+                "captcha",
+                "challenge_token"
+            ],
             "properties": {
                 "captcha": {
                     "type": "string",
@@ -2784,25 +2952,13 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Reaction": {
-            "type": "object",
-            "properties": {
-                "reaction": {
-                    "type": "string"
-                },
-                "recipient": {
-                    "type": "string"
-                },
-                "target_author": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "integer"
-                }
-            }
-        },
         "api.Receipt": {
             "type": "object",
+            "required": [
+                "receipt_type",
+                "recipient",
+                "timestamp"
+            ],
             "properties": {
                 "receipt_type": {
                     "type": "string",
@@ -2832,6 +2988,10 @@ const docTemplate = `{
         },
         "api.RemoteDeleteRequest": {
             "type": "object",
+            "required": [
+                "recipient",
+                "timestamp"
+            ],
             "properties": {
                 "recipient": {
                     "type": "string"
@@ -2843,14 +3003,43 @@ const docTemplate = `{
         },
         "api.RemoteDeleteResponse": {
             "type": "object",
+            "required": [
+                "timestamp"
+            ],
             "properties": {
                 "timestamp": {
                     "type": "string"
                 }
             }
         },
+        "api.RemoveReactionRequest": {
+            "type": "object",
+            "required": [
+                "recipient",
+                "target_author",
+                "timestamp"
+            ],
+            "properties": {
+                "reaction": {
+                    "type": "string"
+                },
+                "recipient": {
+                    "type": "string"
+                },
+                "target_author": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.SearchResponse": {
             "type": "object",
+            "required": [
+                "number",
+                "registered"
+            ],
             "properties": {
                 "number": {
                     "type": "string"
@@ -2862,6 +3051,10 @@ const docTemplate = `{
         },
         "api.SendMessageError": {
             "type": "object",
+            "required": [
+                "account",
+                "error"
+            ],
             "properties": {
                 "account": {
                     "type": "string"
@@ -2879,6 +3072,9 @@ const docTemplate = `{
         },
         "api.SendMessageResponse": {
             "type": "object",
+            "required": [
+                "timestamp"
+            ],
             "properties": {
                 "timestamp": {
                     "type": "string"
@@ -2887,6 +3083,11 @@ const docTemplate = `{
         },
         "api.SendMessageV1": {
             "type": "object",
+            "required": [
+                "message",
+                "number",
+                "recipients"
+            ],
             "properties": {
                 "base64_attachment": {
                     "type": "string",
@@ -2911,6 +3112,11 @@ const docTemplate = `{
         },
         "api.SendMessageV2": {
             "type": "object",
+            "required": [
+                "message",
+                "number",
+                "recipients"
+            ],
             "properties": {
                 "base64_attachments": {
                     "type": "array",
@@ -2980,8 +3186,34 @@ const docTemplate = `{
                 }
             }
         },
+        "api.SendReactionRequest": {
+            "type": "object",
+            "required": [
+                "reaction",
+                "recipient",
+                "target_author",
+                "timestamp"
+            ],
+            "properties": {
+                "reaction": {
+                    "type": "string"
+                },
+                "recipient": {
+                    "type": "string"
+                },
+                "target_author": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.SetPinRequest": {
             "type": "object",
+            "required": [
+                "pin"
+            ],
             "properties": {
                 "pin": {
                     "type": "string"
@@ -2990,6 +3222,9 @@ const docTemplate = `{
         },
         "api.SetUsernameRequest": {
             "type": "object",
+            "required": [
+                "username"
+            ],
             "properties": {
                 "username": {
                     "type": "string",
@@ -3011,6 +3246,9 @@ const docTemplate = `{
         },
         "api.TrustModeRequest": {
             "type": "object",
+            "required": [
+                "trust_mode"
+            ],
             "properties": {
                 "trust_mode": {
                     "type": "string"
@@ -3019,6 +3257,9 @@ const docTemplate = `{
         },
         "api.TrustModeResponse": {
             "type": "object",
+            "required": [
+                "trust_mode"
+            ],
             "properties": {
                 "trust_mode": {
                     "type": "string"
@@ -3027,9 +3268,27 @@ const docTemplate = `{
         },
         "api.TypingIndicatorRequest": {
             "type": "object",
+            "required": [
+                "recipient"
+            ],
             "properties": {
                 "recipient": {
                     "type": "string"
+                }
+            }
+        },
+        "api.UnpinMessageInGroupRequest": {
+            "type": "object",
+            "required": [
+                "target_author",
+                "timestamp"
+            ],
+            "properties": {
+                "target_author": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
                 }
             }
         },
@@ -3059,6 +3318,9 @@ const docTemplate = `{
         },
         "api.UpdateContactRequest": {
             "type": "object",
+            "required": [
+                "recipient"
+            ],
             "properties": {
                 "expiration_in_seconds": {
                     "type": "integer"
@@ -3101,6 +3363,9 @@ const docTemplate = `{
         },
         "api.UpdateProfileRequest": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "about": {
                     "type": "string"
@@ -3123,6 +3388,12 @@ const docTemplate = `{
         },
         "api.VoteRequest": {
             "type": "object",
+            "required": [
+                "poll_author",
+                "poll_timestamp",
+                "recipient",
+                "selected_answers"
+            ],
             "properties": {
                 "poll_author": {
                     "type": "string",
@@ -3149,6 +3420,13 @@ const docTemplate = `{
         },
         "client.About": {
             "type": "object",
+            "required": [
+                "build",
+                "capabilities",
+                "mode",
+                "version",
+                "versions"
+            ],
             "properties": {
                 "build": {
                     "type": "integer"
@@ -3178,6 +3456,13 @@ const docTemplate = `{
         },
         "client.ContactProfile": {
             "type": "object",
+            "required": [
+                "about",
+                "given_name",
+                "has_avatar",
+                "last_updated_timestamp",
+                "lastname"
+            ],
             "properties": {
                 "about": {
                     "type": "string"
@@ -3198,6 +3483,19 @@ const docTemplate = `{
         },
         "client.GroupEntry": {
             "type": "object",
+            "required": [
+                "admins",
+                "blocked",
+                "description",
+                "id",
+                "internal_id",
+                "invite_link",
+                "members",
+                "name",
+                "pending_invites",
+                "pending_requests",
+                "permissions"
+            ],
             "properties": {
                 "admins": {
                     "type": "array",
@@ -3248,6 +3546,14 @@ const docTemplate = `{
         },
         "client.IdentityEntry": {
             "type": "object",
+            "required": [
+                "added",
+                "fingerprint",
+                "number",
+                "safety_number",
+                "status",
+                "uuid"
+            ],
             "properties": {
                 "added": {
                     "type": "string"
@@ -3271,6 +3577,20 @@ const docTemplate = `{
         },
         "client.ListContactsResponse": {
             "type": "object",
+            "required": [
+                "blocked",
+                "color",
+                "given_name",
+                "message_expiration",
+                "name",
+                "nickname",
+                "note",
+                "number",
+                "profile",
+                "profile_name",
+                "username",
+                "uuid"
+            ],
             "properties": {
                 "blocked": {
                     "type": "boolean"
@@ -3312,6 +3632,12 @@ const docTemplate = `{
         },
         "client.ListDevicesResponse": {
             "type": "object",
+            "required": [
+                "creation_timestamp",
+                "id",
+                "last_seen_timestamp",
+                "name"
+            ],
             "properties": {
                 "creation_timestamp": {
                     "type": "integer"
@@ -3329,6 +3655,13 @@ const docTemplate = `{
         },
         "client.ListInstalledStickerPacksResponse": {
             "type": "object",
+            "required": [
+                "author",
+                "installed",
+                "pack_id",
+                "title",
+                "url"
+            ],
             "properties": {
                 "author": {
                     "type": "string"
@@ -3349,6 +3682,11 @@ const docTemplate = `{
         },
         "client.Nickname": {
             "type": "object",
+            "required": [
+                "family_name",
+                "given_name",
+                "name"
+            ],
             "properties": {
                 "family_name": {
                     "type": "string"
@@ -3363,6 +3701,10 @@ const docTemplate = `{
         },
         "client.SetUsernameResponse": {
             "type": "object",
+            "required": [
+                "username",
+                "username_link"
+            ],
             "properties": {
                 "username": {
                     "type": "string"
@@ -3374,6 +3716,11 @@ const docTemplate = `{
         },
         "data.GroupPermissions": {
             "type": "object",
+            "required": [
+                "add_members",
+                "edit_group",
+                "send_messages"
+            ],
             "properties": {
                 "add_members": {
                     "type": "string",
@@ -3400,6 +3747,12 @@ const docTemplate = `{
         },
         "data.LinkPreviewType": {
             "type": "object",
+            "required": [
+                "base64_thumbnail",
+                "description",
+                "title",
+                "url"
+            ],
             "properties": {
                 "base64_thumbnail": {
                     "type": "string"
@@ -3417,6 +3770,11 @@ const docTemplate = `{
         },
         "data.MessageMention": {
             "type": "object",
+            "required": [
+                "author",
+                "length",
+                "start"
+            ],
             "properties": {
                 "author": {
                     "type": "string"

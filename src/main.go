@@ -84,6 +84,7 @@ func main() {
 	} else {
 		docs.SwaggerInfo.Schemes = []string{"https", "http"}
 	}
+	docs.SwaggerInfo.Version = utils.GetEnv("BUILD_VERSION", "1.0")
 
 	router := gin.New()
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
@@ -163,7 +164,7 @@ func main() {
 	jsonRpc2ClientConfigPathPath := *signalCliConfig + "/jsonrpc2.yml"
 	signalCliApiConfigPath := *signalCliConfig + "/api-config.yml"
 	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath, signalCliApiConfigPath, webhookUrl)
-	err = signalClient.Init(15)
+	err = signalClient.Init(60)
 	if err != nil {
 		log.Fatal("Couldn't init Signal Client: ", err.Error())
 	}
@@ -225,6 +226,8 @@ func main() {
 			groups.DELETE(":number/:groupid/members", api.RemoveMembersFromGroup)
 			groups.POST(":number/:groupid/admins", api.AddAdminsToGroup)
 			groups.DELETE(":number/:groupid/admins", api.RemoveAdminsFromGroup)
+			groups.POST(":number/:groupid/pin-message", api.PinMessageInGroup)
+			groups.DELETE(":number/:groupid/pin-message", api.UnpinMessageInGroup)
 		}
 
 		link := v1.Group("qrcodelink")

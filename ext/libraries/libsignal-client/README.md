@@ -4,7 +4,8 @@
 
 * download new release from `https://github.com/signalapp/libsignal-client/releases`
 * unzip + change into directory
-* cd into `java` directory
+* run `rm -rf target` to remove any build artifacts from previous builds
+* copy `Cross.toml` to downloaded libsignal-client folder
 * run `cross build --target x86_64-unknown-linux-gnu --release -p libsignal-jni`
   
   run `cross build --target armv7-unknown-linux-gnueabihf --release -p libsignal-jni`

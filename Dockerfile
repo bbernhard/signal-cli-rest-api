@@ -1,6 +1,6 @@
-ARG SIGNAL_CLI_VERSION=0.14.1
-ARG LIBSIGNAL_CLIENT_VERSION=0.87.4
-ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.14.1+morph027+2
+ARG SIGNAL_CLI_VERSION=0.14.2
+ARG LIBSIGNAL_CLIENT_VERSION=0.90.0
+ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.14.2+morph027+2
 
 ARG SWAG_VERSION=1.16.4
 ARG GRAALVM_VERSION=25.0.2
@@ -144,7 +144,7 @@ COPY src/plugin_loader.go /tmp/signal-cli-rest-api-src/
 
 # build signal-cli-rest-api
 RUN ls -la /tmp/signal-cli-rest-api-src
-RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init
+RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init --requiredByDefault
 RUN cd /tmp/signal-cli-rest-api-src && go build -o signal-cli-rest-api main.go
 RUN cd /tmp/signal-cli-rest-api-src && go test ./client -v && go test ./utils -v
 

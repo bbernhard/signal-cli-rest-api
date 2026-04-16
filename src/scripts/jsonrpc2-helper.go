@@ -31,6 +31,8 @@ func main() {
 	signalMode := utils.GetEnv("MODE", "json-rpc")
 	if signalMode == "json-rpc-native" {
 		signalCliBinary = "signal-cli-native"
+	} else if signalMode != "json-rpc" {
+		log.Fatal("The mode needs to be either 'json-rpc' or 'json-rpc-native'")
 	}
 
 	trustNewIdentitiesEnv := utils.GetEnv("JSON_RPC_TRUST_NEW_IDENTITIES", "")

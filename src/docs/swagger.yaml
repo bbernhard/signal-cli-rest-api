@@ -4,6 +4,8 @@ definitions:
     properties:
       uri:
         type: string
+    required:
+    - uri
     type: object
   api.AddStickerPackRequest:
     properties:
@@ -13,6 +15,9 @@ definitions:
       pack_key:
         example: 19546e18eba0ff69dea78eb591465289d39e16f35e58389ae779d4f9455aff3a
         type: string
+    required:
+    - pack_id
+    - pack_key
     type: object
   api.ChangeGroupAdminsRequest:
     properties:
@@ -20,6 +25,8 @@ definitions:
         items:
           type: string
         type: array
+    required:
+    - admins
     type: object
   api.ChangeGroupMembersRequest:
     properties:
@@ -27,6 +34,8 @@ definitions:
         items:
           type: string
         type: array
+    required:
+    - members
     type: object
   api.ClosePollRequest:
     properties:
@@ -36,11 +45,16 @@ definitions:
       recipient:
         example: <phone number> OR <username> OR <group id>
         type: string
+    required:
+    - poll_timestamp
+    - recipient
     type: object
   api.Configuration:
     properties:
       logging:
         $ref: '#/definitions/api.LoggingConfiguration'
+    required:
+    - logging
     type: object
   api.CreateGroupRequest:
     properties:
@@ -67,6 +81,8 @@ definitions:
     properties:
       id:
         type: string
+    required:
+    - id
     type: object
   api.CreatePollRequest:
     properties:
@@ -87,12 +103,18 @@ definitions:
       recipient:
         example: <phone number> OR <username> OR <group id>
         type: string
+    required:
+    - answers
+    - question
+    - recipient
     type: object
   api.CreatePollResponse:
     properties:
       timestamp:
         example: "1769271479"
         type: string
+    required:
+    - timestamp
     type: object
   api.DeleteLocalAccountDataRequest:
     properties:
@@ -104,16 +126,34 @@ definitions:
     properties:
       device_link_uri:
         type: string
+    required:
+    - device_link_uri
     type: object
   api.Error:
     properties:
       error:
         type: string
+    required:
+    - error
     type: object
   api.LoggingConfiguration:
     properties:
       Level:
         type: string
+    required:
+    - Level
+    type: object
+  api.PinMessageInGroupRequest:
+    properties:
+      duration:
+        type: integer
+      target_author:
+        type: string
+      timestamp:
+        type: integer
+    required:
+    - target_author
+    - timestamp
     type: object
   api.RateLimitChallengeRequest:
     properties:
@@ -123,17 +163,9 @@ definitions:
       challenge_token:
         example: <challenge token>
         type: string
-    type: object
-  api.Reaction:
-    properties:
-      reaction:
-        type: string
-      recipient:
-        type: string
-      target_author:
-        type: string
-      timestamp:
-        type: integer
+    required:
+    - captcha
+    - challenge_token
     type: object
   api.Receipt:
     properties:
@@ -146,6 +178,10 @@ definitions:
         type: string
       timestamp:
         type: integer
+    required:
+    - receipt_type
+    - recipient
+    - timestamp
     type: object
   api.RegisterNumberRequest:
     properties:
@@ -160,11 +196,31 @@ definitions:
         type: string
       timestamp:
         type: integer
+    required:
+    - recipient
+    - timestamp
     type: object
   api.RemoteDeleteResponse:
     properties:
       timestamp:
         type: string
+    required:
+    - timestamp
+    type: object
+  api.RemoveReactionRequest:
+    properties:
+      reaction:
+        type: string
+      recipient:
+        type: string
+      target_author:
+        type: string
+      timestamp:
+        type: integer
+    required:
+    - recipient
+    - target_author
+    - timestamp
     type: object
   api.SearchResponse:
     properties:
@@ -172,6 +228,9 @@ definitions:
         type: string
       registered:
         type: boolean
+    required:
+    - number
+    - registered
     type: object
   api.SendMessageError:
     properties:
@@ -183,11 +242,16 @@ definitions:
         type: array
       error:
         type: string
+    required:
+    - account
+    - error
     type: object
   api.SendMessageResponse:
     properties:
       timestamp:
         type: string
+    required:
+    - timestamp
     type: object
   api.SendMessageV1:
     properties:
@@ -206,6 +270,10 @@ definitions:
         items:
           type: string
         type: array
+    required:
+    - message
+    - number
+    - recipients
     type: object
   api.SendMessageV2:
     properties:
@@ -254,17 +322,41 @@ definitions:
         type: string
       view_once:
         type: boolean
+    required:
+    - message
+    - number
+    - recipients
+    type: object
+  api.SendReactionRequest:
+    properties:
+      reaction:
+        type: string
+      recipient:
+        type: string
+      target_author:
+        type: string
+      timestamp:
+        type: integer
+    required:
+    - reaction
+    - recipient
+    - target_author
+    - timestamp
     type: object
   api.SetPinRequest:
     properties:
       pin:
         type: string
+    required:
+    - pin
     type: object
   api.SetUsernameRequest:
     properties:
       username:
         example: test
         type: string
+    required:
+    - username
     type: object
   api.TrustIdentityRequest:
     properties:
@@ -278,16 +370,32 @@ definitions:
     properties:
       trust_mode:
         type: string
+    required:
+    - trust_mode
     type: object
   api.TrustModeResponse:
     properties:
       trust_mode:
         type: string
+    required:
+    - trust_mode
     type: object
   api.TypingIndicatorRequest:
     properties:
       recipient:
         type: string
+    required:
+    - recipient
+    type: object
+  api.UnpinMessageInGroupRequest:
+    properties:
+      target_author:
+        type: string
+      timestamp:
+        type: integer
+    required:
+    - target_author
+    - timestamp
     type: object
   api.UnregisterNumberRequest:
     properties:
@@ -313,6 +421,8 @@ definitions:
         type: string
       recipient:
         type: string
+    required:
+    - recipient
     type: object
   api.UpdateGroupRequest:
     properties:
@@ -341,6 +451,8 @@ definitions:
         type: string
       name:
         type: string
+    required:
+    - name
     type: object
   api.VerifyNumberSettings:
     properties:
@@ -364,6 +476,11 @@ definitions:
         items:
           type: integer
         type: array
+    required:
+    - poll_author
+    - poll_timestamp
+    - recipient
+    - selected_answers
     type: object
   client.About:
     properties:
@@ -383,6 +500,12 @@ definitions:
         items:
           type: string
         type: array
+    required:
+    - build
+    - capabilities
+    - mode
+    - version
+    - versions
     type: object
   client.ContactProfile:
     properties:
@@ -396,6 +519,12 @@ definitions:
         type: integer
       lastname:
         type: string
+    required:
+    - about
+    - given_name
+    - has_avatar
+    - last_updated_timestamp
+    - lastname
     type: object
   client.GroupEntry:
     properties:
@@ -429,6 +558,18 @@ definitions:
         type: array
       permissions:
         $ref: '#/definitions/data.GroupPermissions'
+    required:
+    - admins
+    - blocked
+    - description
+    - id
+    - internal_id
+    - invite_link
+    - members
+    - name
+    - pending_invites
+    - pending_requests
+    - permissions
     type: object
   client.IdentityEntry:
     properties:
@@ -444,6 +585,13 @@ definitions:
         type: string
       uuid:
         type: string
+    required:
+    - added
+    - fingerprint
+    - number
+    - safety_number
+    - status
+    - uuid
     type: object
   client.ListContactsResponse:
     properties:
@@ -471,6 +619,19 @@ definitions:
         type: string
       uuid:
         type: string
+    required:
+    - blocked
+    - color
+    - given_name
+    - message_expiration
+    - name
+    - nickname
+    - note
+    - number
+    - profile
+    - profile_name
+    - username
+    - uuid
     type: object
   client.ListDevicesResponse:
     properties:
@@ -482,6 +643,11 @@ definitions:
         type: integer
       name:
         type: string
+    required:
+    - creation_timestamp
+    - id
+    - last_seen_timestamp
+    - name
     type: object
   client.ListInstalledStickerPacksResponse:
     properties:
@@ -495,6 +661,12 @@ definitions:
         type: string
       url:
         type: string
+    required:
+    - author
+    - installed
+    - pack_id
+    - title
+    - url
     type: object
   client.Nickname:
     properties:
@@ -504,6 +676,10 @@ definitions:
         type: string
       name:
         type: string
+    required:
+    - family_name
+    - given_name
+    - name
     type: object
   client.SetUsernameResponse:
     properties:
@@ -511,6 +687,9 @@ definitions:
         type: string
       username_link:
         type: string
+    required:
+    - username
+    - username_link
     type: object
   data.GroupPermissions:
     properties:
@@ -529,6 +708,10 @@ definitions:
         - only-admins
         - every-member
         type: string
+    required:
+    - add_members
+    - edit_group
+    - send_messages
     type: object
   data.LinkPreviewType:
     properties:
@@ -540,6 +723,11 @@ definitions:
         type: string
       url:
         type: string
+    required:
+    - base64_thumbnail
+    - description
+    - title
+    - url
     type: object
   data.MessageMention:
     properties:
@@ -549,6 +737,10 @@ definitions:
         type: integer
       start:
         type: integer
+    required:
+    - author
+    - length
+    - start
     type: object
 host: localhost:8080
 info:
@@ -1543,6 +1735,77 @@ paths:
       summary: Add one or more members to an existing Signal Group.
       tags:
       - Groups
+  /v1/groups/{number}/{groupid}/pin-message:
+    delete:
+      consumes:
+      - application/json
+      description: Unpin a message in a Signal Group.
+      parameters:
+      - description: Unpin
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.UnpinMessageInGroupRequest'
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Group Id
+        in: path
+        name: groupid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Unpin a message in a Signal Group.
+      tags:
+      - Groups
+    post:
+      consumes:
+      - application/json
+      description: Pin a message in a Signal Group.
+      parameters:
+      - description: Pin
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api.PinMessageInGroupRequest'
+      - description: Registered Phone Number
+        in: path
+        name: number
+        required: true
+        type: string
+      - description: Group Id
+        in: path
+        name: groupid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+      summary: Pin a message in a Signal Group.
+      tags:
+      - Groups
   /v1/groups/{number}/{groupid}/quit:
     post:
       consumes:
@@ -1817,7 +2080,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/api.Reaction'
+          $ref: '#/definitions/api.RemoveReactionRequest'
       - description: Registered phone number
         in: path
         name: number
@@ -1847,7 +2110,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/api.Reaction'
+          $ref: '#/definitions/api.SendReactionRequest'
       - description: Registered phone number
         in: path
         name: number

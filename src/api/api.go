@@ -34,26 +34,37 @@ const (
 
 type UpdateContactRequest struct {
 	Recipient           string  `json:"recipient"`
-	Name                *string `json:"name"`
-	ExpirationInSeconds *int    `json:"expiration_in_seconds"`
+	Name                *string `json:"name,omitempty"`
+	ExpirationInSeconds *int    `json:"expiration_in_seconds,omitempty"`
 }
 
 type CreateGroupRequest struct {
-	Name           string              `json:"name"`
-	Members        []string            `json:"members"`
-	Description    string              `json:"description"`
-	Permissions    ds.GroupPermissions `json:"permissions"`
-	GroupLinkState string              `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
-	ExpirationTime *int                `json:"expiration_time"`
+	Name           string              `json:"name,omitempty"`
+	Members        []string            `json:"members,omitempty"`
+	Description    string              `json:"description,omitempty"`
+	Permissions    ds.GroupPermissions `json:"permissions,omitempty"`
+	GroupLinkState string              `json:"group_link,omitempty" enums:"disabled,enabled,enabled-with-approval"`
+	ExpirationTime *int                `json:"expiration_time,omitempty"`
 }
 
 type UpdateGroupRequest struct {
-	Base64Avatar   *string              `json:"base64_avatar"`
-	Description    *string              `json:"description"`
-	Name           *string              `json:"name"`
-	ExpirationTime *int                 `json:"expiration_time"`
-	GroupLinkState *string              `json:"group_link" enums:"disabled,enabled,enabled-with-approval"`
-	Permissions    *ds.GroupPermissions `json:"permissions"`
+	Base64Avatar   *string              `json:"base64_avatar,omitempty"`
+	Description    *string              `json:"description,omitempty"`
+	Name           *string              `json:"name,omitempty"`
+	ExpirationTime *int                 `json:"expiration_time,omitempty"`
+	GroupLinkState *string              `json:"group_link,omitempty" enums:"disabled,enabled,enabled-with-approval"`
+	Permissions    *ds.GroupPermissions `json:"permissions,omitempty"`
+}
+
+type PinMessageInGroupRequest struct {
+	TargetAuthor string `json:"target_author"`
+	Timestamp    int64  `json:"timestamp"`
+	Duration     *int   `json:"duration,omitempty"`
+}
+
+type UnpinMessageInGroupRequest struct {
+	TargetAuthor string `json:"target_author"`
+	Timestamp    int64  `json:"timestamp"`
 }
 
 type ChangeGroupMembersRequest struct {
@@ -73,22 +84,29 @@ type Configuration struct {
 }
 
 type RegisterNumberRequest struct {
-	UseVoice bool   `json:"use_voice"`
-	Captcha  string `json:"captcha"`
+	UseVoice bool   `json:"use_voice,omitempty"`
+	Captcha  string `json:"captcha,omitempty"`
 }
 
 type UnregisterNumberRequest struct {
-	DeleteAccount   bool `json:"delete_account" example:"false"`
-	DeleteLocalData bool `json:"delete_local_data" example:"false"`
+	DeleteAccount   bool `json:"delete_account,omitempty" example:"false"`
+	DeleteLocalData bool `json:"delete_local_data,omitempty" example:"false"`
 }
 
 type VerifyNumberSettings struct {
-	Pin string `json:"pin"`
+	Pin string `json:"pin,omitempty"`
 }
 
-type Reaction struct {
+type SendReactionRequest struct {
 	Recipient    string `json:"recipient"`
 	Reaction     string `json:"reaction"`
+	TargetAuthor string `json:"target_author"`
+	Timestamp    int64  `json:"timestamp"`
+}
+
+type RemoveReactionRequest struct {
+	Recipient    string `json:"recipient"`
+	Reaction     string `json:"reaction,omitempty"`
 	TargetAuthor string `json:"target_author"`
 	Timestamp    int64  `json:"timestamp"`
 }
@@ -103,27 +121,27 @@ type SendMessageV1 struct {
 	Number           string   `json:"number"`
 	Recipients       []string `json:"recipients"`
 	Message          string   `json:"message"`
-	Base64Attachment string   `json:"base64_attachment" example:"'<BASE64 ENCODED DATA>' OR 'data:<MIME-TYPE>;base64,<BASE64 ENCODED DATA>' OR 'data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>'"`
-	IsGroup          bool     `json:"is_group"`
+	Base64Attachment string   `json:"base64_attachment,omitempty" example:"'<BASE64 ENCODED DATA>' OR 'data:<MIME-TYPE>;base64,<BASE64 ENCODED DATA>' OR 'data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>'"`
+	IsGroup          bool     `json:"is_group,omitempty"`
 }
 
 type SendMessageV2 struct {
 	Number            string              `json:"number"`
 	Recipients        []string            `json:"recipients"`
-	Recipient         string              `json:"recipient" swaggerignore:"true"` //some REST API consumers (like the Synology NAS) do not support an array as recipients, so we provide this string parameter here as backup. In order to not confuse anyone, the parameter won't be exposed in the Swagger UI (most users are fine with the recipients parameter).
+	Recipient         string              `json:"recipient,omitempty" swaggerignore:"true"` //some REST API consumers (like the Synology NAS) do not support an array as recipients, so we provide this string parameter here as backup. In order to not confuse anyone, the parameter won't be exposed in the Swagger UI (most users are fine with the recipients parameter).
 	Message           string              `json:"message"`
-	Base64Attachments []string            `json:"base64_attachments" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
-	Sticker           string              `json:"sticker"`
-	Mentions          []ds.MessageMention `json:"mentions"`
-	QuoteTimestamp    *int64              `json:"quote_timestamp"`
-	QuoteAuthor       *string             `json:"quote_author"`
-	QuoteMessage      *string             `json:"quote_message"`
-	QuoteMentions     []ds.MessageMention `json:"quote_mentions"`
-	TextMode          *string             `json:"text_mode" enums:"normal,styled"`
-	EditTimestamp     *int64              `json:"edit_timestamp"`
-	NotifySelf        *bool               `json:"notify_self"`
-	LinkPreview       *ds.LinkPreviewType `json:"link_preview"`
-	ViewOnce          *bool               `json:"view_once"`
+	Base64Attachments []string            `json:"base64_attachments,omitempty" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
+	Sticker           string              `json:"sticker,omitempty"`
+	Mentions          []ds.MessageMention `json:"mentions,omitempty"`
+	QuoteTimestamp    *int64              `json:"quote_timestamp,omitempty"`
+	QuoteAuthor       *string             `json:"quote_author,omitempty"`
+	QuoteMessage      *string             `json:"quote_message,omitempty"`
+	QuoteMentions     []ds.MessageMention `json:"quote_mentions,omitempty"`
+	TextMode          *string             `json:"text_mode,omitempty" enums:"normal,styled"`
+	EditTimestamp     *int64              `json:"edit_timestamp,omitempty"`
+	NotifySelf        *bool               `json:"notify_self,omitempty"`
+	LinkPreview       *ds.LinkPreviewType `json:"link_preview,omitempty"`
+	ViewOnce          *bool               `json:"view_once,omitempty"`
 }
 
 type TypingIndicatorRequest struct {
@@ -146,13 +164,13 @@ type CreateGroupResponse struct {
 
 type UpdateProfileRequest struct {
 	Name         string  `json:"name"`
-	Base64Avatar string  `json:"base64_avatar"`
-	About        *string `json:"about"`
+	Base64Avatar string  `json:"base64_avatar,omitempty"`
+	About        *string `json:"about,omitempty"`
 }
 
 type TrustIdentityRequest struct {
-	VerifiedSafetyNumber *string `json:"verified_safety_number"`
-	TrustAllKnownKeys    *bool   `json:"trust_all_known_keys" example:"false"`
+	VerifiedSafetyNumber *string `json:"verified_safety_number,omitempty"`
+	TrustAllKnownKeys    *bool   `json:"trust_all_known_keys,omitempty" example:"false"`
 }
 
 type SendMessageResponse struct {
@@ -192,8 +210,8 @@ type RateLimitChallengeRequest struct {
 }
 
 type UpdateAccountSettingsRequest struct {
-	DiscoverableByNumber *bool `json:"discoverable_by_number"`
-	ShareNumber          *bool `json:"share_number"`
+	DiscoverableByNumber *bool `json:"discoverable_by_number,omitempty"`
+	ShareNumber          *bool `json:"share_number,omitempty"`
 }
 
 type SetUsernameRequest struct {
@@ -215,7 +233,7 @@ type RemoteDeleteRequest struct {
 }
 
 type DeleteLocalAccountDataRequest struct {
-	IgnoreRegistered bool `json:"ignore_registered" example:"false"`
+	IgnoreRegistered bool `json:"ignore_registered,omitempty" example:"false"`
 }
 
 type DeviceLinkUriResponse struct {
@@ -226,7 +244,7 @@ type CreatePollRequest struct {
 	Recipient               string   `json:"recipient" example:"<phone number> OR <username> OR <group id>"`
 	Question                string   `json:"question" example:"What's your favourite fruit?"`
 	Answers                 []string `json:"answers" example:"apple,banana,orange"`
-	AllowMultipleSelections *bool    `json:"allow_multiple_selections" example:"true"`
+	AllowMultipleSelections *bool    `json:"allow_multiple_selections,omitempty" example:"true"`
 }
 
 type CreatePollResponse struct {
@@ -855,6 +873,11 @@ func (a *Api) AddMembersToGroup(c *gin.Context) {
 		return
 	}
 
+	if len(req.Members) == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - group members missing"})
+		return
+	}
+
 	err = a.signalClient.AddMembersToGroup(number, groupId, req.Members)
 	if err != nil {
 		switch err.(type) {
@@ -1171,6 +1194,113 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
+}
+
+// @Summary Pin a message in a Signal Group.
+// @Tags Groups
+// @Description Pin a message in a Signal Group.
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} Error
+// @Param data body PinMessageInGroupRequest true "Pin"
+// @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group Id"
+// @Router /v1/groups/{number}/{groupid}/pin-message [post]
+func (a *Api) PinMessageInGroup(c *gin.Context) {
+	base64EncodedGroupId := c.Param("groupid")
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if base64EncodedGroupId == "" {
+		c.JSON(400, Error{Msg: "Please specify a group id"})
+		return
+	}
+
+	groupId, err := client.ConvertGroupIdToInternalGroupId(base64EncodedGroupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	var req PinMessageInGroupRequest
+	err = c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	duration := -1
+	if req.Duration != nil {
+		duration = *req.Duration
+	}
+
+	err = a.signalClient.PinMessageInGroup(number, groupId, req.TargetAuthor, req.Timestamp, duration)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(201)
+}
+
+// @Summary Unpin a message in a Signal Group.
+// @Tags Groups
+// @Description Unpin a message in a Signal Group.
+// @Accept  json
+// @Produce  json
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} Error
+// @Param data body UnpinMessageInGroupRequest true "Unpin"
+// @Param number path string true "Registered Phone Number"
+// @Param groupid path string true "Group Id"
+// @Router /v1/groups/{number}/{groupid}/pin-message [delete]
+func (a *Api) UnpinMessageInGroup(c *gin.Context) {
+	base64EncodedGroupId := c.Param("groupid")
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+
+	if base64EncodedGroupId == "" {
+		c.JSON(400, Error{Msg: "Please specify a group id"})
+		return
+	}
+
+	groupId, err := client.ConvertGroupIdToInternalGroupId(base64EncodedGroupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	var req UnpinMessageInGroupRequest
+	err = c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	if req.TargetAuthor == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - target author missing"})
+		return
+	}
+
+	if req.Timestamp == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - timestamp missing"})
+		return
+	}
+
+	err = a.signalClient.UnpinMessageInGroup(number, groupId, req.TargetAuthor, req.Timestamp)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(201)
 }
 
 // @Summary Link device and generate QR code.
@@ -1739,11 +1869,11 @@ func (a *Api) UpdateGroup(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
-// @Param data body Reaction true "Reaction"
+// @Param data body SendReactionRequest true "Reaction"
 // @Param number path string true "Registered phone number"
 // @Router /v1/reactions/{number} [post]
 func (a *Api) SendReaction(c *gin.Context) {
-	var req Reaction
+	var req SendReactionRequest
 	err := c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
@@ -1792,11 +1922,11 @@ func (a *Api) SendReaction(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
-// @Param data body Reaction true "Reaction"
+// @Param data body RemoveReactionRequest true "Reaction"
 // @Param number path string true "Registered phone number"
 // @Router /v1/reactions/{number} [delete]
 func (a *Api) RemoveReaction(c *gin.Context) {
-	var req Reaction
+	var req RemoveReactionRequest
 	err := c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
@@ -2267,6 +2397,16 @@ func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
 	err = c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	if req.ChallengeToken == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - challenge token missing"})
+		return
+	}
+
+	if req.Captcha == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - captcha missing"})
 		return
 	}
 

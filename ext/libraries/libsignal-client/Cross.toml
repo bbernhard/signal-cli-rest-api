@@ -1,0 +1,13 @@
+[target.aarch64-unknown-linux-gnu]
+pre-build = [
+    "apt update && apt install -y unzip",
+    "curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.9/protoc-25.9-linux-x86_64.zip  && unzip  protoc-25.9-linux-x86_64.zip  -d /usr/",
+	"chmod 755 /usr/bin/protoc"
+]
+
+[target.armv7-unknown-linux-gnueabihf]
+pre-build = [
+    "apt update && apt install -y unzip",
+    "curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.9/protoc-25.9-linux-x86_64.zip  && unzip  protoc-25.9-linux-x86_64.zip  -d /usr/",
+	"chmod 755 /usr/bin/protoc"
+]

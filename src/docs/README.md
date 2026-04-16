@@ -1,32 +1,47 @@
-These files are generated from the [swaggo/swag](https://github.com/swaggo/swag) tool.
+# Documentation
 
-To regenerate them, run in /src:
+These files are generated using the [swaggo/swag](https://github.com/swaggo/swag) tool.
 
-```bash
-docker run --rm -v $(pwd):/code ghcr.io/swaggo/swag:latest init
-```
+There are two steps, first generating the docs and then running the web server.
 
-Or, if you have `swag` installed:
+## Generating the docs
 
-```bash
-swag init
-```
+Regenerate the files with your local source code changes.
 
-Then run the app in `/src`
+1. Set the current working dir to `src`
+    ```bash
+    cd src
+    ```
+1. Run swag to generate the docs
+    * Option 1, via docker 
+        ```bash
+        docker run --rm -v $(pwd):/code ghcr.io/swaggo/swag:latest init --requiredByDefault
+        ```
+    * Option 2, install swag and run the command line tool
+        ```bash
+        swag init --requiredByDefault
+        ```
 
-```bash
-go run main.go
-```
+## Run the web server
 
-Or with docker compose in the root of the repository
-```bash
-docker compose up
-```
+Run the web server to visualize the generated docs.
 
-Then navigate to the following address to view the docs
+1. Run the main script
+    * Option 1, via docker, run the command at the root of the repository
+        ```bash
+        docker compose up
+        ```
+    * Option 2, install go and run the command line tool
+        ```bash
+        cd src
+        ```
+        ```bash
+        go run main.go
+        ```
 
-http://127.0.0.1:8080/swagger/index.html
 
-On docker you'll get a Network error, replace the IP for the docker internal IP in the error, e.g:
+## Navigate to the docs
 
-http://172.18.0.2:8080/swagger/index.html
+The docs are served at: http://127.0.0.1:8080/swagger/index.html
+
+When serving with docker, if you get a Network error, replace the IP for the docker internal IP in the error, e.g: http://172.18.0.2:8080/swagger/index.html
