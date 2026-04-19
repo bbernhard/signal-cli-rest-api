@@ -155,8 +155,8 @@ RUN cd /tmp/signal-cli-rest-api-src && go build -buildmode=plugin -o signal-cli-
 
 # Manually add the json schemas for the receive V1 endpoint
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
-    	cd /tmp/signal-cli-rest-api-src/src/docs \
-    	&& go run update_receive_docs.go /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/generated/META-INF/schemas; \
+		cd /tmp/signal-cli-rest-api-src/src/docs \
+		&& go run update_receive_docs.go /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/generated/META-INF/schemas; \
 	fi;
 
 # Start a fresh container for release container
