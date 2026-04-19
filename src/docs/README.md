@@ -21,6 +21,14 @@ Regenerate the files with your local source code changes.
         ```bash
         swag init --requiredByDefault
         ```
+1. Set the current working dir to `src/docs`
+    ```bash
+    cd docs
+    ```
+1. Run the script to add the receive V1 schemas
+    ```bash
+    go run add_v1_receive_schemas.go
+    ```
 
 ## Run the web server
 

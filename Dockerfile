@@ -87,7 +87,8 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& zip -qu libsignal-client.jar libsignal_jni.so \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& git apply /tmp/signal-cli-native.patch \
-		&& ./gradlew -q nativeCompile; \
+		&& ./gradlew -q nativeCompile \
+		&& ./gradlew jsonSchemas; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
 		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64 - many thanks to @morph027" \
 		&& curl -fsSL https://packaging.gitlab.io/signal-cli/gpg.key | gpg -o /usr/share/keyrings/signal-cli-native.pgp --dearmor \
@@ -151,6 +152,10 @@ RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper
 
 # build plugin_loader
 RUN cd /tmp/signal-cli-rest-api-src && go build -buildmode=plugin -o signal-cli-rest-api_plugin_loader.so plugin_loader.go
+
+# Manually add the json schemas for the receive V1 endpoint
+RUN cd /tmp/signal-cli-rest-api-src/src/docs \
+    && go run update_receive_docs.go /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/generated/META-INF/schemas
 
 # Start a fresh container for release container
 
