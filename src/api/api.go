@@ -324,8 +324,14 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 
 	err = a.signalClient.RegisterNumber(number, req.UseVoice, req.Captcha)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
+		switch err.(type) {
+		case *client.InvalidTransportError:
+			c.JSON(400, Error{Msg: "Couldn't use SMS verification to register the specified number. Wait 60 seconds and try again with {\"use_voice\": true}"})
+			return
+		default:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
 	}
 	c.Writer.WriteHeader(201)
 }
