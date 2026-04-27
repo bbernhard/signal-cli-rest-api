@@ -1,6 +1,6 @@
-ARG SIGNAL_CLI_VERSION=0.14.2
-ARG LIBSIGNAL_CLIENT_VERSION=0.90.0
-ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.14.2+morph027+2
+ARG SIGNAL_CLI_VERSION=0.14.3
+ARG LIBSIGNAL_CLIENT_VERSION=0.92.1
+ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION=0.14.3+morph027+1
 
 ARG SWAG_VERSION=1.16.4
 ARG GRAALVM_VERSION=25.0.2
@@ -18,8 +18,18 @@ ARG GRAALVM_VERSION
 ARG BUILD_VERSION_ARG
 ARG SIGNAL_CLI_NATIVE_PACKAGE_VERSION
 
-COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
+RUN dpkg-reconfigure debconf --frontend=noninteractive \
+	&& apt-get update \
+	&& apt-get -y install --no-install-recommends \
+		wget git locales zip unzip \
+		file build-essential libz-dev zlib1g-dev binutils \
+	&& rm -rf /var/lib/apt/lists/*
+
 COPY ext/libraries/libsignal-client/signal-cli-native.patch /tmp/signal-cli-native.patch
+
+#COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
+RUN wget https://github.com/bbernhard/libsignal-client-builds/releases/download/v${LIBSIGNAL_CLIENT_VERSION}/libsignal-client-build-v${LIBSIGNAL_CLIENT_VERSION}.tar.gz -O /tmp/libsignal-client.tar.gz
+RUN cd /tmp && mkdir -p /tmp/libsignal-client-libraries && tar xf libsignal-client.tar.gz && mv x86-64 armv7 arm64 -t libsignal-client-libraries
 
 # use architecture specific libsignal_jni.so
 RUN arch="$(uname -m)"; \
@@ -29,13 +39,6 @@ RUN arch="$(uname -m)"; \
             x86_64) cp /tmp/libsignal-client-libraries/x86-64/libsignal_jni.so /tmp/libsignal_jni.so ;; \
 			*) echo "Unknown architecture" && exit 1 ;; \
         esac;
-
-RUN dpkg-reconfigure debconf --frontend=noninteractive \
-	&& apt-get update \
-	&& apt-get -y install --no-install-recommends \
-		wget git locales zip unzip \
-		file build-essential libz-dev zlib1g-dev binutils \
-	&& rm -rf /var/lib/apt/lists/* 
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
@@ -96,11 +99,11 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& echo "deb [signed-by=/usr/share/keyrings/signal-cli-native.pgp] https://packaging.gitlab.io/signal-cli signalcli main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
 		&& mkdir -p /tmp/signal-cli-native \
 		&& cd /tmp/signal-cli-native \
-		#&& wget https://gitlab.com/packaging/signal-cli/-/jobs/3716873649/artifacts/download?file_type=archive -O /tmp/signal-cli-native/archive.zip \
-		#&& unzip archive.zip \
-		#&& mv signal-cli-native-arm64/*deb . \
-		&& apt-get update \
-		&& apt-get download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} \
+		&& wget https://gitlab.com/packaging/signal-cli/-/jobs/14049119045/artifacts/download?file_type=archive -O /tmp/signal-cli-native/archive.zip \
+		&& unzip archive.zip \
+		&& mv signal-cli-native-arm64-trigger/*deb . \
+		#&& apt-get update \
+		#&& apt-get download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} \
 		&& ar x *.deb \
 		&& tar xf data.tar.gz \
 		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
