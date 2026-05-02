@@ -97,11 +97,11 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& echo "deb [signed-by=/usr/share/keyrings/signal-cli-native.pgp] https://packaging.gitlab.io/signal-cli signalcli main" > /etc/apt/sources.list.d/morph027-signal-cli.list \
 		&& mkdir -p /tmp/signal-cli-native \
 		&& cd /tmp/signal-cli-native \
-		&& wget https://gitlab.com/packaging/signal-cli/-/jobs/14049119045/artifacts/download?file_type=archive -O /tmp/signal-cli-native/archive.zip \
-		&& unzip archive.zip \
-		&& mv signal-cli-native-arm64-trigger/*deb . \
-		#&& apt-get update \
-		#&& apt-get download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} \
+		#&& wget https://gitlab.com/packaging/signal-cli/-/jobs/14049119045/artifacts/download?file_type=archive -O /tmp/signal-cli-native/archive.zip \
+		#&& unzip archive.zip \
+		#&& mv signal-cli-native-arm64-trigger/*deb . \
+		&& apt-get update \
+		&& apt-get download signal-cli-native=${SIGNAL_CLI_NATIVE_PACKAGE_VERSION} \
 		&& ar x *.deb \
 		&& tar xf data.tar.gz \
 		&& mkdir -p /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/native/nativeCompile \
