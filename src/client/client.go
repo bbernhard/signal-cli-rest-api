@@ -749,6 +749,8 @@ func (s *SignalClient) About() About {
 }
 
 func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha string) error {
+	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			UseVoice bool   `json:"voice,omitempty"`
@@ -765,12 +767,11 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 			request.Captcha = captcha
 		}
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
 		_, err = jsonRpc2Client.getRaw("register", nil, request)
-		return err
 	} else {
 		command := []string{"--config", s.signalCliConfig, "-a", number, "register"}
 
@@ -782,9 +783,16 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 			command = append(command, []string{"--captcha", captcha}...)
 		}
 
-		_, err := s.cliClient.Execute(true, command, "")
-		return err
+		_, err = s.cliClient.Execute(true, command, "")
 	}
+
+	if err != nil {
+		if !useVoice && strings.Contains(err.Error(), "StatusCode: 400 (InvalidTransportModeException)") {
+			return &InvalidTransportError{Description: "Couldn't use SMS verification to register number."}
+		}
+	}
+
+	return err
 }
 
 func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool, deleteLocalData bool) error {
