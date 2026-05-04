@@ -145,16 +145,18 @@ COPY src/go.sum /tmp/signal-cli-rest-api-src/
 COPY src/plugin_loader.go /tmp/signal-cli-rest-api-src/
 COPY src/docs/add_v1_receive_schemas.go /tmp/signal-cli-rest-api-src/docs/add_v1_receive_schemas.go
 
-# build signal-cli-rest-api
 RUN ls -la /tmp/signal-cli-rest-api-src
+
+# build the docs
 RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init --requiredByDefault
 
-# Manually add the json schemas for the receive V1 endpoint
+# manually add the json schemas for the receive V1 endpoint to the docs
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		cd /tmp/signal-cli-rest-api-src/docs \
 		&& go run add_v1_receive_schemas.go /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/generated/META-INF/schemas; \
 	fi;
 
+# build signal-cli-rest-api
 RUN cd /tmp/signal-cli-rest-api-src && go build -o signal-cli-rest-api main.go
 RUN cd /tmp/signal-cli-rest-api-src && go test ./client -v && go test ./utils -v
 
