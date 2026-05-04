@@ -90,7 +90,8 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		&& zip -qu libsignal-client.jar libsignal_jni.so \
 		&& cd /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source \
 		&& git apply /tmp/signal-cli-native.patch \
-		&& ./gradlew -q nativeCompile; \
+		&& ./gradlew -q nativeCompile \
+		&& ./gradlew jsonSchemas; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
 		echo "Use native image from @morph027 (https://packaging.gitlab.io/signal-cli/) for arm64 - many thanks to @morph027" \
 		&& curl -fsSL https://packaging.gitlab.io/signal-cli/gpg.key | gpg -o /usr/share/keyrings/signal-cli-native.pgp --dearmor \
@@ -142,10 +143,20 @@ COPY src/main.go /tmp/signal-cli-rest-api-src/
 COPY src/go.mod /tmp/signal-cli-rest-api-src/
 COPY src/go.sum /tmp/signal-cli-rest-api-src/
 COPY src/plugin_loader.go /tmp/signal-cli-rest-api-src/
+COPY src/docs/add_v1_receive_schemas.go /tmp/signal-cli-rest-api-src/docs/add_v1_receive_schemas.go
+
+RUN ls -la /tmp/signal-cli-rest-api-src
+
+# build the docs
+RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init --requiredByDefault --outputTypes "go,json"
+
+# manually add the json schemas for the receive V1 endpoint to the docs
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+		cd /tmp/signal-cli-rest-api-src/docs \
+		&& go run add_v1_receive_schemas.go /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/generated/META-INF/schemas; \
+	fi;
 
 # build signal-cli-rest-api
-RUN ls -la /tmp/signal-cli-rest-api-src
-RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init --requiredByDefault
 RUN cd /tmp/signal-cli-rest-api-src && go build -o signal-cli-rest-api main.go
 RUN cd /tmp/signal-cli-rest-api-src && go test ./client -v && go test ./utils -v
 
