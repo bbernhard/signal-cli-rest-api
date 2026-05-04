@@ -15,11 +15,11 @@ Regenerate the files with your local source code changes.
 1. Run swag to generate the docs
     * Option 1, via docker 
         ```bash
-        docker run --rm -v $(pwd):/code ghcr.io/swaggo/swag:latest init --requiredByDefault
+        docker run --rm -v $(pwd):/code ghcr.io/swaggo/swag:latest init --requiredByDefault --outputTypes go
         ```
     * Option 2, install swag and run the command line tool
         ```bash
-        swag init --requiredByDefault
+        swag init --requiredByDefault --outputTypes go
         ```
 1. Set the current working dir to `src/docs`
     ```bash
