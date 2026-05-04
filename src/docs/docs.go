@@ -2190,10 +2190,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/data.Message"
                         }
                     },
                     "400": {
@@ -2790,6 +2787,14 @@ const docTemplate = `{
         },
         "api.CreateGroupRequest": {
             "type": "object",
+            "required": [
+                "description",
+                "expiration_time",
+                "group_link",
+                "members",
+                "name",
+                "permissions"
+            ],
             "properties": {
                 "description": {
                     "type": "string"
@@ -2833,6 +2838,7 @@ const docTemplate = `{
         "api.CreatePollRequest": {
             "type": "object",
             "required": [
+                "allow_multiple_selections",
                 "answers",
                 "question",
                 "recipient"
@@ -2877,6 +2883,9 @@ const docTemplate = `{
         },
         "api.DeleteLocalAccountDataRequest": {
             "type": "object",
+            "required": [
+                "ignore_registered"
+            ],
             "properties": {
                 "ignore_registered": {
                     "type": "boolean",
@@ -2920,6 +2929,7 @@ const docTemplate = `{
         "api.PinMessageInGroupRequest": {
             "type": "object",
             "required": [
+                "duration",
                 "target_author",
                 "timestamp"
             ],
@@ -2977,6 +2987,10 @@ const docTemplate = `{
         },
         "api.RegisterNumberRequest": {
             "type": "object",
+            "required": [
+                "captcha",
+                "use_voice"
+            ],
             "properties": {
                 "captcha": {
                     "type": "string"
@@ -3015,6 +3029,7 @@ const docTemplate = `{
         "api.RemoveReactionRequest": {
             "type": "object",
             "required": [
+                "reaction",
                 "recipient",
                 "target_author",
                 "timestamp"
@@ -3053,6 +3068,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "account",
+                "challenge_tokens",
                 "error"
             ],
             "properties": {
@@ -3084,6 +3100,8 @@ const docTemplate = `{
         "api.SendMessageV1": {
             "type": "object",
             "required": [
+                "base64_attachment",
+                "is_group",
                 "message",
                 "number",
                 "recipients"
@@ -3113,9 +3131,21 @@ const docTemplate = `{
         "api.SendMessageV2": {
             "type": "object",
             "required": [
+                "base64_attachments",
+                "edit_timestamp",
+                "link_preview",
+                "mentions",
                 "message",
+                "notify_self",
                 "number",
-                "recipients"
+                "quote_author",
+                "quote_mentions",
+                "quote_message",
+                "quote_timestamp",
+                "recipients",
+                "sticker",
+                "text_mode",
+                "view_once"
             ],
             "properties": {
                 "base64_attachments": {
@@ -3234,6 +3264,10 @@ const docTemplate = `{
         },
         "api.TrustIdentityRequest": {
             "type": "object",
+            "required": [
+                "trust_all_known_keys",
+                "verified_safety_number"
+            ],
             "properties": {
                 "trust_all_known_keys": {
                     "type": "boolean",
@@ -3294,6 +3328,10 @@ const docTemplate = `{
         },
         "api.UnregisterNumberRequest": {
             "type": "object",
+            "required": [
+                "delete_account",
+                "delete_local_data"
+            ],
             "properties": {
                 "delete_account": {
                     "type": "boolean",
@@ -3307,6 +3345,10 @@ const docTemplate = `{
         },
         "api.UpdateAccountSettingsRequest": {
             "type": "object",
+            "required": [
+                "discoverable_by_number",
+                "share_number"
+            ],
             "properties": {
                 "discoverable_by_number": {
                     "type": "boolean"
@@ -3319,6 +3361,8 @@ const docTemplate = `{
         "api.UpdateContactRequest": {
             "type": "object",
             "required": [
+                "expiration_in_seconds",
+                "name",
                 "recipient"
             ],
             "properties": {
@@ -3335,6 +3379,14 @@ const docTemplate = `{
         },
         "api.UpdateGroupRequest": {
             "type": "object",
+            "required": [
+                "base64_avatar",
+                "description",
+                "expiration_time",
+                "group_link",
+                "name",
+                "permissions"
+            ],
             "properties": {
                 "base64_avatar": {
                     "type": "string"
@@ -3364,6 +3416,8 @@ const docTemplate = `{
         "api.UpdateProfileRequest": {
             "type": "object",
             "required": [
+                "about",
+                "base64_avatar",
                 "name"
             ],
             "properties": {
@@ -3380,6 +3434,9 @@ const docTemplate = `{
         },
         "api.VerifyNumberSettings": {
             "type": "object",
+            "required": [
+                "pin"
+            ],
             "properties": {
                 "pin": {
                     "type": "string"
@@ -3786,6 +3843,1284 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "data.Message": {
+            "properties": {
+                "account": {
+                    "type": "string"
+                },
+                "envelope": {
+                    "$ref": "#/definitions/receive.MessageEnvelope"
+                }
+            },
+            "required": [
+                "account",
+                "envelope"
+            ],
+            "type": "object"
+        },
+        "receive.AdminDelete": {
+            "properties": {
+                "targetAuthor": {
+                    "type": "string"
+                },
+                "targetAuthorNumber": {
+                    "type": "string"
+                },
+                "targetAuthorUuid": {
+                    "type": "string"
+                },
+                "targetSentTimestamp": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "targetSentTimestamp"
+            ],
+            "type": "object"
+        },
+        "receive.Attachment": {
+            "properties": {
+                "caption": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "filename": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "uploadTimestamp": {
+                    "type": "integer"
+                },
+                "width": {
+                    "type": "integer"
+                }
+            },
+            "type": "object"
+        },
+        "receive.AttachmentData": {
+            "properties": {
+                "data": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.CallMessage": {
+            "properties": {
+                "answerMessage": {
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        },
+                        "opaque": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "id"
+                    ],
+                    "type": "object"
+                },
+                "busyMessage": {
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "id"
+                    ],
+                    "type": "object"
+                },
+                "hangupMessage": {
+                    "properties": {
+                        "deviceId": {
+                            "type": "integer"
+                        },
+                        "id": {
+                            "type": "integer"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "id",
+                        "deviceId"
+                    ],
+                    "type": "object"
+                },
+                "iceUpdateMessages": {
+                    "items": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "opaque": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "offerMessage": {
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        },
+                        "opaque": {
+                            "type": "string"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "id"
+                    ],
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "receive.Contact": {
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "familyName": {
+                    "type": "string"
+                },
+                "givenName": {
+                    "type": "string"
+                },
+                "internal": {
+                    "$ref": "#/definitions/receive.Internal"
+                },
+                "isArchived": {
+                    "type": "boolean"
+                },
+                "isBlocked": {
+                    "type": "boolean"
+                },
+                "isHidden": {
+                    "type": "boolean"
+                },
+                "messageExpirationTime": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nickFamilyName": {
+                    "type": "string"
+                },
+                "nickGivenName": {
+                    "type": "string"
+                },
+                "nickName": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "profile": {
+                    "$ref": "#/definitions/receive.Profile"
+                },
+                "profileSharing": {
+                    "type": "boolean"
+                },
+                "unregistered": {
+                    "type": "boolean"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "isArchived",
+                "isBlocked",
+                "isHidden",
+                "messageExpirationTime",
+                "profileSharing",
+                "unregistered"
+            ],
+            "type": "object"
+        },
+        "receive.ContactAddress": {
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "neighborhood": {
+                    "type": "string"
+                },
+                "pobox": {
+                    "type": "string"
+                },
+                "postcode": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "street": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.ContactAvatar": {
+            "properties": {
+                "attachment": {
+                    "$ref": "#/definitions/receive.Attachment"
+                },
+                "isProfile": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "isProfile"
+            ],
+            "type": "object"
+        },
+        "receive.ContactEmail": {
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.ContactName": {
+            "properties": {
+                "family": {
+                    "type": "string"
+                },
+                "given": {
+                    "type": "string"
+                },
+                "middle": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "prefix": {
+                    "type": "string"
+                },
+                "suffix": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.ContactPhone": {
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.DataMessage": {
+            "properties": {
+                "adminDelete": {
+                    "$ref": "#/definitions/receive.AdminDelete"
+                },
+                "attachments": {
+                    "items": {
+                        "$ref": "#/definitions/receive.Attachment"
+                    },
+                    "type": "array"
+                },
+                "contacts": {
+                    "items": {
+                        "$ref": "#/definitions/receive.SharedContact"
+                    },
+                    "type": "array"
+                },
+                "expiresInSeconds": {
+                    "type": "integer"
+                },
+                "groupInfo": {
+                    "$ref": "#/definitions/receive.GroupInfo"
+                },
+                "isExpirationUpdate": {
+                    "type": "boolean"
+                },
+                "mentions": {
+                    "items": {
+                        "$ref": "#/definitions/receive.Mention"
+                    },
+                    "type": "array"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "payment": {
+                    "$ref": "#/definitions/receive.Payment"
+                },
+                "pinMessage": {
+                    "$ref": "#/definitions/receive.PinMessage"
+                },
+                "pollCreate": {
+                    "$ref": "#/definitions/receive.PollCreate"
+                },
+                "pollTerminate": {
+                    "$ref": "#/definitions/receive.PollTerminate"
+                },
+                "pollVote": {
+                    "$ref": "#/definitions/receive.PollVote"
+                },
+                "previews": {
+                    "items": {
+                        "$ref": "#/definitions/receive.Preview"
+                    },
+                    "type": "array"
+                },
+                "quote": {
+                    "$ref": "#/definitions/receive.Quote"
+                },
+                "reaction": {
+                    "$ref": "#/definitions/receive.Reaction"
+                },
+                "remoteDelete": {
+                    "$ref": "#/definitions/receive.RemoteDelete"
+                },
+                "sticker": {
+                    "$ref": "#/definitions/receive.Sticker"
+                },
+                "storyContext": {
+                    "$ref": "#/definitions/receive.StoryContext"
+                },
+                "textStyles": {
+                    "items": {
+                        "$ref": "#/definitions/receive.TextStyle"
+                    },
+                    "type": "array"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "unpinMessage": {
+                    "$ref": "#/definitions/receive.UnpinMessage"
+                },
+                "viewOnce": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "timestamp"
+            ],
+            "type": "object"
+        },
+        "receive.EditMessage": {
+            "properties": {
+                "dataMessage": {
+                    "$ref": "#/definitions/receive.DataMessage"
+                },
+                "targetSentTimestamp": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "targetSentTimestamp"
+            ],
+            "type": "object"
+        },
+        "receive.Error": {
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.GroupInfo": {
+            "properties": {
+                "groupId": {
+                    "type": "string"
+                },
+                "groupName": {
+                    "type": "string"
+                },
+                "revision": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "revision"
+            ],
+            "type": "object"
+        },
+        "receive.Internal": {
+            "properties": {
+                "capabilities": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "discoverableByPhonenumber": {
+                    "type": "boolean"
+                },
+                "sharesPhoneNumber": {
+                    "type": "boolean"
+                },
+                "unidentifiedAccessMode": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.Mention": {
+            "properties": {
+                "length": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "start": {
+                    "type": "integer"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "start",
+                "length"
+            ],
+            "type": "object"
+        },
+        "receive.MessageEnvelope": {
+            "properties": {
+                "callMessage": {
+                    "$ref": "#/definitions/receive.CallMessage"
+                },
+                "dataMessage": {
+                    "$ref": "#/definitions/receive.DataMessage"
+                },
+                "editMessage": {
+                    "$ref": "#/definitions/receive.EditMessage"
+                },
+                "receiptMessage": {
+                    "$ref": "#/definitions/receive.ReceiptMessage"
+                },
+                "serverDeliveredTimestamp": {
+                    "type": "integer"
+                },
+                "serverReceivedTimestamp": {
+                    "type": "integer"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "sourceDevice": {
+                    "type": "integer"
+                },
+                "sourceName": {
+                    "type": "string"
+                },
+                "sourceNumber": {
+                    "type": "string"
+                },
+                "sourceUuid": {
+                    "type": "string"
+                },
+                "storyMessage": {
+                    "$ref": "#/definitions/receive.StoryMessage"
+                },
+                "syncMessage": {
+                    "$ref": "#/definitions/receive.SyncMessage"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "typingMessage": {
+                    "$ref": "#/definitions/receive.TypingMessage"
+                }
+            },
+            "required": [
+                "timestamp",
+                "serverReceivedTimestamp",
+                "serverDeliveredTimestamp"
+            ],
+            "type": "object"
+        },
+        "receive.Payment": {
+            "properties": {
+                "note": {
+                    "type": "string"
+                },
+                "receipt": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "receipt"
+            ],
+            "type": "object"
+        },
+        "receive.PinMessage": {
+            "properties": {
+                "pinDurationSeconds": {
+                    "type": "integer"
+                },
+                "targetAuthor": {
+                    "type": "string"
+                },
+                "targetAuthorNumber": {
+                    "type": "string"
+                },
+                "targetAuthorUuid": {
+                    "type": "string"
+                },
+                "targetSentTimestamp": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "targetSentTimestamp",
+                "pinDurationSeconds"
+            ],
+            "type": "object"
+        },
+        "receive.PollCreate": {
+            "properties": {
+                "allowMultiple": {
+                    "type": "boolean"
+                },
+                "options": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "question": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "allowMultiple"
+            ],
+            "type": "object"
+        },
+        "receive.PollTerminate": {
+            "properties": {
+                "targetSentTimestamp": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "targetSentTimestamp"
+            ],
+            "type": "object"
+        },
+        "receive.PollVote": {
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "authorNumber": {
+                    "type": "string"
+                },
+                "authorUuid": {
+                    "type": "string"
+                },
+                "optionIndexes": {
+                    "items": {
+                        "type": "integer"
+                    },
+                    "type": "array"
+                },
+                "targetSentTimestamp": {
+                    "type": "integer"
+                },
+                "voteCount": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "targetSentTimestamp",
+                "voteCount"
+            ],
+            "type": "object"
+        },
+        "receive.Preview": {
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "image": {
+                    "$ref": "#/definitions/receive.Attachment"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.Profile": {
+            "properties": {
+                "about": {
+                    "type": "string"
+                },
+                "aboutEmoji": {
+                    "type": "string"
+                },
+                "familyName": {
+                    "type": "string"
+                },
+                "givenName": {
+                    "type": "string"
+                },
+                "hasAvatar": {
+                    "type": "boolean"
+                },
+                "lastUpdateTimestamp": {
+                    "type": "integer"
+                },
+                "mobileCoinAddress": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "lastUpdateTimestamp",
+                "hasAvatar"
+            ],
+            "type": "object"
+        },
+        "receive.Quote": {
+            "properties": {
+                "attachments": {
+                    "items": {
+                        "$ref": "#/definitions/receive.QuotedAttachment"
+                    },
+                    "type": "array"
+                },
+                "author": {
+                    "type": "string"
+                },
+                "authorNumber": {
+                    "type": "string"
+                },
+                "authorUuid": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mentions": {
+                    "items": {
+                        "$ref": "#/definitions/receive.Mention"
+                    },
+                    "type": "array"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "textStyles": {
+                    "items": {
+                        "$ref": "#/definitions/receive.TextStyle"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "id"
+            ],
+            "type": "object"
+        },
+        "receive.QuotedAttachment": {
+            "properties": {
+                "contentType": {
+                    "type": "string"
+                },
+                "filename": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "$ref": "#/definitions/receive.Attachment"
+                }
+            },
+            "type": "object"
+        },
+        "receive.Reaction": {
+            "properties": {
+                "emoji": {
+                    "type": "string"
+                },
+                "isRemove": {
+                    "type": "boolean"
+                },
+                "targetAuthor": {
+                    "type": "string"
+                },
+                "targetAuthorNumber": {
+                    "type": "string"
+                },
+                "targetAuthorUuid": {
+                    "type": "string"
+                },
+                "targetSentTimestamp": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "targetSentTimestamp",
+                "isRemove"
+            ],
+            "type": "object"
+        },
+        "receive.ReceiptMessage": {
+            "properties": {
+                "isDelivery": {
+                    "type": "boolean"
+                },
+                "isRead": {
+                    "type": "boolean"
+                },
+                "isViewed": {
+                    "type": "boolean"
+                },
+                "timestamps": {
+                    "items": {
+                        "type": "integer"
+                    },
+                    "type": "array"
+                },
+                "when": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "when",
+                "isDelivery",
+                "isRead",
+                "isViewed"
+            ],
+            "type": "object"
+        },
+        "receive.RecipientAddress": {
+            "properties": {
+                "number": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.RemoteDelete": {
+            "properties": {
+                "timestamp": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "timestamp"
+            ],
+            "type": "object"
+        },
+        "receive.SendMessageResult": {
+            "properties": {
+                "groupId": {
+                    "type": "string"
+                },
+                "recipientAddress": {
+                    "$ref": "#/definitions/receive.RecipientAddress"
+                },
+                "retryAfterSeconds": {
+                    "type": "integer"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                        "SUCCESS",
+                        "NETWORK_FAILURE",
+                        "UNREGISTERED_FAILURE",
+                        "IDENTITY_FAILURE",
+                        "RATE_LIMIT_FAILURE",
+                        "INVALID_PRE_KEY_FAILURE"
+                    ],
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.SharedContact": {
+            "properties": {
+                "address": {
+                    "items": {
+                        "$ref": "#/definitions/receive.ContactAddress"
+                    },
+                    "type": "array"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/receive.ContactAvatar"
+                },
+                "email": {
+                    "items": {
+                        "$ref": "#/definitions/receive.ContactEmail"
+                    },
+                    "type": "array"
+                },
+                "name": {
+                    "$ref": "#/definitions/receive.ContactName"
+                },
+                "organization": {
+                    "type": "string"
+                },
+                "phone": {
+                    "items": {
+                        "$ref": "#/definitions/receive.ContactPhone"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "receive.Sticker": {
+            "properties": {
+                "packId": {
+                    "type": "string"
+                },
+                "stickerId": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "stickerId"
+            ],
+            "type": "object"
+        },
+        "receive.StoryContext": {
+            "properties": {
+                "authorNumber": {
+                    "type": "string"
+                },
+                "authorUuid": {
+                    "type": "string"
+                },
+                "sentTimestamp": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "sentTimestamp"
+            ],
+            "type": "object"
+        },
+        "receive.StoryMessage": {
+            "properties": {
+                "allowsReplies": {
+                    "type": "boolean"
+                },
+                "fileAttachment": {
+                    "$ref": "#/definitions/receive.Attachment"
+                },
+                "groupId": {
+                    "type": "string"
+                },
+                "textAttachment": {
+                    "properties": {
+                        "backgroundColor": {
+                            "type": "string"
+                        },
+                        "backgroundGradient": {
+                            "properties": {
+                                "angle": {
+                                    "type": "integer"
+                                },
+                                "colors": {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                "endColor": {
+                                    "type": "string"
+                                },
+                                "positions": {
+                                    "items": {
+                                        "type": "number"
+                                    },
+                                    "type": "array"
+                                },
+                                "startColor": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "preview": {
+                            "$ref": "#/definitions/receive.Preview"
+                        },
+                        "style": {
+                            "type": "string"
+                        },
+                        "text": {
+                            "type": "string"
+                        },
+                        "textBackgroundColor": {
+                            "type": "string"
+                        },
+                        "textForegroundColor": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
+            "required": [
+                "allowsReplies"
+            ],
+            "type": "object"
+        },
+        "receive.SyncDataMessage": {
+            "properties": {
+                "adminDelete": {
+                    "$ref": "#/definitions/receive.AdminDelete"
+                },
+                "attachments": {
+                    "items": {
+                        "$ref": "#/definitions/receive.Attachment"
+                    },
+                    "type": "array"
+                },
+                "contacts": {
+                    "items": {
+                        "$ref": "#/definitions/receive.SharedContact"
+                    },
+                    "type": "array"
+                },
+                "destination": {
+                    "type": "string"
+                },
+                "destinationNumber": {
+                    "type": "string"
+                },
+                "destinationUuid": {
+                    "type": "string"
+                },
+                "editMessage": {
+                    "$ref": "#/definitions/receive.EditMessage"
+                },
+                "expiresInSeconds": {
+                    "type": "integer"
+                },
+                "groupInfo": {
+                    "$ref": "#/definitions/receive.GroupInfo"
+                },
+                "isExpirationUpdate": {
+                    "type": "boolean"
+                },
+                "mentions": {
+                    "items": {
+                        "$ref": "#/definitions/receive.Mention"
+                    },
+                    "type": "array"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "payment": {
+                    "$ref": "#/definitions/receive.Payment"
+                },
+                "pinMessage": {
+                    "$ref": "#/definitions/receive.PinMessage"
+                },
+                "pollCreate": {
+                    "$ref": "#/definitions/receive.PollCreate"
+                },
+                "pollTerminate": {
+                    "$ref": "#/definitions/receive.PollTerminate"
+                },
+                "pollVote": {
+                    "$ref": "#/definitions/receive.PollVote"
+                },
+                "previews": {
+                    "items": {
+                        "$ref": "#/definitions/receive.Preview"
+                    },
+                    "type": "array"
+                },
+                "quote": {
+                    "$ref": "#/definitions/receive.Quote"
+                },
+                "reaction": {
+                    "$ref": "#/definitions/receive.Reaction"
+                },
+                "remoteDelete": {
+                    "$ref": "#/definitions/receive.RemoteDelete"
+                },
+                "sticker": {
+                    "$ref": "#/definitions/receive.Sticker"
+                },
+                "storyContext": {
+                    "$ref": "#/definitions/receive.StoryContext"
+                },
+                "textStyles": {
+                    "items": {
+                        "$ref": "#/definitions/receive.TextStyle"
+                    },
+                    "type": "array"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "unpinMessage": {
+                    "$ref": "#/definitions/receive.UnpinMessage"
+                },
+                "viewOnce": {
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
+        "receive.SyncMessage": {
+            "properties": {
+                "blockedGroupIds": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "blockedNumbers": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "readMessages": {
+                    "items": {
+                        "$ref": "#/definitions/receive.SyncReadMessage"
+                    },
+                    "type": "array"
+                },
+                "sentMessage": {
+                    "$ref": "#/definitions/receive.SyncDataMessage"
+                },
+                "sentStoryMessage": {
+                    "$ref": "#/definitions/receive.SyncStoryMessage"
+                },
+                "type": {
+                    "enum": [
+                        "CONTACTS_SYNC",
+                        "GROUPS_SYNC",
+                        "REQUEST_SYNC"
+                    ],
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.SyncReadMessage": {
+            "properties": {
+                "sender": {
+                    "type": "string"
+                },
+                "senderNumber": {
+                    "type": "string"
+                },
+                "senderUuid": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "timestamp"
+            ],
+            "type": "object"
+        },
+        "receive.SyncStoryMessage": {
+            "properties": {
+                "allowsReplies": {
+                    "type": "boolean"
+                },
+                "destinationNumber": {
+                    "type": "string"
+                },
+                "destinationUuid": {
+                    "type": "string"
+                },
+                "fileAttachment": {
+                    "$ref": "#/definitions/receive.Attachment"
+                },
+                "groupId": {
+                    "type": "string"
+                },
+                "textAttachment": {
+                    "properties": {
+                        "backgroundColor": {
+                            "type": "string"
+                        },
+                        "backgroundGradient": {
+                            "properties": {
+                                "angle": {
+                                    "type": "integer"
+                                },
+                                "colors": {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                "endColor": {
+                                    "type": "string"
+                                },
+                                "positions": {
+                                    "items": {
+                                        "type": "number"
+                                    },
+                                    "type": "array"
+                                },
+                                "startColor": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "preview": {
+                            "$ref": "#/definitions/receive.Preview"
+                        },
+                        "style": {
+                            "type": "string"
+                        },
+                        "text": {
+                            "type": "string"
+                        },
+                        "textBackgroundColor": {
+                            "type": "string"
+                        },
+                        "textForegroundColor": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "receive.TextStyle": {
+            "properties": {
+                "length": {
+                    "type": "integer"
+                },
+                "start": {
+                    "type": "integer"
+                },
+                "style": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "start",
+                "length"
+            ],
+            "type": "object"
+        },
+        "receive.TypingMessage": {
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "groupId": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "timestamp"
+            ],
+            "type": "object"
+        },
+        "receive.UnpinMessage": {
+            "properties": {
+                "targetAuthor": {
+                    "type": "string"
+                },
+                "targetAuthorNumber": {
+                    "type": "string"
+                },
+                "targetAuthorUuid": {
+                    "type": "string"
+                },
+                "targetSentTimestamp": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "targetSentTimestamp"
+            ],
+            "type": "object"
         }
     },
     "tags": [
