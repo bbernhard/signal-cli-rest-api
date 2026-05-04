@@ -1,13 +1,15 @@
 {
-    "schemes": ["http","https"],
+    "schemes": [
+        "http"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "This is the Signal Cli REST API documentation.",
         "title": "Signal Cli REST API",
         "contact": {},
-        "version": "0.99"
+        "version": "1.0"
     },
-    "host": "192.168.0.166:8080",
+    "host": "localhost:8080",
     "basePath": "/",
     "paths": {
         "/v1/about": {
@@ -3922,6 +3924,9 @@
                             "type": "string"
                         }
                     },
+                    "required": [
+                        "id"
+                    ],
                     "type": "object"
                 },
                 "busyMessage": {
@@ -3930,6 +3935,9 @@
                             "type": "integer"
                         }
                     },
+                    "required": [
+                        "id"
+                    ],
                     "type": "object"
                 },
                 "hangupMessage": {
@@ -3945,6 +3953,7 @@
                         }
                     },
                     "required": [
+                        "id",
                         "deviceId"
                     ],
                     "type": "object"
@@ -3959,6 +3968,9 @@
                                 "type": "string"
                             }
                         },
+                        "required": [
+                            "id"
+                        ],
                         "type": "object"
                     },
                     "type": "array"
@@ -3975,6 +3987,9 @@
                             "type": "string"
                         }
                     },
+                    "required": [
+                        "id"
+                    ],
                     "type": "object"
                 }
             },
