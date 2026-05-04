@@ -148,7 +148,7 @@ COPY src/docs/add_v1_receive_schemas.go /tmp/signal-cli-rest-api-src/docs/add_v1
 RUN ls -la /tmp/signal-cli-rest-api-src
 
 # build the docs
-RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init --requiredByDefault --outputTypes go
+RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init --requiredByDefault --outputTypes "go,json"
 
 # manually add the json schemas for the receive V1 endpoint to the docs
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
