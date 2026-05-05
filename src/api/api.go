@@ -578,7 +578,7 @@ func (a *Api) SendV2(c *gin.Context) {
 }
 
 func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan struct{}) {
-	receiveChannel, channelUuid, err := a.signalClient.GetReceiveChannel()
+	receiveChannel, channelUuid, err := a.signalClient.GetReceiveChannel(number)
 	if err != nil {
 		log.Error("Couldn't get receive channel: ", err.Error())
 		return

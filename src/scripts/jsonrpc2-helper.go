@@ -13,7 +13,7 @@ import (
 const supervisorctlConfigTemplate = `
 [program:%s]
 process_name=%s
-command=%s --output=json --config %s%s daemon %s%s%s%s --tcp 127.0.0.1:%d
+command=%s --output=json --config %s%s daemon%s %s%s%s%s --tcp 127.0.0.1:%d
 autostart=true
 autorestart=true
 startretries=10
@@ -75,6 +75,22 @@ func main() {
 		signalCliIgnoreStickers = " --ignore-stickers"
 	}
 
+	// Receive mode: by default signal-cli auto-receives messages on the
+	// daemon and pushes them as JSON-RPC notifications, regardless of
+	// whether any websocket subscriber is connected. In a deploy where
+	// the subscribing client briefly disconnects, those notifications
+	// have nowhere to go and are silently dropped. With manual receive
+	// mode, signal-cli only fetches messages when explicitly requested
+	// via subscribeReceive — see jsonrpc2.go — so messages stay buffered
+	// on the Signal servers until a subscriber re-attaches.
+	signalCliReceiveMode := ""
+	receiveMode := utils.GetEnv("JSON_RPC_RECEIVE_MODE", "")
+	if receiveMode == "manual" {
+		signalCliReceiveMode = " --receive-mode=manual"
+	} else if receiveMode != "" && receiveMode != "on-start" {
+		log.Fatal("Invalid JSON_RPC_RECEIVE_MODE environment variable set! Must be 'manual' or 'on-start'.")
+	}
+
 	supervisorctlProgramName := "signal-cli-json-rpc-1"
 	supervisorctlLogFolder := "/var/log/" + supervisorctlProgramName
 	_, err := exec.Command("mkdir", "-p", supervisorctlLogFolder).Output()
@@ -100,7 +116,7 @@ func main() {
 	supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-1.conf"
 
 	supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName, signalCliBinary,
-		signalCliConfigDir, trustNewIdentities, signalCliIgnoreAttachments, signalCliIgnoreStories,
+		signalCliConfigDir, trustNewIdentities, signalCliReceiveMode, signalCliIgnoreAttachments, signalCliIgnoreStories,
 		signalCliIgnoreAvatars, signalCliIgnoreStickers, tcpPort,
 		supervisorctlProgramName, supervisorctlProgramName)
 
