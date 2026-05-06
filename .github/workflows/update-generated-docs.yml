@@ -1,0 +1,41 @@
+name: Update Generated Docs
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: src/go.mod
+          cache-dependency-path: src/go.sum
+
+      - name: Regenerate docs
+        working-directory: src
+        run: go run github.com/swaggo/swag/cmd/swag@v1.16.6 init --requiredByDefault
+
+      - name: Create pull request for regenerated docs
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: automation/update-generated-docs
+          delete-branch: true
+          commit-message: "chore: regenerate swagger docs"
+          title: "chore: regenerate swagger docs"
+          body: |
+            Update Swagger docs to match the latest changes in the main branch.
+          add-paths: |
+            src/docs/docs.go
+            src/docs/swagger.json
+            src/docs/swagger.yaml
