@@ -4,9 +4,22 @@ on:
   push:
     branches:
       - '**' #every branch
+    paths-ignore:
+      - "*/*.md"
+      - "*/*.yml"
+      - "doc/**"
+      - "plugins/**"
+      - ".github/**"
   pull_request:
     branches:
       - '**' #every branch
+    paths-ignore:
+      - "*/*.md"
+      - "*/*.yml"
+      - "doc/**"
+      - "plugins/**"
+      - ".github/**"
+      
 
 jobs:
   setup:
