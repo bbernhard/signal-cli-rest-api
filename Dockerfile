@@ -102,13 +102,11 @@ RUN ls -la /tmp/signal-cli-rest-api-src
 RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init --requiredByDefault --outputTypes "go,json"
 
 # manually add the json schemas for the receive V1 endpoint to the docs
-RUN if [ "$(uname -m)" = "x86_64" ]; then \
-		cd /tmp/signal-cli-rest-api-src/docs \
-		wget https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz \
-		&& mkdir signal-cli-schemas \
-		&& tar xf signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz -C signal-cli-schemas \
-		&& go run add_v1_receive_schemas.go signal-cli-schemas; \
-	fi;
+RUN cd /tmp/signal-cli-rest-api-src/docs \
+	wget https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz \
+	&& mkdir signal-cli-schemas \
+	&& tar xf signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz -C signal-cli-schemas \
+	&& go run add_v1_receive_schemas.go signal-cli-schemas
 
 # build signal-cli-rest-api
 RUN cd /tmp/signal-cli-rest-api-src && go build -o signal-cli-rest-api main.go
