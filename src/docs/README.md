@@ -44,10 +44,13 @@ Install [go](https://go.dev/).
     ```bash
     cd docs
     ```
-1. Run the script to add the receive V1 schemas from https://github.com/AsamK/signal-cli#json-schemas-for-the-json-rpc-mode
-    ```bash
-    go run add_v1_receive_schemas.go ./path-to-signal-cli-json-schema-folder
-    ```
+1. Add the signal-cli receive V1 schemas
+    * Download the `signal-cli-x.y.z-json-schemas.tar.gz` schema files from https://github.com/Gara-Dorta/signal-cli/releases
+    * Extract the files
+    * Run the script to add the schemas
+        ```bash
+        go run add_v1_receive_schemas.go ./path-to-signal-cli-json-schema-folder
+        ```
 
 ### Run the web server
 
