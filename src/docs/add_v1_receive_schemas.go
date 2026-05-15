@@ -76,19 +76,21 @@ func updateDocsGo(receiveDefinitions map[string]interface{}) error {
 		return err
 	}
 
-	document, err := jsonUnmarshalSafe(template, true)
-	if err != nil {
-		return err
+	var document map[string]interface{}
+	if err := json.Unmarshal([]byte(toValidJson(template)), &document); err != nil {
+		return fmt.Errorf("parse document: %w", err)
 	}
 
 	if err := applyReceiveSchemaUpdates(document, receiveDefinitions); err != nil {
 		return err
 	}
 
-	updatedTemplate, err := jsonMarshalIndentSafe(document, true)
+	raw, err := json.MarshalIndent(document, "", "    ")
 	if err != nil {
-		return err
+		return fmt.Errorf("marshal document: %w", err)
 	}
+	updatedTemplate := string(raw)
+	updatedTemplate = encodeForGoRawString(updatedTemplate)
 
 	updated := string(content[:templateStart]) + updatedTemplate + string(content[templateEnd:])
 	if err := os.WriteFile(goDocsPath, []byte(updated), 0644); err != nil {
@@ -104,19 +106,20 @@ func updateSwaggerJSON(receiveDefinitions map[string]interface{}) error {
 		return fmt.Errorf("read %s: %w", jsonDocsPath, err)
 	}
 
-	document, err := jsonUnmarshalSafe(string(content), false)
-	if err != nil {
-		return err
+	var document map[string]interface{}
+	if err := json.Unmarshal(content, &document); err != nil {
+		return fmt.Errorf("parse document: %w", err)
 	}
 
 	if err := applyReceiveSchemaUpdates(document, receiveDefinitions); err != nil {
 		return err
 	}
 
-	updated, err := jsonMarshalIndentSafe(document, false)
+	raw, err := json.MarshalIndent(document, "", "    ")
 	if err != nil {
-		return err
+		return fmt.Errorf("marshal document: %w", err)
 	}
+	updated := string(raw)
 
 	if err := os.WriteFile(jsonDocsPath, []byte(updated), 0644); err != nil {
 		return fmt.Errorf("write %s: %w", jsonDocsPath, err)
@@ -141,33 +144,16 @@ func extractDocTemplate(content string) (string, int, int, error) {
 	return content[start:end], start, end, nil
 }
 
-func jsonUnmarshalSafe(content string, applyStringConcat bool) (map[string]interface{}, error) {
-	if applyStringConcat {
-		content = strings.ReplaceAll(content, "` + \"`\" + `", "`")
-		content = strings.Replace(content, schemesTemplateValue, `"`+schemesPlaceholderToken+`"`, 1)
-	}
-
-	var document map[string]interface{}
-	if err := json.Unmarshal([]byte(content), &document); err != nil {
-		return nil, fmt.Errorf("parse document: %w", err)
-	}
-
-	return document, nil
+func toValidJson(content string) string {
+	content = strings.ReplaceAll(content, "` + \"`\" + `", "`")
+	content = strings.Replace(content, schemesTemplateValue, `"`+schemesPlaceholderToken+`"`, 1)
+	return content
 }
 
-func jsonMarshalIndentSafe(document map[string]interface{}, backTicksAsStringConcat bool) (string, error) {
-	raw, err := json.MarshalIndent(document, "", "    ")
-	if err != nil {
-		return "", fmt.Errorf("marshal document: %w", err)
-	}
-
-	updated := string(raw)
-	if backTicksAsStringConcat {
-		updated = strings.ReplaceAll(updated, "`", "` + \"`\" + `")
-		updated = strings.Replace(updated, `"`+schemesPlaceholderToken+`"`, schemesTemplateValue, 1)
-	}
-
-	return updated, nil
+func encodeForGoRawString(content string) string {
+	content = strings.ReplaceAll(content, "`", "` + \"`\" + `")
+	content = strings.Replace(content, `"`+schemesPlaceholderToken+`"`, schemesTemplateValue, 1)
+	return content
 }
 
 func addReceiveSchemas(definitions map[string]interface{}, receiveDir string) (map[string]string, error) {
