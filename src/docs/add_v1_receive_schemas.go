@@ -46,9 +46,7 @@ func run(receiveDir string) error {
 		return err
 	}
 
-	if err := updateReceiveSchemaRefs(definitions, titleByFile); err != nil {
-		return err
-	}
+	updateReceiveSchemaRefs(definitions, titleByFile)
 
 	addEnvelopeWrapperDefinition(definitions)
 
@@ -76,20 +74,10 @@ func updateDocsGo(receiveDefinitions map[string]interface{}) error {
 		return err
 	}
 
-	var document map[string]interface{}
-	if err := json.Unmarshal([]byte(toValidJson(template)), &document); err != nil {
-		return fmt.Errorf("parse document: %w", err)
-	}
-
-	if err := applyReceiveSchemaUpdates(document, receiveDefinitions); err != nil {
+	updatedTemplate, err := updateJSONDocument(toValidJson(template), receiveDefinitions)
+	if err != nil {
 		return err
 	}
-
-	raw, err := json.MarshalIndent(document, "", "    ")
-	if err != nil {
-		return fmt.Errorf("marshal document: %w", err)
-	}
-	updatedTemplate := string(raw)
 	updatedTemplate = encodeForGoRawString(updatedTemplate)
 
 	updated := string(content[:templateStart]) + updatedTemplate + string(content[templateEnd:])
@@ -106,20 +94,10 @@ func updateSwaggerJSON(receiveDefinitions map[string]interface{}) error {
 		return fmt.Errorf("read %s: %w", jsonDocsPath, err)
 	}
 
-	var document map[string]interface{}
-	if err := json.Unmarshal(content, &document); err != nil {
-		return fmt.Errorf("parse document: %w", err)
-	}
-
-	if err := applyReceiveSchemaUpdates(document, receiveDefinitions); err != nil {
+	updated, err := updateJSONDocument(string(content), receiveDefinitions)
+	if err != nil {
 		return err
 	}
-
-	raw, err := json.MarshalIndent(document, "", "    ")
-	if err != nil {
-		return fmt.Errorf("marshal document: %w", err)
-	}
-	updated := string(raw)
 
 	if err := os.WriteFile(jsonDocsPath, []byte(updated), 0644); err != nil {
 		return fmt.Errorf("write %s: %w", jsonDocsPath, err)
@@ -154,6 +132,24 @@ func encodeForGoRawString(content string) string {
 	content = strings.ReplaceAll(content, "`", "` + \"`\" + `")
 	content = strings.Replace(content, `"`+schemesPlaceholderToken+`"`, schemesTemplateValue, 1)
 	return content
+}
+
+func updateJSONDocument(content string, receiveDefinitions map[string]interface{}) (string, error) {
+	var document map[string]interface{}
+	if err := json.Unmarshal([]byte(content), &document); err != nil {
+		return "", fmt.Errorf("parse document: %w", err)
+	}
+
+	if err := applyReceiveSchemaUpdates(document, receiveDefinitions); err != nil {
+		return "", err
+	}
+
+	raw, err := json.MarshalIndent(document, "", "    ")
+	if err != nil {
+		return "", fmt.Errorf("marshal document: %w", err)
+	}
+
+	return string(raw), nil
 }
 
 func addReceiveSchemas(definitions map[string]interface{}, receiveDir string) (map[string]string, error) {
@@ -221,15 +217,13 @@ func removeSchemaKeysRecursive(value interface{}, parentKey string) interface{} 
 	}
 }
 
-func updateReceiveSchemaRefs(definitions map[string]interface{}, titleByFile map[string]string) error {
+func updateReceiveSchemaRefs(definitions map[string]interface{}, titleByFile map[string]string) {
 	for key, value := range definitions {
 		if !strings.HasPrefix(key, receivePrefix) {
 			continue
 		}
 		definitions[key] = rewriteSchemaRefs(value, titleByFile)
 	}
-
-	return nil
 }
 
 func rewriteSchemaRefs(value interface{}, titleByFile map[string]string) interface{} {
