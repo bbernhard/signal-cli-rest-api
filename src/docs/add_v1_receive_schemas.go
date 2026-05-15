@@ -162,9 +162,6 @@ func extractDocTemplate(content string) (string, int, int, error) {
 func unmarshalDocument(content string, withSchemesTemplate bool) (map[string]interface{}, error) {
 	if withSchemesTemplate {
 		content = strings.ReplaceAll(content, "` + \"`\" + `", "`")
-	}
-
-	if withSchemesTemplate {
 		content = strings.Replace(content, schemesTemplateValue, `"`+schemesPlaceholderToken+`"`, 1)
 	}
 
