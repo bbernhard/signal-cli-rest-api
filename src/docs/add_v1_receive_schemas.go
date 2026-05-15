@@ -8,21 +8,21 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 
 	_ "github.com/bbernhard/signal-cli-rest-api/docs"
 )
 
 const (
-	goDocsPath       = "docs.go"
-	jsonDocsPath    = "swagger.json"
-	openMarker     = "const docTemplate = `"
-	closeMarker    = "`\n\n// SwaggerInfo"
-	definitionsKey = `"definitions": {`
-	receivePrefix  = "receive."
-	receivePathKey = `"/v1/receive/{number}":`
-	receiveWrapper = "data.Message"
+	goDocsPath              = "docs.go"
+	jsonDocsPath            = "swagger.json"
+	openMarker              = "const docTemplate = `"
+	closeMarker             = "`\n\n// SwaggerInfo"
+	schemesTemplateValue    = "{{ marshal .Schemes }}"
+	schemesPlaceholderToken = "__SWAG_SCHEMES_PLACEHOLDER__"
+	receivePrefix           = "receive."
+	receivePathKey          = "/v1/receive/{number}"
+	receiveWrapper          = "data.Message"
 )
 
 func main() {
@@ -52,16 +52,11 @@ func run(receiveDir string) error {
 
 	addEnvelopeWrapperDefinition(definitions)
 
-	managedDefinitions, err := renderManagedDefinitions(definitions)
-	if err != nil {
+	if err := updateDocsGo(definitions); err != nil {
 		return err
 	}
 
-	if err := updateDocsGo(managedDefinitions); err != nil {
-		return err
-	}
-
-	if err := updateSwaggerJSON(managedDefinitions); err != nil {
+	if err := updateSwaggerJSON(definitions); err != nil {
 		return err
 	}
 
@@ -70,23 +65,41 @@ func run(receiveDir string) error {
 	return nil
 }
 
-func updateDocsGo(managedDefinitions string) error {
+func updateDocsGo(receiveDefinitions map[string]interface{}) error {
 	content, err := os.ReadFile(goDocsPath)
 	if err != nil {
 		return fmt.Errorf("read %s: %w", goDocsPath, err)
 	}
 
-	template, err := extractDocTemplate(string(content))
+	template, templateStart, templateEnd, err := extractDocTemplate(string(content))
 	if err != nil {
 		return err
 	}
 
-	updatedTemplate, err := applyReceiveSchemaUpdates(template, managedDefinitions)
+	document, err := unmarshalDocument(template, true)
 	if err != nil {
 		return err
 	}
 
-	updated := strings.Replace(string(content), template, updatedTemplate, 1)
+	// Check for existing receive.* or data.Message definitions
+	if defs, ok := document["definitions"].(map[string]interface{}); ok {
+		for k := range defs {
+			if strings.HasPrefix(k, receivePrefix) || k == receiveWrapper {
+				return fmt.Errorf("definitions already contain receive entries; run swag init first")
+			}
+		}
+	}
+
+	if err := applyReceiveSchemaUpdates(document, receiveDefinitions); err != nil {
+		return err
+	}
+
+	updatedTemplate, err := marshalDocument(document, true)
+	if err != nil {
+		return err
+	}
+
+	updated := string(content[:templateStart]) + updatedTemplate + string(content[templateEnd:])
 	if err := os.WriteFile(goDocsPath, []byte(updated), 0644); err != nil {
 		return fmt.Errorf("write %s: %w", goDocsPath, err)
 	}
@@ -94,13 +107,31 @@ func updateDocsGo(managedDefinitions string) error {
 	return nil
 }
 
-func updateSwaggerJSON(managedDefinitions string) error {
+func updateSwaggerJSON(receiveDefinitions map[string]interface{}) error {
 	content, err := os.ReadFile(jsonDocsPath)
 	if err != nil {
 		return fmt.Errorf("read %s: %w", jsonDocsPath, err)
 	}
 
-	updated, err := applyReceiveSchemaUpdates(string(content), managedDefinitions)
+	document, err := unmarshalDocument(string(content), false)
+	if err != nil {
+		return err
+	}
+
+	// Check for existing receive.* or data.Message definitions
+	if defs, ok := document["definitions"].(map[string]interface{}); ok {
+		for k := range defs {
+			if strings.HasPrefix(k, receivePrefix) || k == receiveWrapper {
+				return fmt.Errorf("definitions already contain receive entries; run swag init first")
+			}
+		}
+	}
+
+	if err := applyReceiveSchemaUpdates(document, receiveDefinitions); err != nil {
+		return err
+	}
+
+	updated, err := marshalDocument(document, false)
 	if err != nil {
 		return err
 	}
@@ -112,74 +143,53 @@ func updateSwaggerJSON(managedDefinitions string) error {
 	return nil
 }
 
-func applyReceiveSchemaUpdates(content string, managedDefinitions string) (string, error) {
-	updated, err := appendDefinitionsEntries(content, managedDefinitions)
-	if err != nil {
-		return "", err
-	}
-
-	updated, err = replaceReceiveResponseSchema(updated)
-	if err != nil {
-		return "", err
-	}
-
-	return updated, nil
-}
-
-func extractDocTemplate(content string) (string, error) {
+func extractDocTemplate(content string) (string, int, int, error) {
 	start := strings.Index(content, openMarker)
 	if start == -1 {
-		return "", fmt.Errorf("could not find docTemplate start in %s", goDocsPath)
+		return "", -1, -1, fmt.Errorf("could not find docTemplate start in %s", goDocsPath)
 	}
 
 	start += len(openMarker)
 	endOffset := strings.Index(content[start:], closeMarker)
 	if endOffset == -1 {
-		return "", fmt.Errorf("could not find docTemplate end in %s", goDocsPath)
+		return "", -1, -1, fmt.Errorf("could not find docTemplate end in %s", goDocsPath)
 	}
 
-	return content[start : start+endOffset], nil
+	end := start + endOffset
+	return content[start:end], start, end, nil
 }
 
-func definitionsBounds(template string) (int, int, error) {
-	definitionsIndex := strings.Index(template, definitionsKey)
-	if definitionsIndex == -1 {
-		return -1, -1, fmt.Errorf("could not find definitions block in docTemplate")
+func unmarshalDocument(content string, withSchemesTemplate bool) (map[string]interface{}, error) {
+	if withSchemesTemplate {
+		content = strings.ReplaceAll(content, "` + \"`\" + `", "`")
 	}
 
-	braceIndex := definitionsIndex + strings.Index(definitionsKey, "{")
-	closingBraceIndex, err := findMatchingBrace(template, braceIndex)
-	if err != nil {
-		return -1, -1, err
+	if withSchemesTemplate {
+		content = strings.Replace(content, schemesTemplateValue, `"`+schemesPlaceholderToken+`"`, 1)
 	}
 
-	return braceIndex, closingBraceIndex, nil
+	var document map[string]interface{}
+	if err := json.Unmarshal([]byte(content), &document); err != nil {
+		return nil, fmt.Errorf("parse document: %w", err)
+	}
+
+	return document, nil
 }
 
-func appendDefinitionsEntries(template string, entries string) (string, error) {
-	braceIndex, closingBraceIndex, err := definitionsBounds(template)
+func marshalDocument(document map[string]interface{}, withSchemesTemplate bool) (string, error) {
+	raw, err := json.MarshalIndent(document, "", "    ")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("marshal document: %w", err)
 	}
 
-	definitionsBlock := template[braceIndex : closingBraceIndex+1]
-	if strings.Contains(definitionsBlock, `"`+receiveWrapper+`"`) || strings.Contains(definitionsBlock, `"`+receivePrefix) {
-		return "", fmt.Errorf("definitions already contain receive entries; run swag init first")
+	updated := string(raw)
+	if withSchemesTemplate {
+		// Single ` break the docs.go, replace with string concatenation
+		updated = strings.ReplaceAll(updated, "`", "` + \"`\" + `")
+		updated = strings.Replace(updated, `"`+schemesPlaceholderToken+`"`, schemesTemplateValue, 1)
 	}
 
-	inner := strings.TrimSpace(template[braceIndex+1 : closingBraceIndex])
-
-	if inner == "" {
-		return template[:braceIndex+1] + "\n" + entries + "\n" + template[closingBraceIndex:], nil
-	}
-
-	closingLine := "\n    }"
-	insertIndex := strings.LastIndex(template[:closingBraceIndex+1], closingLine)
-	if insertIndex == -1 {
-		return "", fmt.Errorf("could not determine definitions closing line")
-	}
-
-	return template[:insertIndex] + ",\n" + entries + template[insertIndex:], nil
+	return updated, nil
 }
 
 func addReceiveSchemas(definitions map[string]interface{}, receiveDir string) (map[string]string, error) {
@@ -300,110 +310,60 @@ func addEnvelopeWrapperDefinition(definitions map[string]interface{}) {
 	}
 }
 
-func renderManagedDefinitions(definitions map[string]interface{}) (string, error) {
-	keys := make([]string, 0, len(definitions))
-	for key := range definitions {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-
-	parts := make([]string, 0, len(keys))
-	for _, key := range keys {
-		raw, err := json.MarshalIndent(definitions[key], "", "    ")
-		if err != nil {
-			return "", fmt.Errorf("marshal definition %s: %w", key, err)
-		}
-
-		lines := strings.Split(string(raw), "\n")
-		for idx := range lines {
-			lines[idx] = "        " + lines[idx]
-		}
-
-		entry := "        " + strconv.Quote(key) + ": " + strings.TrimPrefix(lines[0], "        ")
-		if len(lines) > 1 {
-			entry += "\n" + strings.Join(lines[1:], "\n")
-		}
-
-		parts = append(parts, entry)
-	}
-
-	return strings.Join(parts, ",\n"), nil
-}
-
-func replaceReceiveResponseSchema(template string) (string, error) {
-	pathIndex := strings.Index(template, receivePathKey)
-	if pathIndex == -1 {
-		return "", fmt.Errorf("could not find receive path block; run swag init first")
-	}
-	braceOffset := strings.Index(template[pathIndex+len(receivePathKey):], "{")
-	if braceOffset == -1 {
-		return "", fmt.Errorf("could not find opening brace for receive path block")
-	}
-	pathOpenBrace := pathIndex + len(receivePathKey) + braceOffset
-	pathCloseBrace, err := findMatchingBrace(template, pathOpenBrace)
+func applyReceiveSchemaUpdates(document map[string]interface{}, receiveDefinitions map[string]interface{}) error {
+	definitions, err := getObject(document, "definitions")
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	pathBlock := template[pathOpenBrace : pathCloseBrace+1]
-
-	oldSchema := `"schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        }`
-
-	newSchema := `"schema": {
-                            "$ref": "#/definitions/data.Message"
-                        }`
-
-	updatedPathBlock := strings.Replace(pathBlock, oldSchema, newSchema, 1)
-	if updatedPathBlock == pathBlock {
-		return "", fmt.Errorf("could not replace /v1/receive schema; ensure generated docs are freshly generated by swag")
+	for key := range definitions {
+		if strings.HasPrefix(key, receivePrefix) || key == receiveWrapper {
+			delete(definitions, key)
+		}
 	}
 
-	return template[:pathOpenBrace] + updatedPathBlock + template[pathCloseBrace+1:], nil
+	for key, value := range receiveDefinitions {
+		definitions[key] = value
+	}
+
+	paths, err := getObject(document, "paths")
+	if err != nil {
+		return err
+	}
+	receivePath, err := getObject(paths, receivePathKey)
+	if err != nil {
+		return err
+	}
+	receiveGet, err := getObject(receivePath, "get")
+	if err != nil {
+		return err
+	}
+	responses, err := getObject(receiveGet, "responses")
+	if err != nil {
+		return err
+	}
+	response200, err := getObject(responses, "200")
+	if err != nil {
+		return err
+	}
+
+	response200["schema"] = map[string]interface{}{
+		"$ref": "#/definitions/" + receiveWrapper,
+	}
+
+	return nil
 }
 
-func findMatchingBrace(input string, openBraceIndex int) (int, error) {
-	depth := 0
-	inString := false
-	escaped := false
-
-	for index := openBraceIndex; index < len(input); index++ {
-		char := input[index]
-
-		if inString {
-			if escaped {
-				escaped = false
-				continue
-			}
-			if char == '\\' {
-				escaped = true
-				continue
-			}
-			if char == '"' {
-				inString = false
-			}
-			continue
-		}
-
-		if char == '"' {
-			inString = true
-			continue
-		}
-
-		switch char {
-		case '{':
-			depth++
-		case '}':
-			depth--
-			if depth == 0 {
-				return index, nil
-			}
-		}
+func getObject(parent map[string]interface{}, key string) (map[string]interface{}, error) {
+	value, ok := parent[key]
+	if !ok {
+		return nil, fmt.Errorf("missing key %q", key)
 	}
 
-	return -1, fmt.Errorf("could not find matching brace")
+	obj, ok := value.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("key %q is not an object", key)
+	}
+
+	return obj, nil
 }
