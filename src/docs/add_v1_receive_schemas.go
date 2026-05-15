@@ -76,7 +76,7 @@ func updateDocsGo(receiveDefinitions map[string]interface{}) error {
 		return err
 	}
 
-	document, err := unmarshalDocument(template, true)
+	document, err := jsonUnmarshalSafe(template, true)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func updateDocsGo(receiveDefinitions map[string]interface{}) error {
 		return err
 	}
 
-	updatedTemplate, err := marshalDocument(document, true)
+	updatedTemplate, err := jsonMarshalIndentSafe(document, true)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func updateSwaggerJSON(receiveDefinitions map[string]interface{}) error {
 		return fmt.Errorf("read %s: %w", jsonDocsPath, err)
 	}
 
-	document, err := unmarshalDocument(string(content), false)
+	document, err := jsonUnmarshalSafe(string(content), false)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func updateSwaggerJSON(receiveDefinitions map[string]interface{}) error {
 		return err
 	}
 
-	updated, err := marshalDocument(document, false)
+	updated, err := jsonMarshalIndentSafe(document, false)
 	if err != nil {
 		return err
 	}
@@ -159,8 +159,8 @@ func extractDocTemplate(content string) (string, int, int, error) {
 	return content[start:end], start, end, nil
 }
 
-func unmarshalDocument(content string, withSchemesTemplate bool) (map[string]interface{}, error) {
-	if withSchemesTemplate {
+func jsonUnmarshalSafe(content string, applyStringConcat bool) (map[string]interface{}, error) {
+	if applyStringConcat {
 		content = strings.ReplaceAll(content, "` + \"`\" + `", "`")
 		content = strings.Replace(content, schemesTemplateValue, `"`+schemesPlaceholderToken+`"`, 1)
 	}
@@ -173,15 +173,14 @@ func unmarshalDocument(content string, withSchemesTemplate bool) (map[string]int
 	return document, nil
 }
 
-func marshalDocument(document map[string]interface{}, withSchemesTemplate bool) (string, error) {
+func jsonMarshalIndentSafe(document map[string]interface{}, backTicksAsStringConcat bool) (string, error) {
 	raw, err := json.MarshalIndent(document, "", "    ")
 	if err != nil {
 		return "", fmt.Errorf("marshal document: %w", err)
 	}
 
 	updated := string(raw)
-	if withSchemesTemplate {
-		// Single ` break the docs.go, replace with string concatenation
+	if backTicksAsStringConcat {
 		updated = strings.ReplaceAll(updated, "`", "` + \"`\" + `")
 		updated = strings.Replace(updated, `"`+schemesPlaceholderToken+`"`, schemesTemplateValue, 1)
 	}
