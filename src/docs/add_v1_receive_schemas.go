@@ -81,15 +81,6 @@ func updateDocsGo(receiveDefinitions map[string]interface{}) error {
 		return err
 	}
 
-	// Check for existing receive.* or data.Message definitions
-	if defs, ok := document["definitions"].(map[string]interface{}); ok {
-		for k := range defs {
-			if strings.HasPrefix(k, receivePrefix) || k == receiveWrapper {
-				return fmt.Errorf("definitions already contain receive entries; run swag init first")
-			}
-		}
-	}
-
 	if err := applyReceiveSchemaUpdates(document, receiveDefinitions); err != nil {
 		return err
 	}
@@ -116,15 +107,6 @@ func updateSwaggerJSON(receiveDefinitions map[string]interface{}) error {
 	document, err := jsonUnmarshalSafe(string(content), false)
 	if err != nil {
 		return err
-	}
-
-	// Check for existing receive.* or data.Message definitions
-	if defs, ok := document["definitions"].(map[string]interface{}); ok {
-		for k := range defs {
-			if strings.HasPrefix(k, receivePrefix) || k == receiveWrapper {
-				return fmt.Errorf("definitions already contain receive entries; run swag init first")
-			}
-		}
 	}
 
 	if err := applyReceiveSchemaUpdates(document, receiveDefinitions); err != nil {
