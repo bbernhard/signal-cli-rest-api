@@ -815,6 +815,12 @@ const docTemplate = `{
                 "member": {
                     "type": "boolean"
                 },
+                "member_label": {
+                    "type": "string"
+                },
+                "member_label_emoji": {
+                    "type": "string"
+                },
                 "members": {
                     "items": {
                         "type": "string"
@@ -848,6 +854,8 @@ const docTemplate = `{
                 "internal_id",
                 "invite_link",
                 "member",
+                "member_label",
+                "member_label_emoji",
                 "members",
                 "name",
                 "pending_invites",
