@@ -2059,7 +2059,8 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 }
 
 func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *string, groupDescription *string, groupName *string, expirationTime *int,
-	groupLinkState *GroupLinkState, editGroupPermission GroupPermission, addMembersPermission GroupPermission, sendMessagesPermission GroupPermission) error {
+	groupLinkState *GroupLinkState, editGroupPermission GroupPermission, addMembersPermission GroupPermission, sendMessagesPermission GroupPermission,
+	memberLabel *string, memberLabelEmoji *string) error {
 	var err error
 	var avatarTmpPath string = ""
 	if base64Avatar != nil {
@@ -2108,6 +2109,8 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 			EditGroupPermissions    string  `json:"setPermissionEditDetails,omitempty"`
 			AddMembersPermissions   string  `json:"setPermissionAddMember,omitempty"`
 			SendMessagesPermissions string  `json:"setPermissionSendMessages,omitempty"`
+			MemberLabel             *string `json:"memberLabel,omitempty"`
+			MemberLabelEmoji        *string `json:"memberLabelEmoji,omitempty"`
 		}
 		request := Request{GroupId: groupId}
 
@@ -2137,6 +2140,9 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 		if sendMessagesPermission != DefaultGroupPermission {
 			request.SendMessagesPermissions = sendMessagesPermission.String()
 		}
+
+		request.MemberLabel = memberLabel
+		request.MemberLabelEmoji = memberLabelEmoji
 
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
@@ -2175,6 +2181,14 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 
 		if sendMessagesPermission != DefaultGroupPermission {
 			cmd = append(cmd, []string{"--set-permission-send-messages", sendMessagesPermission.String()}...)
+		}
+
+		if memberLabelEmoji != nil {
+			cmd = append(cmd, []string{"--member-label-emoji", *memberLabelEmoji}...)
+		}
+
+		if memberLabel != nil {
+			cmd = append(cmd, []string{"--member-label", *memberLabel}...)
 		}
 
 		_, err = s.cliClient.Execute(true, cmd, "")
