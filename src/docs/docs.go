@@ -654,6 +654,12 @@ const docTemplate = `{
                     ],
                     "type": "string"
                 },
+                "member_label": {
+                    "type": "string"
+                },
+                "member_label_emoji": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
