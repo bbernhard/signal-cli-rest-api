@@ -115,6 +115,16 @@ e.g:
 
   `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/+431212131491291'`
 
+- Update your group member label
+
+  Updates the member label for the registered number in the given group. The group id can be obtained via the "List groups" REST call.
+
+  `curl -X PUT -H "Content-Type: application/json" -d '{"member_label": "<label>", "member_label_emoji": "<emoji>"}' 'http://127.0.0.1:8080/v1/groups/<number>/<group id>'`
+
+  e.g:
+
+  `curl -X PUT -H "Content-Type: application/json" -d '{"member_label": "Dad", "member_label_emoji": "👨‍👧"}' 'http://127.0.0.1:8080/v1/groups/+431212131491291/<group id>'`
+
 - Delete a group
 
   Delete the group with the given group id. The group id can be obtained via the "List groups" REST call.
