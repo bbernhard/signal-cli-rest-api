@@ -7,12 +7,16 @@ on:
         description: 'Version'
         required: true
 
-permissions: {}
-
+permissions:
+  contents: read
 
 jobs:
+  check-docs:
+    uses: ./.github/workflows/check-docs.yml
+
   setup:
     runs-on: ubuntu-24.04
+    needs: check-docs
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0

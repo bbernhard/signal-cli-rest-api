@@ -1,0 +1,28 @@
+name: Check Generated Docs
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  check-docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.0.0
+        with:
+          go-version-file: src/go.mod
+          cache-dependency-path: src/go.sum
+
+      - name: Regenerate docs
+        working-directory: src
+        run: go run github.com/swaggo/swag/cmd/swag@v1.16.6 init --requiredByDefault
+
+      - name: Fail if docs are out of date
+        run: |
+          git diff --exit-code -- src/docs/docs.go src/docs/swagger.json src/docs/swagger.yaml
