@@ -744,7 +744,7 @@ func (s *SignalClient) About() About {
 		BuildNr:              2,
 		Mode:                 getSignalCliModeString(s.signalCliMode),
 		Version:              utils.GetEnv("BUILD_VERSION", "unset"),
-		Capabilities:         map[string][]string{"v2/send": []string{"quotes", "mentions"}},
+		Capabilities:         map[string][]string{"v2/send": {"quotes", "mentions"}},
 	}
 	return about
 }

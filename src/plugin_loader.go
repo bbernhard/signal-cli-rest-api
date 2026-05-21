@@ -1,27 +1,27 @@
 package main
 
 import (
-	"github.com/yuin/gopher-lua"
-	"github.com/cjoudrey/gluahttp"
-	"layeh.com/gopher-luar"
-	luajson "layeh.com/gopher-json"
-	"github.com/gin-gonic/gin"
-	"io"
-	log "github.com/sirupsen/logrus"
-	"github.com/bbernhard/signal-cli-rest-api/utils"
 	"github.com/bbernhard/signal-cli-rest-api/api"
-	"strings"
+	"github.com/bbernhard/signal-cli-rest-api/utils"
+	"github.com/cjoudrey/gluahttp"
+	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
+	"github.com/yuin/gopher-lua"
+	"io"
+	luajson "layeh.com/gopher-json"
+	"layeh.com/gopher-luar"
 	"net/http"
+	"strings"
 )
 
 type PluginInputData struct {
-	Params  map[string]string
+	Params      map[string]string
 	QueryParams map[string]string
-	Payload string
+	Payload     string
 }
 
 type PluginOutputData struct {
-	payload string
+	payload        string
 	httpStatusCode int
 }
 
@@ -50,13 +50,13 @@ func execPlugin(c *gin.Context, pluginConfig utils.PluginConfig) {
 	}
 
 	pluginInputData := &PluginInputData{
-		Params: make(map[string]string),
+		Params:      make(map[string]string),
 		QueryParams: make(map[string]string),
-		Payload: string(jsonData),
+		Payload:     string(jsonData),
 	}
 
 	pluginOutputData := &PluginOutputData{
-		payload: "",
+		payload:        "",
 		httpStatusCode: 200,
 	}
 
@@ -98,5 +98,5 @@ func (p plugHandler) ExecutePlugin(pluginConfig utils.PluginConfig) gin.HandlerF
 	return gin.HandlerFunc(fn)
 }
 
-//exported
+// exported
 var PluginHandler plugHandler
