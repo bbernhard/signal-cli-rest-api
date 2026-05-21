@@ -2,9 +2,10 @@ package utils
 
 import (
 	"errors"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"os"
+	"path/filepath"
+
+	"gopkg.in/yaml.v2"
 )
 
 type SignalCliTrustMode int
@@ -55,9 +56,10 @@ func NewSignalCliApiConfig() *SignalCliApiConfig {
 }
 
 func (c *SignalCliApiConfig) Load(path string) error {
-	c.path = path
-	if _, err := os.Stat(path); err == nil {
-		data, err := ioutil.ReadFile(path)
+	cleanPath := filepath.Clean(path)
+	c.path = cleanPath
+	if _, err := os.Stat(cleanPath); err == nil {
+		data, err := os.ReadFile(cleanPath)
 		if err != nil {
 			return err
 		}
@@ -92,5 +94,5 @@ func (c *SignalCliApiConfig) Persist() error {
 		return err
 	}
 
-	return ioutil.WriteFile(c.path, out, 0644)
+	return os.WriteFile(c.path, out, 0600)
 }

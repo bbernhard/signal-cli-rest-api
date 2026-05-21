@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -104,7 +104,7 @@ func main() {
 		signalCliIgnoreAvatars, signalCliIgnoreStickers, tcpPort,
 		supervisorctlProgramName, supervisorctlProgramName)
 
-	err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
+	err = os.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0600)
 	if err != nil {
 		log.Fatal("Couldn't write ", supervisorctlConfigFilename, ": ", err.Error())
 	}

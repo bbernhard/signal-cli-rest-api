@@ -9,6 +9,7 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 	uuid "github.com/gofrs/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 type AttachmentEntry struct {
@@ -90,7 +91,7 @@ func (attachmentEntry *AttachmentEntry) storeBase64AsTemporaryFile() error {
 
 	attachmentEntry.DirName = dirNameUuid.String()
 	dirPath := attachmentEntry.attachmentTmpDir + attachmentEntry.DirName
-	if err := os.Mkdir(dirPath, os.ModePerm); err != nil {
+	if err := os.Mkdir(dirPath, 0750); err != nil {
 		return err
 	}
 
@@ -100,29 +101,41 @@ func (attachmentEntry *AttachmentEntry) storeBase64AsTemporaryFile() error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 
 	if _, err := f.Write(dec); err != nil {
+		if closeErr := f.Close(); closeErr != nil {
+			log.Error("Couldn't close attachment tmp file: ", closeErr.Error())
+		}
 		attachmentEntry.cleanUp()
 		return err
 	}
 	if err := f.Sync(); err != nil {
+		if closeErr := f.Close(); closeErr != nil {
+			log.Error("Couldn't close attachment tmp file: ", closeErr.Error())
+		}
 		attachmentEntry.cleanUp()
 		return err
 	}
-	f.Close()
+	if err := f.Close(); err != nil {
+		attachmentEntry.cleanUp()
+		return err
+	}
 
 	return nil
 }
 
 func (attachmentEntry *AttachmentEntry) cleanUp() {
 	if strings.Compare(attachmentEntry.FilePath, "") != 0 {
-		os.Remove(attachmentEntry.FilePath)
+		if err := os.Remove(attachmentEntry.FilePath); err != nil {
+			log.Error("Couldn't remove file ", attachmentEntry.FilePath, ": ", err.Error())
+		}
 	}
 
 	if strings.Compare(attachmentEntry.DirName, "") != 0 {
 		dirPath := attachmentEntry.attachmentTmpDir + attachmentEntry.DirName
-		os.Remove(dirPath)
+		if err := os.Remove(dirPath); err != nil {
+			log.Error("Couldn't remove directory ", dirPath, ": ", err.Error())
+		}
 	}
 }
 

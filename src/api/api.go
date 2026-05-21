@@ -304,7 +304,10 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 	var req RegisterNumberRequest
 
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(c.Request.Body)
+	if _, err := buf.ReadFrom(c.Request.Body); err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - failed to read body."})
+		return
+	}
 	if buf.String() != "" {
 		err := json.Unmarshal(buf.Bytes(), &req)
 		if err != nil {
@@ -356,7 +359,10 @@ func (a *Api) UnregisterNumber(c *gin.Context) {
 	deleteAccount := false
 	deleteLocalData := false
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(c.Request.Body)
+	if _, err := buf.ReadFrom(c.Request.Body); err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - failed to read body."})
+		return
+	}
 	if buf.String() != "" {
 		var req UnregisterNumberRequest
 		err := json.Unmarshal(buf.Bytes(), &req)
@@ -436,7 +442,10 @@ func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 	pin := ""
 	var req VerifyNumberSettings
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(c.Request.Body)
+	if _, err := buf.ReadFrom(c.Request.Body); err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - failed to read body."})
+		return
+	}
 	if buf.String() != "" {
 		err := json.Unmarshal(buf.Bytes(), &req)
 		if err != nil {
@@ -588,7 +597,9 @@ func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan s
 		select {
 		case <-stop:
 			a.signalClient.RemoveReceiveChannel(channelUuid)
-			ws.Close()
+			if err := ws.Close(); err != nil {
+				log.Debug("Error closing websocket: ", err.Error())
+			}
 			return
 		case msg := <-receiveChannel:
 			var data string = string(msg.Params)
@@ -645,7 +656,9 @@ func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan s
 func wsPong(ws *websocket.Conn, stop chan struct{}) {
 	defer func() {
 		close(stop)
-		ws.Close()
+		if err := ws.Close(); err != nil {
+			log.Debug("Error closing websocket: ", err.Error())
+		}
 	}()
 
 	ws.SetReadLimit(512)
@@ -663,7 +676,9 @@ func (a *Api) wsPing(ws *websocket.Conn, stop chan struct{}) {
 	for {
 		select {
 		case <-stop:
-			ws.Close()
+			if err := ws.Close(); err != nil {
+				log.Debug("Error closing websocket: ", err.Error())
+			}
 			return
 		case <-pingTicker.C:
 			a.wsMutex.Lock()

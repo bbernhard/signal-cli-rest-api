@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"plugin"
 	"strconv"
 
@@ -75,7 +76,9 @@ func main() {
 		err := utils.SetLogLevel(logLevel)
 		if err != nil {
 			log.Error("Couldn't set log level to '", logLevel, "'. Falling back to the info log level")
-			utils.SetLogLevel("info")
+			if err := utils.SetLogLevel("info"); err != nil {
+				log.Error("Couldn't set fallback log level to 'info': ", err.Error())
+			}
 		}
 	}
 
@@ -404,9 +407,9 @@ func main() {
 
 		c := cron.New()
 		c.Schedule(schedule, cron.FuncJob(func() {
-			accountsJsonPath := *signalCliConfig + "/data/accounts.json"
+			accountsJsonPath := filepath.Clean(*signalCliConfig + "/data/accounts.json")
 			if _, err := os.Stat(accountsJsonPath); err == nil {
-				signalCliConfigJsonData, err := ioutil.ReadFile(accountsJsonPath)
+				signalCliConfigJsonData, err := os.ReadFile(accountsJsonPath)
 				if err != nil {
 					log.Fatal("AUTO_RECEIVE_SCHEDULE: Couldn't read accounts.json: ", err.Error())
 				}
@@ -440,8 +443,10 @@ func main() {
 					}
 
 					if resp.StatusCode != 200 {
-						jsonResp, err := ioutil.ReadAll(resp.Body)
-						resp.Body.Close()
+						jsonResp, err := io.ReadAll(resp.Body)
+						if closeErr := resp.Body.Close(); closeErr != nil {
+							log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't close response body: ", closeErr.Error())
+						}
 						if err != nil {
 							log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't read json response: ", err.Error())
 							continue
@@ -467,5 +472,7 @@ func main() {
 		c.Start()
 	}
 
-	router.Run()
+	if err := router.Run(); err != nil {
+		log.Fatal("Couldn't start HTTP router: ", err.Error())
+	}
 }
