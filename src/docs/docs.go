@@ -654,6 +654,12 @@ const docTemplate = `{
                     ],
                     "type": "string"
                 },
+                "member_label": {
+                    "type": "string"
+                },
+                "member_label_emoji": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -806,6 +812,12 @@ const docTemplate = `{
                 "invite_link": {
                     "type": "string"
                 },
+                "member_label": {
+                    "type": "string"
+                },
+                "member_label_emoji": {
+                    "type": "string"
+                },
                 "members": {
                     "items": {
                         "type": "string"
@@ -838,6 +850,8 @@ const docTemplate = `{
                 "id",
                 "internal_id",
                 "invite_link",
+                "member_label",
+                "member_label_emoji",
                 "members",
                 "name",
                 "pending_invites",
