@@ -40,45 +40,56 @@ The definition file (with the file suffix `.def`) contains some metadata which i
 ```
 endpoint: my-custom-send-endpoint/:number 
 method: POST
+version: 2
 ```
 
-The `endpoint` specifies the URI of the newly created endpoint. All custom endpoints are registered under the `/v1/plugins` endpoint. So, our `my-custom-send-endpoint` will be available at `/v1/plugins/my-custom-endpoint`. If you want to use variables inside the endpoint, prefix them with a `:`.
+The `endpoint` specifies the URI of the newly created endpoint. All custom endpoints are registered under the `/v1/plugins` endpoint. So, our `my-custom-send-endpoint` will be available at `/v1/plugins/my-custom-endpoint`. If you want to use variables inside the endpoint, prefix them with a `:`. 
+
+If you write a new plugin, it is recommended to use the `version: 2` of the plugin mechanism. (`version: 1` is deprecated!)
 
 The `method` parameter specifies the HTTP method that is used for the endpoint registration.
 
 # The script file
 
-The script file (with the file suffix `.lua`) contains the implementation of the endpoint.
+The script file (with the file suffix `.lua`) contains the implementation of the endpoint. Each plugin must implement a `exec` function and can optionally implement a `init` function. The `exec` function gets called whenever the plugin is called. The `init` function only gets called once during the startup and can be used to perform initialization tasks.
 
 Example:
 
 ```
-local http = require("http")
-local json = require("json")
+-- 
+function exec()
+    local http = require("http")
+    local json = require("json")
 
-local url = "http://127.0.0.1:8080/v2/send"
+    local url = "http://127.0.0.1:8080/v2/send"
 
-local customEndpointPayload = json.decode(pluginInputData.payload)
+    local customEndpointPayload = json.decode(pluginInputData.payload)
 
-local sendEndpointPayload = {
-    recipients = {customEndpointPayload.recipient},
-    message = customEndpointPayload.message,
-    number = pluginInputData.Params.number
-}
+    local sendEndpointPayload = {
+        recipients = {customEndpointPayload.recipient},
+        message = customEndpointPayload.message,
+        number = pluginInputData.Params.number
+    }
 
-local encodedSendEndpointPayload = json.encode(sendEndpointPayload)
+    local encodedSendEndpointPayload = json.encode(sendEndpointPayload)
 
-response, error_message = http.request("POST", url, {
-    timeout="30s",
-    headers={
-        Accept="*/*",
-        ["Content-Type"]="application/json"
-    },
-    body=encodedSendEndpointPayload
-})
+    response, error_message = http.request("POST", url, {
+        timeout="30s",
+        headers={
+            Accept="*/*",
+            ["Content-Type"]="application/json"
+        },
+        body=encodedSendEndpointPayload
+    })
 
-pluginOutputData:SetPayload(response["body"])
-pluginOutputData:SetHttpStatusCode(response.status_code)
+    pluginOutputData:SetPayload(response["body"])
+    pluginOutputData:SetHttpStatusCode(response.status_code)
+end
+
+-- optional init function
+function init()
+
+end
 ```
 
 What the lua script does, is parse the JSON payload from the custom request, extract the `recipient` and the `message` from the payload and the `number` from the URL parameter and call the `/v2/send` endpoint with those parameters. The HTTP status code and the body that is returned by the HTTP request is then returned to the caller (this is done via the `pluginOutputData:SetPayload` and `pluginOutputData:SetHttpStatusCode` functions.

@@ -349,6 +349,18 @@ func main() {
 				}
 
 				for _, pluginConfig := range pluginConfigs.Configs {
+					if pluginConfig.Version > 1 {
+						err = pluginHandler.InitPlugin(pluginConfig)
+						if err != nil {
+							log.Error("Couldn't initialize plugin ", pluginConfig.Endpoint)
+							continue
+						}
+					} else {
+						log.Info("Plugin ", pluginConfig.Endpoint, " still uses plugin version 1. Consider migrating to version 2! (see https://github.com/bbernhard/signal-cli-rest-api/plugins/migrate-v1-plugin-to-v2.md)")
+					}
+
+					log.Info("Registering plugin ", pluginConfig.Endpoint)
+
 					if pluginConfig.Method == "GET" {
 						plugins.GET(pluginConfig.Endpoint, pluginHandler.ExecutePlugin(pluginConfig))
 					} else if pluginConfig.Method == "POST" {
