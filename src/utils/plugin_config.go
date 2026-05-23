@@ -1,16 +1,18 @@
 package utils
 
 import (
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 type PluginConfig struct {
 	Endpoint   string `yaml:"endpoint"`
 	Method     string `yaml:"method"`
+	Version    int    `yaml:"version,omitempty"`
 	ScriptPath string
 }
 
@@ -40,6 +42,7 @@ func (c *PluginConfigs) Load(baseDirectory string) error {
 			}
 
 			var pluginConfig PluginConfig
+			pluginConfig.Version = 1
 			err = yaml.Unmarshal(data, &pluginConfig)
 			if err != nil {
 				return err
