@@ -16,7 +16,7 @@ RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get update \
 	&& apt-get -y install --no-install-recommends \
 		wget git locales zip unzip \
-		file build-essential libz-dev zlib1g-dev binutils \
+		file build-essential libz-dev zlib1g-dev binutils openjdk-25-jdk \
 	&& rm -rf /var/lib/apt/lists/*
 
 #COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
@@ -39,6 +39,11 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
 ENV JAVA_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
 
 ENV LANG en_US.UTF-8
+
+RUN cd /tmp \
+	&& git clone https://github.com/AsamK/signal-cli.git --branch v${SIGNAL_CLI_VERSION} --single-branch signal-cli-source \
+	&& cd signal-cli-source \
+	&& ./gradlew jsonSchemas
 
 RUN go install github.com/swaggo/swag/cmd/swag@v${SWAG_VERSION}
 
@@ -101,9 +106,7 @@ RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init --requiredByDefau
 
 # manually add the json schemas for the receive V1 endpoint to the docs
 RUN cd /tmp/signal-cli-rest-api-src/docs \
-	&& wget https://github.com/Gara-Dorta/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz \
-	&& mkdir signal-cli-schemas \
-	&& tar xf signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz -C signal-cli-schemas \
+	&& cp -r /tmp/signal-cli-source/build/generated/META-INF/schemas signal-cli-schemas \
 	&& go run add_v1_receive_schemas.go signal-cli-schemas
 
 # build signal-cli-rest-api
