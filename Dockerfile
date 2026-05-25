@@ -41,9 +41,13 @@ ENV JAVA_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
 ENV LANG en_US.UTF-8
 
 RUN cd /tmp \
-	&& git clone https://github.com/AsamK/signal-cli.git --branch v${SIGNAL_CLI_VERSION} --single-branch signal-cli-source \
+	&& wget https://services.gradle.org/distributions/gradle-9.5.1-bin.zip \
+	&& unzip -d /opt/gradle gradle-9.5.1-bin.zip
+
+ENV PATH=$PATH:/opt/gradle/gradle-9.5.1/bin
+RUN git clone https://github.com/AsamK/signal-cli.git --branch v${SIGNAL_CLI_VERSION} --single-branch signal-cli-source \
 	&& cd signal-cli-source \
-	&& ./gradlew jsonSchemas
+	&& /opt/gradle/gradle-9.5.1/bin/gradle jsonSchemas
 
 RUN go install github.com/swaggo/swag/cmd/swag@v${SWAG_VERSION}
 
