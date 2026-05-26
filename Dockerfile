@@ -40,14 +40,14 @@ ENV JAVA_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
 
 ENV LANG en_US.UTF-8
 
-RUN cd /tmp \
-	&& wget https://services.gradle.org/distributions/gradle-9.5.1-bin.zip \
-	&& unzip -d /opt/gradle gradle-9.5.1-bin.zip
-
-ENV PATH=$PATH:/opt/gradle/gradle-9.5.1/bin
-RUN git clone https://github.com/AsamK/signal-cli.git --branch v${SIGNAL_CLI_VERSION} --single-branch signal-cli-source \
+# building the jsonSchemas for armv7l unfortunately doesn't work, so as a temporary fix, do not build the json schema
+# for armv7. should be removed as soon as https://github.com/AsamK/signal-cli/pull/2040 is merged
+RUN if [ "$(uname -m)" != "armv7l" ]; then \
+	cd /tmp \
+	&& git clone https://github.com/AsamK/signal-cli.git --branch v${SIGNAL_CLI_VERSION} --single-branch signal-cli-source \
 	&& cd signal-cli-source \
-	&& /opt/gradle/gradle-9.5.1/bin/gradle jsonSchemas
+	&& ./gradlew jsonSchemas; \
+fi;
 
 RUN go install github.com/swaggo/swag/cmd/swag@v${SWAG_VERSION}
 
@@ -108,10 +108,15 @@ RUN ls -la /tmp/signal-cli-rest-api-src
 # build the docs
 RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init --requiredByDefault --outputTypes "go,json"
 
+
 # manually add the json schemas for the receive V1 endpoint to the docs
-RUN cd /tmp/signal-cli-rest-api-src/docs \
+# (building the jsonSchemas for armv7l unfortunately doesn't work, so as a temporary fix, do not build the json schema
+# for armv7. should be removed as soon as https://github.com/AsamK/signal-cli/pull/2040 is merged)
+RUN if [ "$(uname -m)" != "armv7l" ]; then \
+	cd /tmp/signal-cli-rest-api-src/docs \
 	&& cp -r /tmp/signal-cli-source/build/generated/META-INF/schemas signal-cli-schemas \
-	&& go run add_v1_receive_schemas.go signal-cli-schemas
+	&& go run add_v1_receive_schemas.go signal-cli-schemas; \
+	fi;
 
 # build signal-cli-rest-api
 RUN cd /tmp/signal-cli-rest-api-src && go build -o signal-cli-rest-api main.go
