@@ -13,6 +13,7 @@ import (
 type PluginConfig struct {
 	Endpoint   string `yaml:"endpoint"`
 	Method     string `yaml:"method"`
+	Version    int    `yaml:"version,omitempty"`
 	ScriptPath string
 }
 
@@ -26,7 +27,6 @@ type PluginConfigs struct {
 
 func (c *PluginConfigs) Load(baseDirectory string) error {
 	baseDirectory = filepath.Clean(baseDirectory)
-
 	root, err := os.OpenRoot(baseDirectory)
 	if err != nil {
 		return err
@@ -37,11 +37,9 @@ func (c *PluginConfigs) Load(baseDirectory string) error {
 		if err != nil {
 			return err
 		}
-
 		if d.IsDir() {
 			return nil
 		}
-
 		if filepath.Ext(path) != ".def" {
 			return nil
 		}
@@ -63,14 +61,13 @@ func (c *PluginConfigs) Load(baseDirectory string) error {
 		}
 
 		var pluginConfig PluginConfig
+		pluginConfig.Version = 1 // default; overridden by yaml if present
 		if err = yaml.Unmarshal(data, &pluginConfig); err != nil {
 			return err
 		}
 		pluginConfig.ScriptPath = strings.TrimSuffix(path, filepath.Ext(path)) + ".lua"
 		c.Configs = append(c.Configs, pluginConfig)
-
 		return nil
 	})
-
 	return err
 }
