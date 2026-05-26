@@ -45,6 +45,9 @@ func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *tes
 		{
 			"-base64 +data +filename", "data:someData;filename=file.name;INVALIDMTIzNDU=", false, "data:someData;filename=file.name;INVALIDMTIzNDU=", false, "", "", "data:someData;filename=file.name;INVALIDMTIzNDU=",
 		},
+		{
+			"base64 prefix at start +data", "base64,data:someData", false, "data:someData", false, "", "", "data:someData",
+		},
 	}
 
 	attachmentTmp := flag.String("attachment-tmp-dir", string(os.PathSeparator)+"tmp"+string(os.PathSeparator), "Attachment tmp directory")
