@@ -107,6 +107,10 @@ RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper
 # build plugin_loader
 RUN cd /tmp/signal-cli-rest-api-src && go build -buildmode=plugin -o signal-cli-rest-api_plugin_loader.so plugin_loader.go
 
+# Manually add the json schemas for the receive V1 endpoint
+RUN cd /tmp/signal-cli-rest-api-src/src/docs \
+    && go run update_receive_docs.go /tmp/signal-cli-${SIGNAL_CLI_VERSION}-source/build/generated/META-INF/schemas
+
 # Start a fresh container for release container
 FROM debian:trixie-slim
 
