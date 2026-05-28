@@ -44,6 +44,9 @@ func (attachmentEntry *AttachmentEntry) extractMetaData(attachmentData string) {
 	}
 
 	attachmentEntry.Base64 = attachmentData[base64FlagIndex+len("base64,"):]
+	if base64FlagIndex == 0 {
+		return
+	}
 	metaDataKeys := map[string]string{
 		"data:":     "MimeInfo",
 		"filename=": "FileName",
