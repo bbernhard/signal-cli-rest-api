@@ -59,12 +59,14 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 		cd /tmp \
 		&& wget https://github.com/bbernhard/signal-cli-native-builds/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-native-v${SIGNAL_CLI_VERSION}.tar.gz \
 		&& tar xvf signal-cli-native-v${SIGNAL_CLI_VERSION}.tar.gz \
-		&& cp signal-cli-native-v${SIGNAL_CLI_VERSION}/x86-64/signal-cli-native /tmp/signal-cli-native; \
+		&& cp signal-cli-native-v${SIGNAL_CLI_VERSION}/x86-64/signal-cli-native /tmp/signal-cli-native \
+		&& chmod +x /tmp/signal-cli-native; \
 	elif [ "$(uname -m)" = "aarch64" ] ; then \
 		cd /tmp \
 		&& wget https://github.com/bbernhard/signal-cli-native-builds/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-native-v${SIGNAL_CLI_VERSION}.tar.gz \
 		&& tar xvf signal-cli-native-v${SIGNAL_CLI_VERSION}.tar.gz \
-		&& cp signal-cli-native-v${SIGNAL_CLI_VERSION}/arm64/signal-cli-native /tmp/signal-cli-native; \
+		&& cp signal-cli-native-v${SIGNAL_CLI_VERSION}/arm64/signal-cli-native /tmp/signal-cli-native \
+		&& chmod +x /tmp/signal-cli-native; \
     elif [ "$(uname -m)" = "armv7l" ] ; then \
 		echo "GRAALVM doesn't support 32bit" \
 		&& echo "Creating temporary file, otherwise the below copy doesn't work for armv7" \
