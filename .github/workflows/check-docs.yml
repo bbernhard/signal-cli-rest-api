@@ -23,6 +23,21 @@ jobs:
         working-directory: src
         run: go run github.com/swaggo/swag/cmd/swag@v1.16.6 init --requiredByDefault
 
+      - name: Build json schemas
+        run: |
+          export JAVA_HOME="$JAVA_HOME_25_X64"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          SIGNAL_CLI_VERSION="$(grep -m1 '^ARG SIGNAL_CLI_VERSION=' Dockerfile | cut -d= -f2)"
+          git clone --depth 1 --branch v${SIGNAL_CLI_VERSION} https://github.com/AsamK/signal-cli/ signal-cli
+          cd signal-cli
+          ./gradlew jsonSchemas
+          cp -r build/generated/META-INF/schemas ${GITHUB_WORKSPACE}/src/docs/signal-cli-schemas
+
+      - name: Inject receive schemas
+        working-directory: src/docs
+        run: |
+          go run add_v1_receive_schemas.go signal-cli-schemas
+
       - name: Fail if docs are out of date
         run: |
           git diff --exit-code -- src/docs/docs.go src/docs/swagger.json src/docs/swagger.yaml
