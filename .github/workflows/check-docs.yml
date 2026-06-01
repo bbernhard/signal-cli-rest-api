@@ -19,15 +19,14 @@ jobs:
           go-version-file: src/go.mod
           cache-dependency-path: src/go.sum
 
-      - name: Install Java
-        run: sudo apt update && sudo apt install -y openjdk-25-jdk
-
       - name: Regenerate docs
         working-directory: src
         run: go run github.com/swaggo/swag/cmd/swag@v1.16.6 init --requiredByDefault
 
       - name: Build json schemas
         run: |
+          export JAVA_HOME="$JAVA_HOME_25_X64"
+          export PATH="$JAVA_HOME/bin:$PATH"
           SIGNAL_CLI_VERSION="$(grep -m1 '^ARG SIGNAL_CLI_VERSION=' Dockerfile | cut -d= -f2)"
           git clone --depth 1 --branch v${SIGNAL_CLI_VERSION} https://github.com/AsamK/signal-cli/ signal-cli
           cd signal-cli
