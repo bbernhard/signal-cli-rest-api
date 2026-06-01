@@ -20,7 +20,7 @@ jobs:
           cache-dependency-path: src/go.sum
 
       - name: Install Java
-        run: apt update && apt install -y openjdk-25-jdk
+        run: sudo apt update && sudo apt install -y openjdk-25-jdk
 
       - name: Regenerate docs
         working-directory: src
