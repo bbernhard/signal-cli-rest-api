@@ -19,17 +19,24 @@ jobs:
           go-version-file: src/go.mod
           cache-dependency-path: src/go.sum
 
+      - name: Install Java
+        run: apt update && apt install -y openjdk-25-jdk
+
       - name: Regenerate docs
         working-directory: src
         run: go run github.com/swaggo/swag/cmd/swag@v1.16.6 init --requiredByDefault
 
-      - name: Download and inject receive schemas
+      - name: Build json schemas
+        run: |
+          SIGNAL_CLI_VERSION="$(grep -m1 '^ARG SIGNAL_CLI_VERSION=' Dockerfile | cut -d= -f2)"
+          git clone --depth 1 --branch $SIGNAL_CLI_VERSION} https://github.com/AsamK/signal-cli/ signal-cli
+          cd signal-cli
+          ./gradlew jsonSchemas
+          cp -r build/generated/META-INF/schemas ${GITHUB_WORKSPACE}/src/docs/signal-cli-schemas
+
+      - name: Inject receive schemas
         working-directory: src/docs
         run: |
-          SIGNAL_CLI_VERSION="$(grep -m1 '^ARG SIGNAL_CLI_VERSION=' ../../Dockerfile | cut -d= -f2)"
-          curl -fsSL "https://github.com/Gara-Dorta/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz" -o signal-cli-json-schemas.tar.gz
-          mkdir -p signal-cli-schemas
-          tar xf signal-cli-json-schemas.tar.gz -C signal-cli-schemas
           go run add_v1_receive_schemas.go signal-cli-schemas
 
       - name: Fail if docs are out of date
