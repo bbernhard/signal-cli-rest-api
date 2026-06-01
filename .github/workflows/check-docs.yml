@@ -29,7 +29,7 @@ jobs:
       - name: Build json schemas
         run: |
           SIGNAL_CLI_VERSION="$(grep -m1 '^ARG SIGNAL_CLI_VERSION=' Dockerfile | cut -d= -f2)"
-          git clone --depth 1 --branch $SIGNAL_CLI_VERSION} https://github.com/AsamK/signal-cli/ signal-cli
+          git clone --depth 1 --branch v${SIGNAL_CLI_VERSION} https://github.com/AsamK/signal-cli/ signal-cli
           cd signal-cli
           ./gradlew jsonSchemas
           cp -r build/generated/META-INF/schemas ${GITHUB_WORKSPACE}/src/docs/signal-cli-schemas
