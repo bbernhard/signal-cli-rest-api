@@ -119,6 +119,7 @@ type GroupEntry struct {
 	InternalId      string              `json:"internal_id"`
 	Members         []string            `json:"members"`
 	Blocked         bool                `json:"blocked"`
+	Member          bool                `json:"member"`
 	PendingInvites  []string            `json:"pending_invites"`
 	PendingRequests []string            `json:"pending_requests"`
 	InviteLink      string              `json:"invite_link"`
@@ -143,6 +144,7 @@ type ExpandedGroupEntry struct {
 	InternalId      string              `json:"internal_id"`
 	Members         []GroupMember       `json:"members"`
 	Blocked         bool                `json:"blocked"`
+	Member          bool                `json:"member"`
 	PendingInvites  []GroupMember       `json:"pending_invites"`
 	PendingRequests []GroupMember       `json:"pending_requests"`
 	InviteLink      string              `json:"invite_link"`
@@ -1330,6 +1332,25 @@ func (s *SignalClient) RemoveAdminsFromGroup(number string, groupId string, admi
 	return s.updateGroupAdmins(number, groupId, admins, false)
 }
 
+func signalCliGroupEntryToExpandedGroupEntry(signalCliGroupEntry SignalCliGroupEntry) ExpandedGroupEntry {
+	var groupEntry ExpandedGroupEntry
+	groupEntry.InternalId = signalCliGroupEntry.Id
+	groupEntry.Name = signalCliGroupEntry.Name
+	groupEntry.Id = convertInternalGroupIdToGroupId(signalCliGroupEntry.Id)
+	groupEntry.Blocked = signalCliGroupEntry.IsBlocked
+	groupEntry.Member = signalCliGroupEntry.IsMember
+	groupEntry.Description = signalCliGroupEntry.Description
+	groupEntry.Permissions.SendMessages = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
+	groupEntry.Permissions.EditGroup = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
+	groupEntry.Permissions.AddMembers = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionAddMember)
+	groupEntry.Members = signalCliGroupEntry.Members
+	groupEntry.PendingInvites = signalCliGroupEntry.PendingMembers
+	groupEntry.PendingRequests = signalCliGroupEntry.RequestingMembers
+	groupEntry.Admins = signalCliGroupEntry.Admins
+	groupEntry.InviteLink = signalCliGroupEntry.GroupInviteLink
+	return groupEntry
+}
+
 func (s *SignalClient) GetGroupsExpanded(number string) ([]ExpandedGroupEntry, error) {
 	groupEntries := []ExpandedGroupEntry{}
 
@@ -1360,22 +1381,7 @@ func (s *SignalClient) GetGroupsExpanded(number string) ([]ExpandedGroupEntry, e
 	}
 
 	for _, signalCliGroupEntry := range signalCliGroupEntries {
-		var groupEntry ExpandedGroupEntry
-		groupEntry.InternalId = signalCliGroupEntry.Id
-		groupEntry.Name = signalCliGroupEntry.Name
-		groupEntry.Id = convertInternalGroupIdToGroupId(signalCliGroupEntry.Id)
-		groupEntry.Blocked = signalCliGroupEntry.IsBlocked
-		groupEntry.Description = signalCliGroupEntry.Description
-		groupEntry.Permissions.SendMessages = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
-		groupEntry.Permissions.EditGroup = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
-		groupEntry.Permissions.AddMembers = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionAddMember)
-		groupEntry.Members = signalCliGroupEntry.Members
-		groupEntry.PendingInvites = signalCliGroupEntry.PendingMembers
-		groupEntry.PendingRequests = signalCliGroupEntry.RequestingMembers
-		groupEntry.Admins = signalCliGroupEntry.Admins
-		groupEntry.InviteLink = signalCliGroupEntry.GroupInviteLink
-
-		groupEntries = append(groupEntries, groupEntry)
+		groupEntries = append(groupEntries, signalCliGroupEntryToExpandedGroupEntry(signalCliGroupEntry))
 	}
 
 	return groupEntries, nil
@@ -1390,7 +1396,7 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 	groupEntries := []GroupEntry{}
 	for _, expandedGroupEntry := range expandedGroupEntries {
 		groupEntry := GroupEntry{InternalId: expandedGroupEntry.InternalId, Name: expandedGroupEntry.Name,
-			Id: expandedGroupEntry.Id, Blocked: expandedGroupEntry.Blocked, Description: expandedGroupEntry.Description,
+			Id: expandedGroupEntry.Id, Blocked: expandedGroupEntry.Blocked, Member: expandedGroupEntry.Member, Description: expandedGroupEntry.Description,
 			Permissions: expandedGroupEntry.Permissions, InviteLink: expandedGroupEntry.InviteLink}
 
 		members := []string{}
