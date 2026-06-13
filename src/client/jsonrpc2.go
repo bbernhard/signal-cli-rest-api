@@ -222,7 +222,9 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 		str, err := connbuf.ReadString('\n')
 		if err != nil {
 			log.Error("Lost connection to signal-cli...attempting to reconnect (", err.Error(), ")")
-			r.conn.Close()
+			if err := r.conn.Close(); err != nil {
+				log.Warn("Error closing connection to signal-cli: ", err.Error())
+			}
 			err = r.Dial(r.address, 15)
 			if err != nil {
 				log.Fatal("Unable to reconnect to signal-cli: ", err.Error(), "...aborting")
@@ -234,7 +236,10 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 		log.Debug("json-rpc received data: ", str)
 
 		var resp1 JsonRpc2ReceivedMessage
-		json.Unmarshal([]byte(str), &resp1)
+		if err := json.Unmarshal([]byte(str), &resp1); err != nil {
+			log.Warn("Couldn't parse received message: ", err.Error())
+			continue
+		}
 		if resp1.Method == "receive" {
 			r.receivedMessagesMutex.Lock()
 			for _, c := range r.receivedMessagesChannels {

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -258,7 +257,9 @@ type ListDevicesResponse struct {
 
 func cleanupTmpFiles(paths []string) {
 	for _, path := range paths {
-		os.Remove(path)
+		if err := os.Remove(path); err != nil {
+			log.Error("Couldn't remove tmp file ", path, ": ", err.Error())
+		}
 	}
 }
 
@@ -743,7 +744,7 @@ func (s *SignalClient) About() About {
 		BuildNr:              2,
 		Mode:                 getSignalCliModeString(s.signalCliMode),
 		Version:              utils.GetEnv("BUILD_VERSION", "unset"),
-		Capabilities:         map[string][]string{"v2/send": []string{"quotes", "mentions"}},
+		Capabilities:         map[string][]string{"v2/send": {"quotes", "mentions"}},
 	}
 	return about
 }
@@ -1137,8 +1138,7 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 			Timestamp int64  `json:"timestamp"`
 		}
 		var resp Response
-		json.Unmarshal([]byte(rawData), &resp)
-		if err != nil {
+		if err := json.Unmarshal([]byte(rawData), &resp); err != nil {
 			return "", err
 		}
 		internalGroupId = resp.GroupId
@@ -1737,7 +1737,9 @@ func (s *SignalClient) finishLinkAsync(jsonRpc2Client *JsonRpc2Client, deviceNam
 			return
 		}
 		log.Debug("Linking device result: ", result)
-		s.signalCliApiConfig.Load(s.signalCliApiConfigPath)
+		if err := s.signalCliApiConfig.Load(s.signalCliApiConfigPath); err != nil {
+			log.Error("Couldn't reload signal-cli API config after linking device: ", err.Error())
+		}
 	}()
 }
 
@@ -1830,7 +1832,7 @@ func (s *SignalClient) GetAttachment(attachment string) ([]byte, error) {
 		return []byte{}, &NotFoundError{Description: "No attachment with that name found"}
 	}
 
-	attachmentBytes, err := ioutil.ReadFile(path)
+	attachmentBytes, err := os.ReadFile(path) // #nosec G304 -- path is secured by securejoin.SecureJoin above
 	if err != nil {
 		return []byte{}, &InternalError{Description: "Couldn't read attachment - please try again later"}
 	}
@@ -1857,23 +1859,38 @@ func (s *SignalClient) UpdateProfile(number string, profileName string, base64Av
 			return err
 		}
 
-		avatarTmpPath = s.avatarTmpDir + u.String() + "." + fType.Extension
+		avatarFilename := u.String() + "." + fType.Extension
+		avatarTmpPath = filepath.Join(s.avatarTmpDir, avatarFilename)
 
-		f, err := os.Create(avatarTmpPath)
+		avatarRoot, err := os.OpenRoot(s.avatarTmpDir)
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+		defer avatarRoot.Close()
+
+		f, err := avatarRoot.Create(avatarFilename)
+		if err != nil {
+			return err
+		}
 
 		if _, err := f.Write(avatarBytes); err != nil {
+			if closeErr := f.Close(); closeErr != nil {
+				log.Error("Couldn't close avatar tmp file: ", closeErr.Error())
+			}
 			cleanupTmpFiles([]string{avatarTmpPath})
 			return err
 		}
 		if err := f.Sync(); err != nil {
+			if closeErr := f.Close(); closeErr != nil {
+				log.Error("Couldn't close avatar tmp file: ", closeErr.Error())
+			}
 			cleanupTmpFiles([]string{avatarTmpPath})
 			return err
 		}
-		f.Close()
+		if err := f.Close(); err != nil {
+			cleanupTmpFiles([]string{avatarTmpPath})
+			return err
+		}
 	}
 
 	if s.signalCliMode == JsonRpc {
@@ -2072,23 +2089,38 @@ func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *
 			return err
 		}
 
-		avatarTmpPath = s.avatarTmpDir + u.String() + "." + fType.Extension
+		avatarFilename := u.String() + "." + fType.Extension
+		avatarTmpPath = filepath.Join(s.avatarTmpDir, avatarFilename)
 
-		f, err := os.Create(avatarTmpPath)
+		avatarRoot, err := os.OpenRoot(s.avatarTmpDir)
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+		defer avatarRoot.Close()
+
+		f, err := avatarRoot.Create(avatarFilename)
+		if err != nil {
+			return err
+		}
 
 		if _, err := f.Write(avatarBytes); err != nil {
+			if closeErr := f.Close(); closeErr != nil {
+				log.Error("Couldn't close avatar tmp file: ", closeErr.Error())
+			}
 			cleanupTmpFiles([]string{avatarTmpPath})
 			return err
 		}
 		if err := f.Sync(); err != nil {
+			if closeErr := f.Close(); closeErr != nil {
+				log.Error("Couldn't close avatar tmp file: ", closeErr.Error())
+			}
 			cleanupTmpFiles([]string{avatarTmpPath})
 			return err
 		}
-		f.Close()
+		if err := f.Close(); err != nil {
+			cleanupTmpFiles([]string{avatarTmpPath})
+			return err
+		}
 	}
 
 	if s.signalCliMode == JsonRpc {
