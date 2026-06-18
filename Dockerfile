@@ -184,6 +184,8 @@ HEALTHCHECK --interval=20s --timeout=10s --retries=3 \
 
 FROM base AS jre
 
+ARG SIGNAL_CLI_VERSION
+
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get update \
 	&& apt-get install -y --no-install-recommends openjdk-25-jre-headless supervisor \
@@ -199,6 +201,8 @@ RUN ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli /usr/bin/signal-c
 # Supports: linux/amd64, linux/arm64 (no arm/v7 — GraalVM doesn't produce 32-bit binaries)
 
 FROM base AS native
+
+ARG SIGNAL_CLI_VERSION
 
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get update \
