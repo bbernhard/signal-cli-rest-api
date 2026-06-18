@@ -5,6 +5,23 @@ set -e
 
 [ -z "${SIGNAL_CLI_CONFIG_DIR}" ] && echo "SIGNAL_CLI_CONFIG_DIR environmental variable needs to be set! Aborting!" && exit 1;
 
+# Validate MODE against the binaries available in this image variant
+MODE=${MODE:-normal}
+if [ "$MODE" = "native" ] || [ "$MODE" = "json-rpc-native" ]; then
+    if [ ! -x /usr/bin/signal-cli-native ]; then
+        echo "ERROR: MODE=$MODE requires signal-cli-native, but this image doesn't include it."
+        echo "Use the -native image tag (e.g., bbernhard/signal-cli-rest-api:latest-native)"
+        exit 1
+    fi
+fi
+if [ "$MODE" = "normal" ] || [ "$MODE" = "json-rpc" ]; then
+    if ! command -v java >/dev/null 2>&1; then
+        echo "ERROR: MODE=$MODE requires Java (signal-cli), but this image doesn't include it."
+        echo "Use the standard image tag (e.g., bbernhard/signal-cli-rest-api:latest)"
+        exit 1
+    fi
+fi
+
 usermod -u ${SIGNAL_CLI_UID} signal-api
 groupmod -o -g ${SIGNAL_CLI_GID} signal-api
 

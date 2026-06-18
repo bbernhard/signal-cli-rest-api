@@ -16,8 +16,8 @@ Go-based REST API wrapping [signal-cli](https://github.com/AsamK/signal-cli) for
   - `scripts/jsonrpc2-helper.go` — daemon manager for json-rpc mode
 - `plugin_loader.go` — Go plugin system using Lua scripts (v1/v2 plugin API)
 - `plugins/` — example Lua plugins and persistence plugin
-- `Dockerfile` — multi-stage build: Go compile → release image with signal-cli + Java runtime
-- `entrypoint.sh` — container entrypoint; handles UID/GID, chown, supervisor for json-rpc mode
+- `Dockerfile` — multi-stage build with two release targets: `jre` and `native`
+- `entrypoint.sh` — container entrypoint; validates MODE against available binaries, handles UID/GID, chown, supervisor for json-rpc mode
 
 ## Build & Run
 
@@ -34,6 +34,11 @@ Go-based REST API wrapping [signal-cli](https://github.com/AsamK/signal-cli) for
   docker compose build
   docker compose up
   ```
+- **Build specific variant (Docker):**
+  ```bash
+  docker build --target jre .      # JRE variant (normal + json-rpc)
+  docker build --target native .    # native variant (native + json-rpc-native)
+  ```
 - **No linter or typecheck config exists** — standard Go tooling only (e.g., `go vet`).
 
 ## Swagger / API Docs
@@ -46,6 +51,19 @@ go run github.com/swaggo/swag/cmd/swag@v1.16.6 init --requiredByDefault --output
 ```
 
 The receive V1 schemas require an extra step (`add_v1_receive_schemas.go`); see `src/docs/README.md`. CI checks that generated docs are up-to-date (workflow: `check-docs.yml`).
+
+## Image Variants
+
+The Dockerfile produces two release targets from a shared `base` stage:
+
+| Target | Tag suffix | Contains | Modes | Platforms |
+|---|---|---|---|---|
+| `jre` | `latest`, `X.Y.Z` | headless JRE + signal-cli Java dist | `normal`, `json-rpc` | amd64, arm64, arm/v7 |
+| `native` | `latest-native`, `X.Y.Z-native` | signal-cli-native only (no JRE) | `native`, `json-rpc-native` | amd64, arm64 |
+
+The `entrypoint.sh` validates that the requested `MODE` matches binaries available in the running image variant and exits with a clear error if mismatched.
+
+The JRE variant uses `openjdk-25-jre-headless` (not the full `openjdk-25-jre`) to avoid ~280 MB of GUI libraries that a CLI tool never uses.
 
 ## Key Environment Variables
 
@@ -63,8 +81,8 @@ The receive V1 schemas require an extra step (`add_v1_receive_schemas.go`); see 
 ## Gotchas
 
 - The Dockerfile pins `SIGNAL_CLI_VERSION` and `LIBSIGNAL_CLIENT_VERSION` as build args. After bumping these, verify the `libsignal-client-*.jar` filename still matches.
-- Multi-arch build targets: `linux/amd64`, `linux/arm64`, `linux/arm/v7`. The `native` (GraalVM) binary is unavailable on armv7 — code falls back to `normal` mode.
+- Multi-arch builds: the `jre` target covers `linux/amd64`, `linux/arm64`, `linux/arm/v7`; the `native` target covers `linux/amd64`, `linux/arm64` only (no armv7 native binary).
 - `AUTO_RECEIVE_SCHEDULE` and `SIGNAL_CLI_CMD_TIMEOUT` cause a fatal error in json-rpc mode.
 - `RECEIVE_WEBHOOK_URL` is only valid in json-rpc mode; fatal in other modes.
-- CI uses Podman for multi-arch builds, not Docker Buildx.
-- Release versions are published via `publish.sh` triggering GitHub Actions (dev vs stable tags).
+- CI uses Podman for multi-arch builds, not Docker Buildx. Each CI/release workflow builds both `jre` and `native` targets.
+- Release versions are published via `publish.sh` triggering GitHub Actions (dev vs stable tags, with `-native` suffix for the native variant).

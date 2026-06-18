@@ -1,11 +1,22 @@
 services:
+  # JRE variant (default) -- use with MODE=normal or MODE=json-rpc
   signal-cli-rest-api:
     image: bbernhard/signal-cli-rest-api:latest
     environment:
-      - MODE=normal #supported modes: json-rpc, native, normal
+      - MODE=normal #supported modes: normal, json-rpc
       #- AUTO_RECEIVE_SCHEDULE=0 22 * * * #enable this parameter on demand (see description below)
     ports:
       - "8080:8080" #map docker port 8080 to host port 8080.
     volumes:
       - "./signal-cli-config:/home/.local/share/signal-cli" #map "signal-cli-config" folder on host system into docker container. the folder contains the password and cryptographic keys when a new number is registered
 
+  # Native variant -- use with MODE=native or MODE=json-rpc-native
+  # Uncomment to use the native variant (smaller image, no Java runtime)
+  # signal-cli-rest-api-native:
+  #   image: bbernhard/signal-cli-rest-api:latest-native
+  #   environment:
+  #     - MODE=native #supported modes: native, json-rpc-native
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - "./signal-cli-config:/home/.local/share/signal-cli"
