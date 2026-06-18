@@ -56,11 +56,19 @@ The native variant is genuinely lighter; its single large binary just happens to
 | **Total saved** | **-776 MB** |
 | **But adds back**: supervisor + python | +24 MB |
 
+### Actual measured sizes from the build
+
+| Image | Size |
+|---|---|
+| Original single image | 1.33 GB |
+| JRE variant (`signal-cli-rest-api:jre`) | 611 MB |
+| Native variant (`signal-cli-rest-api:native`) | 621 MB |
+
 ## Required Changes
 
 ### 1. `Dockerfile` — Split into multi-stage targets
 
-The builder stage (lines 1–131) stays unchanged. The release stage (lines 133–194) becomes three stages: a shared `base`, then `jre` and `native` targets.
+The builder stage (lines 1–131) stays unchanged. The release stage becomes three stages: a shared `base`, then `jre` and `native` targets.
 
 **Key changes:**
 
@@ -68,6 +76,7 @@ The builder stage (lines 1–131) stays unchanged. The release stage (lines 133�
 - JRE target: includes Java dist, excludes native binary
 - Native target: includes native binary, excludes Java dist and JRE entirely
 - Supervisor installed in both targets (needed for json-rpc daemon mode)
+- Removed armv7 native-binary cleanup hack (not needed — native target isn't built for armv7)
 
 ```dockerfile
 # ---- Shared base for both variants ----
@@ -102,7 +111,7 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
     update-locale LANG=en_US.UTF-8
 
-ENV LANG=en_US.UTF-8
+ENV LANG en_US.UTF-8
 
 EXPOSE ${PORT}
 
@@ -146,10 +155,11 @@ RUN mkdir -p /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin \
 
 ### 2. `entrypoint.sh` — Add MODE validation
 
-At the top of the entrypoint, before the existing logic, add validation that the requested MODE matches the available binaries in the image:
+At the top of the entrypoint (after the existing `SIGNAL_CLI_CONFIG_DIR` check), add validation that the requested MODE matches the available binaries in the image:
 
 ```sh
-# Validate MODE against available binaries
+# Validate MODE against the binaries available in this image variant
+MODE=${MODE:-normal}
 if [ "$MODE" = "native" ] || [ "$MODE" = "json-rpc-native" ]; then
     if [ ! -x /usr/bin/signal-cli-native ]; then
         echo "ERROR: MODE=$MODE requires signal-cli-native, but this image doesn't include it."
@@ -157,7 +167,6 @@ if [ "$MODE" = "native" ] || [ "$MODE" = "json-rpc-native" ]; then
         exit 1
     fi
 fi
-
 if [ "$MODE" = "normal" ] || [ "$MODE" = "json-rpc" ]; then
     if ! command -v java >/dev/null 2>&1; then
         echo "ERROR: MODE=$MODE requires Java (signal-cli), but this image doesn't include it."
@@ -169,16 +178,36 @@ fi
 
 This gives a clear error instead of a cryptic failure when a user runs the wrong MODE for their image variant.
 
-### 3. CI Workflows — Build both variants
+### 3. CI Workflows — Build both variants with configurable registry
 
-All three workflow files need the same change: build two manifests using `--target`.
+All three workflow files build two manifests using `--target` and push to a configurable container registry.
 
-**`ci.yml`** — replaces the single `podman build` with two:
+**Registry configuration** uses GitHub Actions variables and secrets:
+
+| Variable/Secret | Type | Default | Purpose |
+|---|---|---|---|
+| `IMAGE_REGISTRY` | repo variable | `docker.io` | Registry hostname (e.g., `ghcr.io`, `myregistry.local:5000`) |
+| `IMAGE_REPO` | repo variable | `bbernhard/signal-cli-rest-api` | Image path on the registry (e.g., `myorg/signal-cli-rest-api`) |
+| `REGISTRY_USERNAME` | secret | falls back to `DOCKERHUB_USERNAME` | Registry login username |
+| `REGISTRY_PASSWORD` | secret | falls back to `DOCKERHUB_TOKEN` | Registry login password/token |
+
+The login step uses `docker/login-action` with the `registry` parameter set to `IMAGE_REGISTRY`, so it works with Docker Hub, GHCR, or any private registry. The fallback to `DOCKERHUB_*` secrets preserves backwards compatibility for the upstream repo.
+
+**`ci.yml`:**
 
 ```yaml
+- name: Login to container registry
+  uses: docker/login-action@v4.1.0
+  with:
+    registry: ${{ vars.IMAGE_REGISTRY || 'docker.io' }}
+    username: ${{ secrets.REGISTRY_USERNAME || secrets.DOCKERHUB_USERNAME }}
+    password: ${{ secrets.REGISTRY_PASSWORD || secrets.DOCKERHUB_TOKEN }}
+
 - name: Build
   env:
     VERSION: ${{ github.run_number }}
+    IMAGE_REGISTRY: ${{ vars.IMAGE_REGISTRY || 'docker.io' }}
+    IMAGE_REPO: ${{ vars.IMAGE_REPO || 'bbernhard/signal-cli-rest-api' }}
   run: |
     df -h
     echo "Start CI build"
@@ -186,42 +215,31 @@ All three workflow files need the same change: build two manifests using `--targ
 
     podman manifest create build-jre
     podman build --format docker --target jre --platform linux/amd64,linux/arm64,linux/arm/v7 --manifest localhost/build-jre .
-    podman manifest push localhost/build-jre docker://docker.io/bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci
+    podman manifest push localhost/build-jre docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:${EPOCHSECONDS}-ci
 
     podman manifest create build-native
     podman build --format docker --target native --platform linux/amd64,linux/arm64 --manifest localhost/build-native .
-    podman manifest push localhost/build-native docker://docker.io/bbernhard/signal-cli-rest-api:${EPOCHSECONDS}-ci-native
+    podman manifest push localhost/build-native docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:${EPOCHSECONDS}-ci-native
 ```
 
 **`release-productive-version.yml`** — same pattern, pushes tagged versions:
 
 ```yaml
-- name: Release
-  env:
-    VERSION: ${{ github.event.inputs.version }}
-  run: |
-    echo "Start productive build"
-    docker run --privileged --rm tonistiigi/binfmt --install all
+    podman manifest push localhost/build-jre docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:${VERSION}
+    podman manifest push localhost/build-jre docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:latest
 
-    podman manifest create build-jre
-    podman build --format docker --target jre --build-arg BUILD_VERSION_ARG=${VERSION} --platform linux/amd64,linux/arm64,linux/arm/v7 --manifest localhost/build-jre .
-    podman manifest push localhost/build-jre docker://docker.io/bbernhard/signal-cli-rest-api:${VERSION}
-    podman manifest push localhost/build-jre docker://docker.io/bbernhard/signal-cli-rest-api:latest
-
-    podman manifest create build-native
-    podman build --format docker --target native --build-arg BUILD_VERSION_ARG=${VERSION} --platform linux/amd64,linux/arm64 --manifest localhost/build-native .
-    podman manifest push localhost/build-native docker://docker.io/bbernhard/signal-cli-rest-api:${VERSION}-native
-    podman manifest push localhost/build-native docker://docker.io/bbernhard/signal-cli-rest-api:latest-native
+    podman manifest push localhost/build-native docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:${VERSION}-native
+    podman manifest push localhost/build-native docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:latest-native
 ```
 
 **`release-dev-version.yml`** — same pattern, pushes `-dev` tags:
 
 ```yaml
-    podman manifest push localhost/build-jre docker://docker.io/bbernhard/signal-cli-rest-api:${VERSION}-dev
-    podman manifest push localhost/build-jre docker://docker.io/bbernhard/signal-cli-rest-api:latest-dev
+    podman manifest push localhost/build-jre docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:${VERSION}-dev
+    podman manifest push localhost/build-jre docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:latest-dev
 
-    podman manifest push localhost/build-native docker://docker.io/bbernhard/signal-cli-rest-api:${VERSION}-dev-native
-    podman manifest push localhost/build-native docker://docker.io/bbernhard/signal-cli-rest-api:latest-dev-native
+    podman manifest push localhost/build-native docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:${VERSION}-dev-native
+    podman manifest push localhost/build-native docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:latest-dev-native
 ```
 
 ### 4. `docker-compose.yml` — Add native variant example
@@ -256,7 +274,7 @@ services:
 | `src/main.go` | The `SUPPORTS_NATIVE` env-var check and mode fallback still works. In the native image, `/usr/bin/signal-cli-native` exists; in the JRE image, it doesn't. The entrypoint validation catches mismatched MODE before the Go app starts. |
 | `src/client/cli.go` | Already selects `signal-cli` or `signal-cli-native` based on mode. No awareness of image variants needed. |
 | `src/scripts/jsonrpc2-helper.go` | Already selects the correct binary for daemon mode. No changes needed. |
-| `publish.sh` | Just triggers GitHub Actions workflows. The workflow files handle variant tagging. |
+| `publish.sh` | Just triggers GitHub Actions workflows by version/tag. The workflow files handle variant tagging. |
 | `.github/workflows/check-docs.yml` | Doc generation happens in the builder stage, unaffected by variant split. |
 | `src/docs/*` | Auto-generated, no changes. |
 | `plugins/*` | Runtime Lua scripts, no changes. |
@@ -276,12 +294,60 @@ services:
 
 The `latest` tag points to the JRE variant (preserves backwards compatibility — default `MODE=normal` works out of the box).
 
+## Registry Configuration Examples
+
+### Push to Docker Hub (default, zero config needed)
+
+No variables or secrets need to be set. The existing `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets continue to work as before.
+
+### Push to GitHub Container Registry
+
+Set in your fork's Settings → Secrets and variables → Actions:
+
+| Type | Name | Value |
+|---|---|---|
+| Variable | `IMAGE_REGISTRY` | `ghcr.io` |
+| Variable | `IMAGE_REPO` | `myuser/signal-cli-rest-api` |
+| Secret | `REGISTRY_USERNAME` | your GitHub username |
+| Secret | `REGISTRY_PASSWORD` | a PAT with `write:packages` scope |
+
+### Push to a private/local registry
+
+| Type | Name | Value |
+|---|---|---|
+| Variable | `IMAGE_REGISTRY` | `myregistry.local:5000` |
+| Variable | `IMAGE_REPO` | `signal-cli-rest-api` |
+| Secret | `REGISTRY_USERNAME` | (if auth is needed) |
+| Secret | `REGISTRY_PASSWORD` | (if auth is needed) |
+
+For unauthenticated local registries, you can remove the login step entirely or leave the secrets empty — `podman` will push without auth if the registry allows it.
+
 ## Backwards Compatibility
 
 - **`latest` tag** continues to work with `MODE=normal` (the default) and `MODE=json-rpc`
 - Users currently running `MODE=native` or `MODE=json-rpc-native` on the `latest` tag will get a clear error message from the new entrypoint validation, telling them to switch to `latest-native`
 - For a transition period, the old all-in-one image could be published as `X.Y.Z-full` or `latest-full` if needed
 - On arm/v7, only the JRE variant is published, matching current behavior (native mode falls back to normal)
+- The upstream repo's existing `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` secrets continue to work — the `REGISTRY_USERNAME`/`REGISTRY_PASSWORD` secrets fall back to them
+
+## Verification Results
+
+All three Docker targets build successfully on amd64:
+
+```
+=== Image sizes ===
+base:   188 MB
+jre:    611 MB    (down from 1.33 GB)
+native: 621 MB    (down from 1.33 GB)
+```
+
+Entrypoint validation works correctly:
+- `MODE=native` on JRE image → exit 1: `"Use the -native image tag"`
+- `MODE=normal` on native image → exit 1: `"Use the standard image tag"`
+
+Binary presence verified per variant:
+- JRE: `java` present, `signal-cli` present, `signal-cli-native` absent
+- Native: `signal-cli-native` present, `java` absent, `signal-cli` absent
 
 ## Quick Win (Without Splitting Images)
 
