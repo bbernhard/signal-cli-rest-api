@@ -1,9 +1,13 @@
 services:
   # JRE variant (default) -- use with MODE=normal or MODE=json-rpc
   signal-cli-rest-api:
-    image: bbernhard/signal-cli-rest-api:latest
+     # image: bbernhard/signal-cli-rest-api:latest
+    build: 
+      context: "."
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET}
     environment:
-      - MODE=normal #supported modes: normal, json-rpc
+      - MODE=${RUN_MODE} #supported modes: normal, json-rpc
       #- AUTO_RECEIVE_SCHEDULE=0 22 * * * #enable this parameter on demand (see description below)
     ports:
       - "8080:8080" #map docker port 8080 to host port 8080.
