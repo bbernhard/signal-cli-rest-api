@@ -82,11 +82,19 @@ The JRE variant uses `openjdk-25-jre-headless` (not the full `openjdk-25-jre`) t
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `DEFAULT_SIGNAL_TEXT_MODE` | `normal` | `normal` or `styled` |
 
+## CI Build Optimization
+
+All three targets (`all`, `jre`, `native`) share the `buildcontainer` and `base` stages in the Dockerfile. Without caching, Podman rebuilds these from scratch for each `--target` invocation — tripling the build time.
+
+The `--layers` flag on every `podman build` call tells Podman to cache intermediate layers in the local store. Since `all` is built first, its `base` and `buildcontainer` layers are already cached when `jre` and `native` are built next, so only the target-specific layers are rebuilt.
+
+Build order matters: `all` → `jre` → `native`. All three share `base` + `buildcontainer`; `jre` additionally shares its layers with `all` (since `all` extends `jre`).
+
 ## Gotchas
 
 - The Dockerfile pins `SIGNAL_CLI_VERSION` and `LIBSIGNAL_CLIENT_VERSION` as build args. After bumping these, verify the `libsignal-client-*.jar` filename still matches.
 - Multi-arch builds: the `jre` target covers `linux/amd64`, `linux/arm64`, `linux/arm/v7`; the `native` target covers `linux/amd64`, `linux/arm64` only (no armv7 native binary).
 - `AUTO_RECEIVE_SCHEDULE` and `SIGNAL_CLI_CMD_TIMEOUT` cause a fatal error in json-rpc mode.
 - `RECEIVE_WEBHOOK_URL` is only valid in json-rpc mode; fatal in other modes.
-- CI uses Podman for multi-arch builds, not Docker Buildx. Each CI/release workflow builds all three targets (`all`, `jre`, `native`).
+- CI uses Podman for multi-arch builds, not Docker Buildx. Each CI/release workflow builds all three targets (`all`, `jre`, `native`) with `--layers` for cache reuse between targets.
 - Release versions are published via `publish.sh` triggering GitHub Actions (dev vs stable tags, with `-jre` and `-native` suffixes for those variants; `all` variant gets the plain version/latest tags).
