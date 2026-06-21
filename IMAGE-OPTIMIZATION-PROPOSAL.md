@@ -19,12 +19,15 @@ No user benefits from both the JRE and the native binary at the same time — ea
 
 Additionally, the JRE pulls in ~280 MB of GUI libraries (LLVM, Mesa, GTK, icon themes) that signal-cli never uses. It is a headless CLI tool.
 
-## Proposed Solution: Two Image Variants
+## Proposed Solution: Three Image Variants
 
 | Variant | Tag pattern | Contains | Modes | Est. size |
 |---|---|---|---|---|
-| **JRE** | `latest`, `X.Y.Z` | Headless JRE + signal-cli Java dist | `normal`, `json-rpc` | **~660 MB** |
+| **all** | `latest`,  `X.Y.Z` | Headles JRE and native |  `normal`, `json-rpc`,  `native`, `json-rpc-native` | **1.3 GB** |
+| **JRE** | `latest-jre`, `X.Y.Z-jre` | Headless JRE + signal-cli Java dist | `normal`, `json-rpc` | **~660 MB** |
 | **Native** | `latest-native`, `X.Y.Z-native` | signal-cli-native only (no JRE) | `native`, `json-rpc-native` | **~615 MB** |
+
+We keep the **all** variant in to avoid breaking changes.
 
 For `arm/v7`, only the JRE variant is published (GraalVM doesn't produce a native binary for 32-bit ARM).
 

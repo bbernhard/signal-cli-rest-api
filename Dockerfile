@@ -196,6 +196,19 @@ COPY --from=buildcontainer /opt/signal-cli-${SIGNAL_CLI_VERSION} /opt/signal-cli
 RUN ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli /usr/bin/signal-cli \
 	&& mkdir -p /home/.local/share/signal-cli
 
+# ---- All-in-one variant: MODE=normal, json-rpc, native, json-rpc-native ----
+# Includes headless JRE + signal-cli Java dist + signal-cli-native.
+# Supports: linux/amd64, linux/arm64, linux/arm/v7
+# (arm/v7 gets JRE modes only — signal-cli-native is a dummy on arm/v7)
+
+FROM jre AS all
+
+ARG SIGNAL_CLI_VERSION
+
+COPY --from=buildcontainer /tmp/signal-cli-native /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native
+
+RUN ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native
+
 # ---- Native variant: MODE=native, json-rpc-native ----
 # Includes signal-cli-native only. No JRE, no Java dist.
 # Supports: linux/amd64, linux/arm64 (no arm/v7 — GraalVM doesn't produce 32-bit binaries)
