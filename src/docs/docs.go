@@ -806,6 +806,9 @@ const docTemplate = `{
                 "invite_link": {
                     "type": "string"
                 },
+                "member": {
+                    "type": "boolean"
+                },
                 "members": {
                     "items": {
                         "type": "string"
@@ -838,6 +841,7 @@ const docTemplate = `{
                 "id",
                 "internal_id",
                 "invite_link",
+                "member",
                 "members",
                 "name",
                 "pending_invites",

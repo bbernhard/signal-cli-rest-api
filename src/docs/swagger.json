@@ -801,6 +801,9 @@
                 "invite_link": {
                     "type": "string"
                 },
+                "member": {
+                    "type": "boolean"
+                },
                 "members": {
                     "items": {
                         "type": "string"
@@ -833,6 +836,7 @@
                 "id",
                 "internal_id",
                 "invite_link",
+                "member",
                 "members",
                 "name",
                 "pending_invites",
