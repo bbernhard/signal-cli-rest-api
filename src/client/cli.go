@@ -55,10 +55,25 @@ func classifySignalCliOutput(stdout string, stderr string) (string, string, stri
 	output, infoMessages, warnMessages := stripInfoAndWarnMessages(stdout)
 	stderr = strings.TrimSpace(stderr)
 	if stderr != "" {
-		if warnMessages != "" {
-			warnMessages += "\n"
+		stderrOutput, stderrInfoMessages, stderrWarnMessages := stripInfoAndWarnMessages(stderr)
+		if stderrInfoMessages != "" {
+			if infoMessages != "" {
+				infoMessages += "\n"
+			}
+			infoMessages += stderrInfoMessages
 		}
-		warnMessages += stderr
+		if stderrWarnMessages != "" {
+			if warnMessages != "" {
+				warnMessages += "\n"
+			}
+			warnMessages += stderrWarnMessages
+		}
+		if stderrOutput != "" {
+			if warnMessages != "" {
+				warnMessages += "\n"
+			}
+			warnMessages += stderrOutput
+		}
 	}
 	return output, infoMessages, warnMessages
 }
