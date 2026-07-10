@@ -219,6 +219,17 @@ const docTemplate = `{
             ],
             "type": "object"
         },
+        "api.MemberLabel": {
+            "properties": {
+                "emoji": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "api.PinMessageInGroupRequest": {
             "properties": {
                 "duration": {
@@ -655,10 +666,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "member_label": {
-                    "type": "string"
-                },
-                "member_label_emoji": {
-                    "type": "string"
+                    "$ref": "#/definitions/api.MemberLabel"
                 },
                 "name": {
                     "type": "string"

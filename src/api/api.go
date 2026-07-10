@@ -47,15 +47,19 @@ type CreateGroupRequest struct {
 	ExpirationTime *int                `json:"expiration_time,omitempty"`
 }
 
+type MemberLabel struct {
+	Name  *string `json:"name,omitempty"`
+	Emoji *string `json:"emoji,omitempty"`
+}
+
 type UpdateGroupRequest struct {
-	Base64Avatar     *string              `json:"base64_avatar,omitempty"`
-	Description      *string              `json:"description,omitempty"`
-	Name             *string              `json:"name,omitempty"`
-	MemberLabel      *string              `json:"member_label,omitempty"`
-	MemberLabelEmoji *string              `json:"member_label_emoji,omitempty"`
-	ExpirationTime   *int                 `json:"expiration_time,omitempty"`
-	GroupLinkState   *string              `json:"group_link,omitempty" enums:"disabled,enabled,enabled-with-approval"`
-	Permissions      *ds.GroupPermissions `json:"permissions,omitempty"`
+	Base64Avatar   *string              `json:"base64_avatar,omitempty"`
+	Description    *string              `json:"description,omitempty"`
+	Name           *string              `json:"name,omitempty"`
+	MemberLabel    *MemberLabel         `json:"member_label,omitempty"`
+	ExpirationTime *int                 `json:"expiration_time,omitempty"`
+	GroupLinkState *string              `json:"group_link,omitempty" enums:"disabled,enabled,enabled-with-approval"`
+	Permissions    *ds.GroupPermissions `json:"permissions,omitempty"`
 }
 
 type PinMessageInGroupRequest struct {
@@ -1861,8 +1865,15 @@ func (a *Api) UpdateGroup(c *gin.Context) {
 		}
 	}
 
+	var memberLabel *string
+	var memberLabelEmoji *string
+	if req.MemberLabel != nil {
+		memberLabel = req.MemberLabel.Name
+		memberLabelEmoji = req.MemberLabel.Emoji
+	}
+
 	err = a.signalClient.UpdateGroup(number, internalGroupId, req.Base64Avatar, req.Description, req.Name, req.ExpirationTime, groupLinkState,
-		editGroupPermission, addMembersPermission, sendMessagesPermission, req.MemberLabel, req.MemberLabelEmoji)
+		editGroupPermission, addMembersPermission, sendMessagesPermission, memberLabel, memberLabelEmoji)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
