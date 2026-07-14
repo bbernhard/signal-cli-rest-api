@@ -16,7 +16,7 @@ RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get update \
 	&& apt-get -y install --no-install-recommends \
 		wget git locales zip unzip \
-		file build-essential libz-dev zlib1g-dev binutils openjdk-25-jdk \
+		file build-essential libz-dev zlib1g-dev binutils \
 	&& rm -rf /var/lib/apt/lists/*
 
 #COPY ext/libraries/libsignal-client/v${LIBSIGNAL_CLIENT_VERSION} /tmp/libsignal-client-libraries
@@ -39,15 +39,6 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
 ENV JAVA_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
 
 ENV LANG en_US.UTF-8
-
-# building the jsonSchemas for armv7l unfortunately doesn't work, so as a temporary fix, do not build the json schema
-# for armv7. should be removed as soon as https://github.com/AsamK/signal-cli/pull/2040 is merged
-RUN if [ "$(uname -m)" != "armv7l" ]; then \
-	cd /tmp \
-	&& git clone https://github.com/AsamK/signal-cli.git --branch v${SIGNAL_CLI_VERSION} --single-branch signal-cli-source \
-	&& cd signal-cli-source \
-	&& ./gradlew jsonSchemas; \
-fi;
 
 RUN go install github.com/swaggo/swag/cmd/swag@v${SWAG_VERSION}
 
@@ -112,13 +103,11 @@ RUN cd /tmp/signal-cli-rest-api-src && ${GOPATH}/bin/swag init --requiredByDefau
 
 
 # manually add the json schemas for the receive V1 endpoint to the docs
-# (building the jsonSchemas for armv7l unfortunately doesn't work, so as a temporary fix, do not build the json schema
-# for armv7. should be removed as soon as https://github.com/AsamK/signal-cli/pull/2040 is merged)
-RUN if [ "$(uname -m)" != "armv7l" ]; then \
-	cd /tmp/signal-cli-rest-api-src/docs \
-	&& cp -r /tmp/signal-cli-source/build/generated/META-INF/schemas signal-cli-schemas \
-	&& go run add_v1_receive_schemas.go signal-cli-schemas; \
-	fi;
+RUN cd /tmp/signal-cli-rest-api-src/docs \
+	&& wget https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz \
+	&& mkdir signal-cli-schemas \
+	&& tar xf signal-cli-${SIGNAL_CLI_VERSION}-json-schemas.tar.gz -C signal-cli-schemas \
+	&& go run add_v1_receive_schemas.go signal-cli-schemas
 
 # build signal-cli-rest-api
 RUN cd /tmp/signal-cli-rest-api-src && go build -o signal-cli-rest-api main.go

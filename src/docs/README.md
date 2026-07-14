@@ -45,7 +45,7 @@ Install [go](https://go.dev/).
     cd docs
     ```
 1. Add the signal-cli receive V1 schemas
-    * Download the `signal-cli-x.y.z-json-schemas.tar.gz` schema files from https://github.com/Gara-Dorta/signal-cli/releases
+    * Download the `signal-cli-x.y.z-json-schemas.tar.gz` schema files from https://github.com/AsamK/signal-cli/releases
     * Extract the files
     * Run the script to add the schemas
         ```bash
