@@ -4,11 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	utils "github.com/bbernhard/signal-cli-rest-api/utils"
-	log "github.com/sirupsen/logrus"
+	"fmt"
 	"os/exec"
 	"strings"
 	"time"
+
+	utils "github.com/bbernhard/signal-cli-rest-api/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type CliClient struct {
@@ -104,7 +106,12 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 		cmdTimeout = 120
 	}
 
-	cmd := exec.Command(signalCliBinary, args...)
+	resolvedBinary, err := exec.LookPath(signalCliBinary)
+	if err != nil {
+		return "", fmt.Errorf("signal-cli binary '%s' not found in PATH: %w", signalCliBinary, err)
+	}
+
+	cmd := exec.Command(resolvedBinary, args...) // #nosec G204 -- resolvedBinary is the LookPath-resolved path of a hardcoded binary name ("signal-cli" or "signal-cli-native"), not user-controlled
 	if stdin != "" {
 		cmd.Stdin = strings.NewReader(stdin)
 	}
@@ -161,7 +168,9 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 		if err != nil {
 			return "", err
 		}
-		cmd.Start()
+		if err := cmd.Start(); err != nil {
+			return "", err
+		}
 		buf := bufio.NewReader(stdout) // Notice that this is not in a loop
 		line, _, _ := buf.ReadLine()
 		return string(line), nil
