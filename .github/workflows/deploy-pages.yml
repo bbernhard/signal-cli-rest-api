@@ -23,7 +23,9 @@ jobs:
         uses: actions/configure-pages@v6
 
       - name: Build static documentation bundle
-        run: src/docs/build-static-bundle.sh site "${{ github.event.release.tag_name }}"
+        run: |
+          VERSION=$(git describe --tags --always)
+          src/docs/build-static-bundle.sh site "$VERSION"
 
       - name: Debug site
         run: |
