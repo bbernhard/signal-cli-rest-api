@@ -1,9 +1,7 @@
 name: Deploy API Docs to GitHub Pages
 
 on:
-  release:
-    types:
-      - published
+  push:
 
 permissions:
   contents: read
