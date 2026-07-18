@@ -27,6 +27,14 @@ jobs:
       - name: Build static documentation bundle
         run: src/docs/build-static-bundle.sh site "${{ github.event.release.tag_name }}"
 
+      - name: Debug site
+        run: |
+           echo "PWD: $(pwd)"
+           ls -la
+           ls -la site
+           du -sh site
+           find site -type f -exec ls -lh {} \; 
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
