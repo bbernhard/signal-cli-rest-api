@@ -186,6 +186,8 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 				ChallengeTokens: challengeTokens,
 				Err:             errors.New(resp.Err.Message),
 			}
+		} else if resp.Err.Code == -4 {
+			return "", errors.New("Unable to complete request due to untrusted recipient keys")
 		}
 		return "", errors.New(resp.Err.Message)
 	}
