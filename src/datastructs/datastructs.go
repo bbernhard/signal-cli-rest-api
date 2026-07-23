@@ -58,3 +58,19 @@ type GroupPermissions struct {
 	EditGroup    string `json:"edit_group" enums:"only-admins,every-member"`
 	SendMessages string `json:"send_messages" enums:"only-admins,every-member"`
 }
+
+type SendMessageError struct {
+	Username string `json:"username,omitempty"`
+	Number   string `json:"number,omitempty"`
+	Uuid     string `json:"uuid,omitempty"`
+	Reason   string `json:"reason,omitempty"`
+}
+
+type SendMessageErrors struct {
+	Recipients []SendMessageError `json:"recipients,omitempty"`
+}
+
+type SendMessageResponse struct {
+	Timestamp string             `json:"timestamp"`
+	Errors    *SendMessageErrors `json:"errors,omitempty"`
+}

@@ -173,10 +173,6 @@ type TrustIdentityRequest struct {
 	TrustAllKnownKeys    *bool   `json:"trust_all_known_keys,omitempty" example:"false"`
 }
 
-type SendMessageResponse struct {
-	Timestamp string `json:"timestamp"`
-}
-
 type RemoteDeleteResponse struct {
 	Timestamp string `json:"timestamp"`
 }
@@ -476,7 +472,6 @@ func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 // @Router /v1/send [post]
 // @Deprecated
 func (a *Api) Send(c *gin.Context) {
-
 	var req SendMessageV1
 	err := c.BindJSON(&req)
 	if err != nil {
@@ -489,12 +484,12 @@ func (a *Api) Send(c *gin.Context) {
 		base64Attachments = append(base64Attachments, req.Base64Attachment)
 	}
 
-	timestamp, err := a.signalClient.SendV1(req.Number, req.Message, req.Recipients, base64Attachments, req.IsGroup)
+	resp, err := a.signalClient.SendV1(req.Number, req.Message, req.Recipients, base64Attachments, req.IsGroup)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
-	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt(timestamp.Timestamp, 10)})
+	c.JSON(201, resp)
 }
 
 // @Summary Send a signal message.
@@ -502,7 +497,7 @@ func (a *Api) Send(c *gin.Context) {
 // @Description Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: \*italic text\*, \*\*bold text\*\*, ~strikethrough text~, ||spoiler||, \`monospace\`. If you want to escape a formatting character, prefix it with two backslashes.
 // @Accept  json
 // @Produce  json
-// @Success 201 {object} SendMessageResponse
+// @Success 201 {object} ds.SendMessageResponse
 // @Failure 400 {object} SendMessageError
 // @Param data body SendMessageV2 true "Input Data"
 // @Router /v2/send [post]
@@ -574,7 +569,7 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
-	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt((*data)[0].Timestamp, 10)})
+	c.JSON(201, data)
 }
 
 func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan struct{}) {
