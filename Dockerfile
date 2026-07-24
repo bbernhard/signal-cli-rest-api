@@ -119,13 +119,9 @@ RUN cd /tmp/signal-cli-rest-api-src/scripts && go build -o jsonrpc2-helper
 # build plugin_loader
 RUN cd /tmp/signal-cli-rest-api-src && go build -buildmode=plugin -o signal-cli-rest-api_plugin_loader.so plugin_loader.go
 
-# Start a fresh container for release container
+# ---- Shared base for both image variants ----
 
-# eclipse-temurin doesn't provide a OpenJDK 21 image for armv7 (see https://github.com/adoptium/containers/issues/502). Until this
-# is fixed we use the standard ubuntu image
-#FROM eclipse-temurin:21-jre-jammy
-
-FROM ubuntu:noble
+FROM ubuntu:noble AS base
 
 ENV GIN_MODE=release
 
@@ -139,30 +135,19 @@ ENV SIGNAL_CLI_REST_API_PLUGIN_SHARED_OBJ_DIR=/usr/bin/
 
 RUN dpkg-reconfigure debconf --frontend=noninteractive \
 	&& apt-get update \
-	&& apt-get install -y --no-install-recommends util-linux supervisor openjdk-25-jre curl locales \
-	&& rm -rf /var/lib/apt/lists/* 
+	&& apt-get install -y --no-install-recommends util-linux curl locales \
+	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api /usr/bin/signal-cli-rest-api
-COPY --from=buildcontainer /opt/signal-cli-${SIGNAL_CLI_VERSION} /opt/signal-cli-${SIGNAL_CLI_VERSION}
-COPY --from=buildcontainer /tmp/signal-cli-native /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/scripts/jsonrpc2-helper /usr/bin/jsonrpc2-helper
 COPY --from=buildcontainer /tmp/signal-cli-rest-api-src/signal-cli-rest-api_plugin_loader.so /usr/bin/signal-cli-rest-api_plugin_loader.so
 COPY entrypoint.sh /entrypoint.sh
 
-
 RUN userdel ubuntu -r \
 	&& groupadd -g 1000 signal-api \
 	&& useradd --no-log-init -M -d /home -s /bin/bash -u 1000 -g 1000 signal-api \
-	&& ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli /usr/bin/signal-cli \
-	&& ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native \
 	&& mkdir -p /signal-cli-config/ \
 	&& mkdir -p /home/.local/share/signal-cli
-
-# remove the temporary created signal-cli-native on armv7, as GRAALVM doesn't support 32bit
-RUN arch="$(uname -m)"; \
-        case "$arch" in \
-            armv7l) echo "GRAALVM doesn't support 32bit" && rm /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native  ;; \
-        esac;
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
@@ -181,3 +166,53 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 HEALTHCHECK --interval=20s --timeout=10s --retries=3 \
     CMD curl -f http://localhost:${PORT}/v1/health || exit 1
+
+# ---- JRE variant: MODE=normal, json-rpc ----
+# Includes headless JRE + signal-cli Java dist. No native binary.
+# Supports: linux/amd64, linux/arm64, linux/arm/v7
+
+FROM base AS jre
+
+ARG SIGNAL_CLI_VERSION
+
+RUN dpkg-reconfigure debconf --frontend=noninteractive \
+	&& apt-get update \
+	&& apt-get install -y --no-install-recommends openjdk-25-jre-headless supervisor \
+	&& rm -rf /var/lib/apt/lists/*
+
+COPY --from=buildcontainer /opt/signal-cli-${SIGNAL_CLI_VERSION} /opt/signal-cli-${SIGNAL_CLI_VERSION}
+
+RUN ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli /usr/bin/signal-cli \
+	&& mkdir -p /home/.local/share/signal-cli
+
+# ---- All-in-one variant: MODE=normal, json-rpc, native, json-rpc-native ----
+# Includes headless JRE + signal-cli Java dist + signal-cli-native.
+# Supports: linux/amd64, linux/arm64, linux/arm/v7
+# (arm/v7 gets JRE modes only — signal-cli-native is a dummy on arm/v7)
+
+FROM jre AS all
+
+ARG SIGNAL_CLI_VERSION
+
+COPY --from=buildcontainer /tmp/signal-cli-native /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native
+
+RUN ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native
+
+# ---- Native variant: MODE=native, json-rpc-native ----
+# Includes signal-cli-native only. No JRE, no Java dist.
+# Supports: linux/amd64, linux/arm64 (no arm/v7 — GraalVM doesn't produce 32-bit binaries)
+
+FROM base AS native
+
+ARG SIGNAL_CLI_VERSION
+
+RUN dpkg-reconfigure debconf --frontend=noninteractive \
+	&& apt-get update \
+	&& apt-get install -y --no-install-recommends supervisor \
+	&& rm -rf /var/lib/apt/lists/*
+
+COPY --from=buildcontainer /tmp/signal-cli-native /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native
+
+RUN mkdir -p /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin \
+	&& ln -s /opt/signal-cli-${SIGNAL_CLI_VERSION}/bin/signal-cli-native /usr/bin/signal-cli-native \
+	&& mkdir -p /home/.local/share/signal-cli
