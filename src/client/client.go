@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -496,6 +497,18 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*ds.S
 	if signalCliSendRequest.TextMode != nil && *signalCliSendRequest.TextMode == "styled" {
 		textstyleParser := utils.NewTextstyleParser(signalCliSendRequest.Message)
 		signalCliSendRequest.Message, signalCliTextFormatStrings = textstyleParser.Parse()
+	}
+	if err := validateBodyRanges(signalCliSendRequest.Message,
+		signalCliSendRequest.Mentions,
+		signalCliTextFormatStrings); err != nil {
+		return nil, err
+	}
+	if signalCliSendRequest.QuoteMessage != nil {
+		if err := validateMentionRanges(*signalCliSendRequest.QuoteMessage, signalCliSendRequest.QuoteMentions); err != nil {
+			return nil, fmt.Errorf("invalid quote mention: %w", err)
+		}
+	} else if len(signalCliSendRequest.QuoteMentions) > 0 {
+		return nil, errors.New("quote mentions require a quote message")
 	}
 
 	var groupId string = ""
@@ -1068,20 +1081,69 @@ func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments b
 			return "", err
 		}
 
-		out = strings.Trim(out, "\n")
-		lines := strings.Split(out, "\n")
-
-		jsonStr := "["
-		for i, line := range lines {
-			jsonStr += line
-			if i != (len(lines) - 1) {
-				jsonStr += ","
-			}
-		}
-		jsonStr += "]"
-
-		return jsonStr, nil
+		return marshalJsonStream(out)
 	}
+}
+
+func marshalJsonStream(output string) (string, error) {
+	decoder := json.NewDecoder(strings.NewReader(output))
+	messages := make([]json.RawMessage, 0)
+	for {
+		var message json.RawMessage
+		if err := decoder.Decode(&message); err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return "", fmt.Errorf("invalid JSON from signal-cli receive: %w", err)
+		}
+		messages = append(messages, message)
+	}
+
+	result, err := json.Marshal(messages)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal signal-cli receive response: %w", err)
+	}
+	return string(result), nil
+}
+
+func validateBodyRanges(message string, mentions []ds.MessageMention, textStyles []string) error {
+	if err := validateMentionRanges(message, mentions); err != nil {
+		return fmt.Errorf("invalid mention: %w", err)
+	}
+
+	bodyLength := int64(utils.UTF16StringLength(message))
+	for i, textStyle := range textStyles {
+		parts := strings.SplitN(textStyle, ":", 3)
+		if len(parts) != 3 {
+			return fmt.Errorf("invalid text style at index %d", i)
+		}
+		start, err := strconv.ParseInt(parts[0], 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid text style start at index %d: %w", i, err)
+		}
+		length, err := strconv.ParseInt(parts[1], 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid text style length at index %d: %w", i, err)
+		}
+		if !bodyRangeWithinBounds(start, length, bodyLength) {
+			return fmt.Errorf("text style at index %d is outside the final UTF-16 message length %d", i, bodyLength)
+		}
+	}
+	return nil
+}
+
+func validateMentionRanges(message string, mentions []ds.MessageMention) error {
+	bodyLength := int64(utils.UTF16StringLength(message))
+	for i, mention := range mentions {
+		if !bodyRangeWithinBounds(mention.Start, mention.Length, bodyLength) {
+			return fmt.Errorf("mention at index %d is outside the final UTF-16 message length %d", i, bodyLength)
+		}
+	}
+	return nil
+}
+
+func bodyRangeWithinBounds(start int64, length int64, bodyLength int64) bool {
+	return start >= 0 && length >= 0 && start <= bodyLength && length <= bodyLength-start
 }
 
 func (s *SignalClient) GetReceiveChannel() (chan JsonRpc2ReceivedMessage, string, error) {
