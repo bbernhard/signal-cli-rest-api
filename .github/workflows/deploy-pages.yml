@@ -1,7 +1,9 @@
 name: Deploy API Docs to GitHub Pages
 
 on:
-  push:
+  release:
+    types:
+      - published
 
 permissions:
   contents: read
@@ -24,8 +26,7 @@ jobs:
 
       - name: Build static documentation bundle
         run: |
-          VERSION=$(git describe --tags --always)
-          src/docs/build-static-bundle.sh site "$VERSION"
+          src/docs/build-static-bundle.sh site "${{ github.event.release.tag_name }}"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
