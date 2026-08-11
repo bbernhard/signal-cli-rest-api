@@ -383,10 +383,8 @@ func (r *JsonRpc2Client) GetReceiveChannel(account string) (chan JsonRpc2Receive
 		return c, "", err
 	}
 
-	if account != "" {
-		if err := r.acquireReceiveSubscription(account); err != nil {
-			return c, "", fmt.Errorf("subscribeReceive failed for account %s: %w", account, err)
-		}
+	if err := r.acquireReceiveSubscription(account); err != nil {
+		return c, "", fmt.Errorf("subscribeReceive failed for account %s: %w", account, err)
 	}
 
 	r.receivedMessagesMutex.Lock()
