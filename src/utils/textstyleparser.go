@@ -27,7 +27,7 @@ const (
 
 const EscapeCharacter rune = '\\'
 
-func getUtf16StringLength(s string) int {
+func UTF16StringLength(s string) int {
 	runes := []rune(s) //turn string to slice
 
 	length := 0
@@ -115,13 +115,13 @@ func (l *TextstyleParser) peek() rune {
 
 func (l *TextstyleParser) handleToken(tokenType int, signalCliStylingType string) {
 	if l.tokens.Empty() {
-		l.tokens.Push(TokenState{BeginPos: getUtf16StringLength(l.fullString), Token: tokenType})
+		l.tokens.Push(TokenState{BeginPos: UTF16StringLength(l.fullString), Token: tokenType})
 	} else {
 		if l.tokens.Peek().Token == tokenType {
 			tokenBeginState := l.tokens.Pop()
-			l.signalCliFormatStrings = append(l.signalCliFormatStrings, strconv.Itoa(tokenBeginState.BeginPos)+":"+strconv.Itoa(getUtf16StringLength(l.fullString)-tokenBeginState.BeginPos)+":"+signalCliStylingType)
+			l.signalCliFormatStrings = append(l.signalCliFormatStrings, strconv.Itoa(tokenBeginState.BeginPos)+":"+strconv.Itoa(UTF16StringLength(l.fullString)-tokenBeginState.BeginPos)+":"+signalCliStylingType)
 		} else {
-			l.tokens.Push(TokenState{BeginPos: getUtf16StringLength(l.fullString), Token: tokenType})
+			l.tokens.Push(TokenState{BeginPos: UTF16StringLength(l.fullString), Token: tokenType})
 		}
 	}
 }

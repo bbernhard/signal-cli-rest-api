@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	utils "github.com/bbernhard/signal-cli-rest-api/utils"
-	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"strings"
 	"time"
+
+	utils "github.com/bbernhard/signal-cli-rest-api/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type CliClient struct {
@@ -44,6 +45,34 @@ func stripInfoAndWarnMessages(input string) (string, string, string) {
 				output += "\n"
 			}
 			output += line
+		}
+	}
+	return output, infoMessages, warnMessages
+}
+
+func classifySignalCliOutput(stdout string, stderr string) (string, string, string) {
+	stdout = strings.TrimRight(stdout, "\r\n")
+	output, infoMessages, warnMessages := stripInfoAndWarnMessages(stdout)
+	stderr = strings.TrimSpace(stderr)
+	if stderr != "" {
+		stderrOutput, stderrInfoMessages, stderrWarnMessages := stripInfoAndWarnMessages(stderr)
+		if stderrInfoMessages != "" {
+			if infoMessages != "" {
+				infoMessages += "\n"
+			}
+			infoMessages += stderrInfoMessages
+		}
+		if stderrWarnMessages != "" {
+			if warnMessages != "" {
+				warnMessages += "\n"
+			}
+			warnMessages += stderrWarnMessages
+		}
+		if stderrOutput != "" {
+			if warnMessages != "" {
+				warnMessages += "\n"
+			}
+			warnMessages += stderrOutput
 		}
 	}
 	return output, infoMessages, warnMessages
@@ -132,17 +161,15 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 			return "", errors.New("process killed as timeout reached")
 		case err := <-done:
 			if err != nil {
-				combinedOutput := stdoutBuffer.String() + stderrBuffer.String()
 				log.Debug("signal-cli output (stdout): ", stdoutBuffer.String())
 				log.Debug("signal-cli output (stderr): ", stderrBuffer.String())
-				return "", errors.New(combinedOutput)
+				return "", errors.New(strings.TrimSpace(stdoutBuffer.String() + stderrBuffer.String()))
 			}
 		}
 
-		combinedOutput := stdoutBuffer.String() + stderrBuffer.String()
 		log.Debug("signal-cli output (stdout): ", stdoutBuffer.String())
 		log.Debug("signal-cli output (stderr): ", stderrBuffer.String())
-		strippedOutput, infoMessages, warnMessages := stripInfoAndWarnMessages(combinedOutput)
+		strippedOutput, infoMessages, warnMessages := classifySignalCliOutput(stdoutBuffer.String(), stderrBuffer.String())
 		for _, line := range strings.Split(infoMessages, "\n") {
 			if line != "" {
 				log.Info(line)
