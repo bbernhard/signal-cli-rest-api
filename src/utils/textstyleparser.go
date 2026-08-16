@@ -23,6 +23,7 @@ const (
 	MonoSpaceBegin         = 6
 	StrikethroughBegin     = 8
 	SpoilerBegin           = 9
+	BoldItalicBegin        = 10
 )
 
 const EscapeCharacter rune = '\\'
@@ -119,7 +120,14 @@ func (l *TextstyleParser) handleToken(tokenType int, signalCliStylingType string
 	} else {
 		if l.tokens.Peek().Token == tokenType {
 			tokenBeginState := l.tokens.Pop()
-			l.signalCliFormatStrings = append(l.signalCliFormatStrings, strconv.Itoa(tokenBeginState.BeginPos)+":"+strconv.Itoa(getUtf16StringLength(l.fullString)-tokenBeginState.BeginPos)+":"+signalCliStylingType)
+			length := getUtf16StringLength(l.fullString) - tokenBeginState.BeginPos
+
+			if tokenType == BoldItalicBegin {
+				l.signalCliFormatStrings = append(l.signalCliFormatStrings, strconv.Itoa(tokenBeginState.BeginPos)+":"+strconv.Itoa(length)+":"+Bold)
+				l.signalCliFormatStrings = append(l.signalCliFormatStrings, strconv.Itoa(tokenBeginState.BeginPos)+":"+strconv.Itoa(length)+":"+Italic)
+			} else {
+				l.signalCliFormatStrings = append(l.signalCliFormatStrings, strconv.Itoa(tokenBeginState.BeginPos)+":"+strconv.Itoa(length)+":"+signalCliStylingType)
+			}
 		} else {
 			l.tokens.Push(TokenState{BeginPos: getUtf16StringLength(l.fullString), Token: tokenType})
 		}
@@ -137,14 +145,27 @@ func (l *TextstyleParser) Parse() (string, []string) {
 		nextRune := l.peek()
 
 		if c == '*' {
-			if nextRune == '*' { //Bold
+			if nextRune == '*' {
 				l.next()
-				if prevChar == EscapeCharacter {
-					prevChar = c
-					l.fullString += "**"
-					continue
+
+				if l.peek() == '*' { // Check for *** before treating it as **
+					l.next()
+
+					if prevChar == EscapeCharacter {
+						prevChar = c
+						l.fullString += "***"
+						continue
+					}
+
+					l.handleToken(BoldItalicBegin, "BOLD_ITALIC")
+				} else {
+					if prevChar == EscapeCharacter {
+						prevChar = c
+						l.fullString += "**"
+						continue
+					}
+					l.handleToken(BoldBegin, Bold)
 				}
-				l.handleToken(BoldBegin, Bold)
 			} else { //Italic
 				if prevChar == EscapeCharacter {
 					prevChar = c
