@@ -2,7 +2,8 @@ package utils
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
@@ -26,7 +27,7 @@ func NewJsonRpc2ClientConfig() *JsonRpc2ClientConfig {
 }
 
 func (c *JsonRpc2ClientConfig) Load(path string) error {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return err
 	}
@@ -69,5 +70,5 @@ func (c *JsonRpc2ClientConfig) Persist(path string) error {
 		return err
 	}
 
-	return ioutil.WriteFile(path, out, 0644)
+	return os.WriteFile(filepath.Clean(path), out, 0600)
 }

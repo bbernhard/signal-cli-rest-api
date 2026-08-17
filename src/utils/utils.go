@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"os"
-	"strconv"
 	"errors"
 	log "github.com/sirupsen/logrus"
+	"os"
+	"strconv"
 )
 
 func GetEnv(key string, defaultVal string) string {
