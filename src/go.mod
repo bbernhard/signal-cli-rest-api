@@ -9,8 +9,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/golang/protobuf v1.5.2
-	github.com/gorilla/websocket v1.5.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/h2non/filetype v1.1.3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.1
