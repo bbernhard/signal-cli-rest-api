@@ -33,11 +33,12 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.ref }}
-      - name: Login to Docker Hub
+      - name: Login to container registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ${{ vars.IMAGE_REGISTRY || 'docker.io' }}
+          username: ${{ secrets.REGISTRY_USERNAME || secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD || secrets.DOCKERHUB_TOKEN }}
       - name: Free up disk space
         run: |
           # Remove Java (JDKs)
@@ -80,10 +81,20 @@ jobs:
       - name: Release
         env:
           VERSION: ${{ github.event.inputs.version }}
+          IMAGE_REGISTRY: ${{ vars.IMAGE_REGISTRY || 'docker.io' }}
+          IMAGE_REPO: ${{ vars.IMAGE_REPO || 'bbernhard/signal-cli-rest-api' }}
         run: |
           echo "Start dev build"
           docker run --privileged --rm tonistiigi/binfmt --install all
-          podman manifest create build
-          podman build --format docker --build-arg BUILD_VERSION_ARG=${VERSION} --manifest localhost/build --platform linux/amd64,linux/arm64,linux/arm/v7 .
-          podman manifest push localhost/build docker://docker.io/bbernhard/signal-cli-rest-api:${VERSION}-dev
-          podman manifest push localhost/build docker://docker.io/bbernhard/signal-cli-rest-api:latest-dev
+          podman manifest create build-all
+          podman build --format docker --layers --target all --build-arg BUILD_VERSION_ARG=${VERSION} --platform linux/amd64,linux/arm64,linux/arm/v7 --manifest localhost/build-all .
+          podman manifest push localhost/build-all docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:${VERSION}-dev
+          podman manifest push localhost/build-all docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:latest-dev
+          podman manifest create build-jre
+          podman build --format docker --layers --target jre --build-arg BUILD_VERSION_ARG=${VERSION} --platform linux/amd64,linux/arm64,linux/arm/v7 --manifest localhost/build-jre .
+          podman manifest push localhost/build-jre docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:${VERSION}-dev-jre
+          podman manifest push localhost/build-jre docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:latest-dev-jre
+          podman manifest create build-native
+          podman build --format docker --layers --target native --build-arg BUILD_VERSION_ARG=${VERSION} --platform linux/amd64,linux/arm64 --manifest localhost/build-native .
+          podman manifest push localhost/build-native docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:${VERSION}-dev-native
+          podman manifest push localhost/build-native docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:latest-dev-native
