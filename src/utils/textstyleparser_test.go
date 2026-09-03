@@ -155,5 +155,11 @@ func TestEscapeNew(t *testing.T) {
 	message, signalCliFormatStrings := textstyleParser.Parse()
 	expectMessageEqual(t, message, "Test ** * ~ Escape")
 	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
+}
 
+func TestBoldItalic(t *testing.T) {
+	textstyleParser := NewTextstyleParser("***Bold Italic Text***")
+	message, signalCliFormatStrings := textstyleParser.Parse()
+	expectMessageEqual(t, message, "Bold Italic Text")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"0:16:BOLD", "0:16:ITALIC"})
 }
