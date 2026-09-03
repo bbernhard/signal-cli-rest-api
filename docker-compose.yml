@@ -1,11 +1,16 @@
 services:
   signal-cli-rest-api:
-    image: bbernhard/signal-cli-rest-api:latest
+    user: "1000:1000" # change to UID:GID you preferre
+    image: bbernhard/signal-cli-rest-api:rootless-latest
     environment:
       - MODE=normal #supported modes: json-rpc, native, normal
       #- AUTO_RECEIVE_SCHEDULE=0 22 * * * #enable this parameter on demand (see description below)
     ports:
       - "8080:8080" #map docker port 8080 to host port 8080.
     volumes:
-      - "./signal-cli-config:/home/.local/share/signal-cli" #map "signal-cli-config" folder on host system into docker container. the folder contains the password and cryptographic keys when a new number is registered
+      - "./signal-cli-config:/home/.local/share/signal-cli" #map "signal-cli-config" folder on host system into docker container. the folder contains the password and cryptographic keys when a new number is registered. Make sure that the user has permissions to read and write here.
+    security_opt:
+      - no-new-privileges:true # additonal security control
+    tmpfs:
+      - /run:exec,size=64m,uid=1000,gid=1000,mode=0755 # Make sure this UID:GID fits those from above
 
