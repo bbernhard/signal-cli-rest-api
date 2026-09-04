@@ -372,17 +372,6 @@ const docTemplate = `{
             ],
             "type": "object"
         },
-        "api.SendMessageResponse": {
-            "properties": {
-                "timestamp": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "timestamp"
-            ],
-            "type": "object"
-        },
         "api.SendMessageV1": {
             "properties": {
                 "base64_attachment": {
@@ -1105,6 +1094,48 @@ const docTemplate = `{
                 "author",
                 "length",
                 "start"
+            ],
+            "type": "object"
+        },
+        "data.SendMessageError": {
+            "properties": {
+                "number": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "data.SendMessageErrors": {
+            "properties": {
+                "recipients": {
+                    "items": {
+                        "$ref": "#/definitions/data.SendMessageError"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "data.SendMessageResponse": {
+            "properties": {
+                "errors": {
+                    "$ref": "#/definitions/data.SendMessageErrors"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "timestamp"
             ],
             "type": "object"
         },
@@ -5035,7 +5066,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.SendMessageResponse"
+                            "$ref": "#/definitions/data.SendMessageResponse"
                         }
                     },
                     "400": {
