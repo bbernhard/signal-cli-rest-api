@@ -468,6 +468,9 @@ const docTemplate = `{
                 },
                 "view_once": {
                     "type": "boolean"
+                },
+                "voice_note": {
+                    "type": "boolean"
                 }
             },
             "required": [
