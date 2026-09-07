@@ -51,6 +51,7 @@ type SignalCliSendRequest struct {
 	NotifySelf        *bool
 	LinkPreview       *LinkPreviewType
 	ViewOnce          *bool
+	VoiceNote         *bool
 }
 
 type GroupPermissions struct {

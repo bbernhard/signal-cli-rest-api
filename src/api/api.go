@@ -142,6 +142,7 @@ type SendMessageV2 struct {
 	NotifySelf        *bool               `json:"notify_self,omitempty"`
 	LinkPreview       *ds.LinkPreviewType `json:"link_preview,omitempty"`
 	ViewOnce          *bool               `json:"view_once,omitempty"`
+	VoiceNote         *bool               `json:"voice_note,omitempty"`
 }
 
 type TypingIndicatorRequest struct {
@@ -546,10 +547,15 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
+	if req.VoiceNote != nil && *req.VoiceNote && (len(req.Base64Attachments) == 0) {
+		c.JSON(400, Error{Msg: "'voice_note' can only be set for audio attachments!"})
+		return
+	}
+
 	data, err := a.signalClient.SendV2(
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
 		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions,
-		textMode, req.EditTimestamp, req.NotifySelf, req.LinkPreview, req.ViewOnce)
+		textMode, req.EditTimestamp, req.NotifySelf, req.LinkPreview, req.ViewOnce, req.VoiceNote)
 	if err != nil {
 		switch err.(type) {
 		case *client.RateLimitErrorType:

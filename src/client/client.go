@@ -550,6 +550,7 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*ds.S
 			PreviewImage       *string  `json:"preview-image,omitempty"`
 			PreviewDescription *string  `json:"preview-description,omitempty"`
 			ViewOnce           bool     `json:"view-once,omitempty"`
+			VoiceNote          bool     `json:"voice-note,omitempty"`
 		}
 
 		request := Request{Message: signalCliSendRequest.Message}
@@ -571,6 +572,10 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*ds.S
 
 		if signalCliSendRequest.ViewOnce != nil && *signalCliSendRequest.ViewOnce {
 			request.ViewOnce = true
+		}
+
+		if signalCliSendRequest.VoiceNote != nil && *signalCliSendRequest.VoiceNote {
+			request.VoiceNote = true
 		}
 
 		request.Sticker = signalCliSendRequest.Sticker
@@ -707,6 +712,10 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*ds.S
 
 		if signalCliSendRequest.ViewOnce != nil && *signalCliSendRequest.ViewOnce {
 			cmd = append(cmd, "--view-once")
+		}
+
+		if signalCliSendRequest.VoiceNote != nil && *signalCliSendRequest.VoiceNote {
+			cmd = append(cmd, "--voice-note")
 		}
 
 		rawData, err = s.cliClient.Execute(true, cmd, signalCliSendRequest.Message)
@@ -946,7 +955,7 @@ func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 
 func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, sticker string, mentions []ds.MessageMention,
 	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []ds.MessageMention, textMode *string, editTimestamp *int64, notifySelf *bool,
-	linkPreview *ds.LinkPreviewType, viewOnce *bool) (*[]ds.SendMessageResponse, error) {
+	linkPreview *ds.LinkPreviewType, viewOnce *bool, voiceNote *bool) (*[]ds.SendMessageResponse, error) {
 	if len(recps) == 0 {
 		return nil, errors.New("Please provide at least one recipient")
 	}
@@ -997,7 +1006,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: []string{group}, Base64Attachments: base64Attachments,
 			RecipientType: ds.Group, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
+			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce, VoiceNote: voiceNote}
 		resp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
@@ -1009,7 +1018,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: numbers, Base64Attachments: base64Attachments,
 			RecipientType: ds.Number, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
+			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce, VoiceNote: voiceNote}
 		resp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
@@ -1021,7 +1030,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: usernames, Base64Attachments: base64Attachments,
 			RecipientType: ds.Username, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
+			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce, VoiceNote: voiceNote}
 		resp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
