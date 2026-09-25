@@ -5,6 +5,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"plugin"
 	"strconv"
@@ -401,6 +402,7 @@ func main() {
 
 		type SignalCliAccountConfig struct {
 			Number string `json:"number"`
+			Uuid   string `json:"uuid"`
 		}
 
 		type SignalCliAccountConfigs struct {
@@ -430,11 +432,20 @@ func main() {
 
 				for _, account := range signalCliAccountConfigs.Accounts {
 					client := &http.Client{}
+					identifier := account.Number
+					if identifier == "" {
+						identifier = account.Uuid
+					}
+					if identifier == "" {
+						log.Error("AUTO_RECEIVE_SCHEDULE: Skipping account with no phone number or ACI")
+						continue
+					}
 
-					log.Debug("AUTO_RECEIVE_SCHEDULE: Calling receive for number ", account.Number)
-					req, err := http.NewRequest("GET", "http://127.0.0.1:"+port+"/v1/receive/"+account.Number, nil)
+					log.Debug("AUTO_RECEIVE_SCHEDULE: Calling receive for account ", identifier)
+					req, err := http.NewRequest("GET", "http://127.0.0.1:"+port+"/v1/receive/"+url.PathEscape(identifier), nil)
 					if err != nil {
-						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", err.Error())
+						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for account ", identifier, ": ", err.Error())
+						continue
 					}
 
 					q := req.URL.Query()
@@ -448,7 +459,8 @@ func main() {
 
 					resp, err := client.Do(req)
 					if err != nil {
-						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", err.Error())
+						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for account ", identifier, ": ", err.Error())
+						continue
 					}
 
 					if resp.StatusCode != 200 {
@@ -469,7 +481,7 @@ func main() {
 							continue
 						}
 
-						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for number ", account.Number, ": ", receiveResponse)
+						log.Error("AUTO_RECEIVE_SCHEDULE: Couldn't call receive for account ", identifier, ": ", receiveResponse)
 					}
 				}
 			} else {

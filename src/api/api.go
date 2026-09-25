@@ -118,7 +118,7 @@ type Receipt struct {
 }
 
 type SendMessageV1 struct {
-	Number           string   `json:"number"`
+	Number           string   `json:"number"` // Account identifier (E.164 phone number or ACI UUID)
 	Recipients       []string `json:"recipients"`
 	Message          string   `json:"message"`
 	Base64Attachment string   `json:"base64_attachment,omitempty" example:"'<BASE64 ENCODED DATA>' OR 'data:<MIME-TYPE>;base64,<BASE64 ENCODED DATA>' OR 'data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>'"`
@@ -126,7 +126,7 @@ type SendMessageV1 struct {
 }
 
 type SendMessageV2 struct {
-	Number            string              `json:"number"`
+	Number            string              `json:"number"` // Account identifier (E.164 phone number or ACI UUID)
 	Recipients        []string            `json:"recipients"`
 	Recipient         string              `json:"recipient,omitempty" swaggerignore:"true"` //some REST API consumers (like the Synology NAS) do not support an array as recipients, so we provide this string parameter here as backup. In order to not confuse anyone, the parameter won't be exposed in the Swagger UI (most users are fine with the recipients parameter).
 	Message           string              `json:"message"`
@@ -270,6 +270,14 @@ func NewApi(signalClient *client.SignalClient) *Api {
 	}
 }
 
+func accountIdentifierFromParam(c *gin.Context) (utils.IdentifierType, string, error) {
+	raw, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		return 0, "", errors.New("Couldn't process request - malformed number")
+	}
+	return utils.ParseAccountIdentifier(raw)
+}
+
 // @Summary Lists general information about the API
 // @Tags General
 // @Description Returns the supported API versions and the internal build nr
@@ -287,13 +295,13 @@ func (a *Api) About(c *gin.Context) {
 // @Produce  json
 // @Success 201
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body RegisterNumberRequest false "Additional Settings"
 // @Router /v1/register/{number} [post]
 func (a *Api) RegisterNumber(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -339,13 +347,13 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 // @Produce  json
 // @Success 204
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body UnregisterNumberRequest false "Additional Settings"
 // @Router /v1/unregister/{number} [post]
 func (a *Api) UnregisterNumber(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -378,15 +386,15 @@ func (a *Api) UnregisterNumber(c *gin.Context) {
 // @Description Delete all local data for the specified account. Only use this after unregistering the account or after removing a linked device.
 // @Accept json
 // @Produce json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body DeleteLocalAccountDataRequest false "Cleanup options"
 // @Success 204
 // @Failure 400 {object} Error
 // @Router /v1/devices/{number}/local-data [delete]
 func (a *Api) DeleteLocalAccountData(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -417,14 +425,14 @@ func (a *Api) DeleteLocalAccountData(c *gin.Context) {
 // @Produce  json
 // @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body VerifyNumberSettings false "Additional Settings"
 // @Param token path string true "Verification Code"
 // @Router /v1/register/{number}/verify/{token} [post]
 func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	token := c.Param("token")
@@ -484,6 +492,12 @@ func (a *Api) Send(c *gin.Context) {
 		base64Attachments = append(base64Attachments, req.Base64Attachment)
 	}
 
+	_, req.Number, err = utils.ParseAccountIdentifier(req.Number)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
 	resp, err := a.signalClient.SendV1(req.Number, req.Message, req.Recipients, base64Attachments, req.IsGroup)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
@@ -522,8 +536,9 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
-	if req.Number == "" {
-		c.JSON(400, gin.H{"error": "Couldn't process request - please provide a valid number"})
+	_, req.Number, err = utils.ParseAccountIdentifier(req.Number)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -685,7 +700,7 @@ func StringToBool(input string) bool {
 // @Produce  json
 // @Success 200 {object} []string
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param timeout query string false "Receive timeout in seconds (default: 1)"
 // @Param ignore_attachments query string false "Specify whether the attachments of the received message should be ignored" (default: false)"
 // @Param ignore_stories query string false "Specify whether stories should be ignored when receiving messages" (default: false)"
@@ -695,9 +710,9 @@ func StringToBool(input string) bool {
 // @Param send_read_receipts query string false "Specify whether read receipts should be sent when receiving messages" (default: false)"
 // @Router /v1/receive/{number} [get]
 func (a *Api) Receive(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -775,12 +790,12 @@ func (a *Api) Receive(c *gin.Context) {
 // @Success 201 {object} CreateGroupResponse
 // @Failure 400 {object} Error
 // @Param data body CreateGroupRequest true "Input Data"
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Router /v1/groups/{number} [post]
 func (a *Api) CreateGroup(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -847,13 +862,13 @@ func (a *Api) CreateGroup(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupMembersRequest true "Members"
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/members [post]
 func (a *Api) AddMembersToGroup(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -901,13 +916,13 @@ func (a *Api) AddMembersToGroup(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupMembersRequest true "Members"
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/members [delete]
 func (a *Api) RemoveMembersFromGroup(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -950,13 +965,13 @@ func (a *Api) RemoveMembersFromGroup(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupAdminsRequest true "Admins"
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/admins [post]
 func (a *Api) AddAdminsToGroup(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -999,13 +1014,13 @@ func (a *Api) AddAdminsToGroup(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body ChangeGroupAdminsRequest true "Admins"
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/admins [delete]
 func (a *Api) RemoveAdminsFromGroup(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -1047,13 +1062,13 @@ func (a *Api) RemoveAdminsFromGroup(c *gin.Context) {
 // @Produce  json
 // @Success 200 {object} []client.GroupEntry
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param expand query bool false "Expand the response to show more details (default: false)"
 // @Router /v1/groups/{number} [get]
 func (a *Api) GetGroups(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -1087,14 +1102,14 @@ func (a *Api) GetGroups(c *gin.Context) {
 // @Produce  json
 // @Success 200 {object} client.GroupEntry
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group ID"
 // @Param expand query bool false "Expand the response to show more details (default: false)"
 // @Router /v1/groups/{number}/{groupid} [get]
 func (a *Api) GetGroup(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	groupId := c.Param("groupid")
@@ -1134,13 +1149,13 @@ func (a *Api) GetGroup(c *gin.Context) {
 // @Produce  json
 // @Success 200 {string} string	"Image"
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/avatar [get]
 func (a *Api) GetGroupAvatar(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	groupId := c.Param("groupid")
@@ -1168,14 +1183,14 @@ func (a *Api) GetGroupAvatar(c *gin.Context) {
 // @Produce  json
 // @Success 200 {string} string "OK"
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group Id"
 // @Router /v1/groups/{number}/{groupid} [delete]
 func (a *Api) DeleteGroup(c *gin.Context) {
 	base64EncodedGroupId := c.Param("groupid")
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -1205,14 +1220,14 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param data body PinMessageInGroupRequest true "Pin"
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group Id"
 // @Router /v1/groups/{number}/{groupid}/pin-message [post]
 func (a *Api) PinMessageInGroup(c *gin.Context) {
 	base64EncodedGroupId := c.Param("groupid")
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -1256,14 +1271,14 @@ func (a *Api) PinMessageInGroup(c *gin.Context) {
 // @Success 200 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param data body UnpinMessageInGroupRequest true "Unpin"
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group Id"
 // @Router /v1/groups/{number}/{groupid}/pin-message [delete]
 func (a *Api) UnpinMessageInGroup(c *gin.Context) {
 	base64EncodedGroupId := c.Param("groupid")
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -1306,11 +1321,11 @@ func (a *Api) UnpinMessageInGroup(c *gin.Context) {
 
 // @Summary Link device and generate QR code.
 // @Tags Devices
-// @Description Link device and generate QR code
+// @Description Link this service as a secondary device. Numberless accounts use the same QR flow: signal-cli advertises capabilities=nopni in the link URI. The link command does not take an account selector. After linking, call list accounts and use the ACI when number is empty.
 // @Produce  json
 // @Success 200 {string} string	"Image"
 // @Param device_name query string true "Device Name"
-// @Param qrcode_version query int false "QRCode Version (defaults to 10)"
+// @Param qrcode_version query int false "QR code version. Omit to use the smallest version that fits the link URI."
 // @Failure 400 {object} Error
 // @Router /v1/qrcodelink [get]
 func (a *Api) GetQrCodeLink(c *gin.Context) {
@@ -1322,7 +1337,7 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 		return
 	}
 
-	qrCodeVersionInt := 10
+	qrCodeVersionInt := 0
 	if qrCodeVersion != "" {
 		var err error
 		qrCodeVersionInt, err = strconv.Atoi(qrCodeVersion)
@@ -1343,7 +1358,7 @@ func (a *Api) GetQrCodeLink(c *gin.Context) {
 
 // @Summary Get raw device link URI
 // @Tags Devices
-// @Description Generate the deviceLinkUri string for linking without scanning a QR code.
+// @Description Generate the deviceLinkUri string for linking without scanning a QR code. Numberless accounts use the same URI. signal-cli advertises capabilities=nopni. Do not pass an account selector to link. After linking, use the ACI from list accounts when number is empty.
 // @Produce json
 // @Param device_name query string true "Device Name"
 // @Success 200 {object} DeviceLinkUriResponse
@@ -1367,19 +1382,19 @@ func (a *Api) GetQrCodeLinkUri(c *gin.Context) {
 
 // @Summary List all accounts
 // @Tags Accounts
-// @Description Lists all of the accounts linked or registered
+// @Description Lists all of the accounts linked or registered. number is an empty string when the account has no phone number; use aci as the account identifier on other endpoints in that case.
 // @Produce json
-// @Success 200 {object} []string
+// @Success 200 {object} []client.Account
 // @Failure 400 {object} Error
 // @Router /v1/accounts [get]
 func (a *Api) GetAccounts(c *gin.Context) {
-	devices, err := a.signalClient.GetAccounts()
+	accounts, err := a.signalClient.GetAccounts()
 	if err != nil {
 		c.JSON(500, Error{Msg: "Couldn't get list of accounts: " + err.Error()})
 		return
 	}
 
-	c.JSON(200, devices)
+	c.JSON(200, accounts)
 }
 
 // @Summary List all attachments.
@@ -1482,12 +1497,12 @@ func (a *Api) ServeAttachment(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body UpdateProfileRequest true "Profile Data"
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Router /v1/profiles/{number} [put]
 func (a *Api) UpdateProfile(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -1533,12 +1548,12 @@ func (a *Api) Health(c *gin.Context) {
 // @Description List all identities for the given number.
 // @Produce  json
 // @Success 200 {object} []client.IdentityEntry
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Router /v1/identities/{number} [get]
 func (a *Api) ListIdentities(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -1562,13 +1577,13 @@ func (a *Api) ListIdentities(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Param data body TrustIdentityRequest true "Input Data"
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param numberToTrust path string true "Number To Trust"
 // @Router /v1/identities/{number}/trust/{numberToTrust} [put]
 func (a *Api) TrustIdentity(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -1672,13 +1687,13 @@ func (a *Api) GetConfiguration(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/block [post]
 func (a *Api) BlockGroup(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -1709,13 +1724,13 @@ func (a *Api) BlockGroup(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/join [post]
 func (a *Api) JoinGroup(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -1746,13 +1761,13 @@ func (a *Api) JoinGroup(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group ID"
 // @Router /v1/groups/{number}/{groupid}/quit [post]
 func (a *Api) QuitGroup(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -1782,14 +1797,14 @@ func (a *Api) QuitGroup(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param groupid path string true "Group ID"
 // @Param data body UpdateGroupRequest true "Input Data"
 // @Router /v1/groups/{number}/{groupid} [put]
 func (a *Api) UpdateGroup(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -1871,7 +1886,7 @@ func (a *Api) UpdateGroup(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body SendReactionRequest true "Reaction"
-// @Param number path string true "Registered phone number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Router /v1/reactions/{number} [post]
 func (a *Api) SendReaction(c *gin.Context) {
 	var req SendReactionRequest
@@ -1882,9 +1897,9 @@ func (a *Api) SendReaction(c *gin.Context) {
 		return
 	}
 
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -1924,7 +1939,7 @@ func (a *Api) SendReaction(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body RemoveReactionRequest true "Reaction"
-// @Param number path string true "Registered phone number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Router /v1/reactions/{number} [delete]
 func (a *Api) RemoveReaction(c *gin.Context) {
 	var req RemoveReactionRequest
@@ -1935,9 +1950,9 @@ func (a *Api) RemoveReaction(c *gin.Context) {
 		return
 	}
 
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -1972,7 +1987,7 @@ func (a *Api) RemoveReaction(c *gin.Context) {
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
 // @Param data body Receipt true "Receipt"
-// @Param number path string true "Registered phone number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Router /v1/receipts/{number} [post]
 func (a *Api) SendReceipt(c *gin.Context) {
 	var req Receipt
@@ -1983,9 +1998,9 @@ func (a *Api) SendReceipt(c *gin.Context) {
 		return
 	}
 
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -2025,7 +2040,7 @@ func (a *Api) SendReceipt(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body TypingIndicatorRequest true "Type"
 // @Router /v1/typing-indicator/{number} [put]
 func (a *Api) SendStartTyping(c *gin.Context) {
@@ -2037,9 +2052,9 @@ func (a *Api) SendStartTyping(c *gin.Context) {
 		return
 	}
 
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2062,7 +2077,7 @@ func (a *Api) SendStartTyping(c *gin.Context) {
 // @Produce  json
 // @Success 204 {string} OK
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body TypingIndicatorRequest true "Type"
 // @Router /v1/typing-indicator/{number} [delete]
 func (a *Api) SendStopTyping(c *gin.Context) {
@@ -2074,9 +2089,9 @@ func (a *Api) SendStopTyping(c *gin.Context) {
 		return
 	}
 
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2097,7 +2112,7 @@ func (a *Api) SendStopTyping(c *gin.Context) {
 // @Description Check if one or more phone numbers are registered with the Signal Service.
 // @Accept  json
 // @Produce  json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param numbers query []string true "Numbers to check" collectionFormat(multi)
 // @Success 200 {object} []SearchResponse
 // @Failure 400 {object} Error
@@ -2109,10 +2124,18 @@ func (a *Api) SearchForNumbers(c *gin.Context) {
 		return
 	}
 
-	number, err := url.PathUnescape(c.Param("number"))
+	rawNumber, err := url.PathUnescape(c.Param("number"))
 	if err != nil {
 		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
 		return
+	}
+	number := ""
+	if rawNumber != "" {
+		_, number, err = utils.ParseAccountIdentifier(rawNumber)
+		if err != nil {
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
 	}
 
 	searchResults, err := a.signalClient.SearchForNumbers(number, query["numbers"])
@@ -2135,15 +2158,15 @@ func (a *Api) SearchForNumbers(c *gin.Context) {
 // @Description Updates the info associated to a number on the contact list.
 // @Accept  json
 // @Produce  json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Success 204
 // @Param data body UpdateContactRequest true "Contact"
 // @Failure 400 {object} Error
 // @Router /v1/contacts/{number} [put]
 func (a *Api) UpdateContact(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2176,15 +2199,15 @@ func (a *Api) UpdateContact(c *gin.Context) {
 // @Description Links another device to this device. Only works, if this is the master device.
 // @Accept json
 // @Produce json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Success 204
 // @Param data body AddDeviceRequest true "Request"
 // @Failure 400 {object} Error
 // @Router /v1/devices/{number} [post]
 func (a *Api) AddDevice(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2212,14 +2235,14 @@ func (a *Api) AddDevice(c *gin.Context) {
 // @Description List linked devices associated to this device.
 // @Accept json
 // @Produce json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Success 200 {object} []client.ListDevicesResponse
 // @Failure 400 {object} Error
 // @Router /v1/devices/{number} [get]
 func (a *Api) ListDevices(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2239,15 +2262,15 @@ func (a *Api) ListDevices(c *gin.Context) {
 // @Summary Remove linked device
 // @Tags Devices
 // @Description Remove a linked device from the primary account.
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param deviceId path int true "Device ID from listDevices"
 // @Success 204
 // @Failure 400 {object} Error
 // @Router /v1/devices/{number}/{deviceId} [delete]
 func (a *Api) RemoveDevice(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2275,15 +2298,15 @@ func (a *Api) RemoveDevice(c *gin.Context) {
 // @Description Set account specific settings.
 // @Accept json
 // @Produce json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Success 204
 // @Param data body TrustModeRequest true "Request"
 // @Failure 400 {object} Error
 // @Router /v1/configuration/{number}/settings [post]
 func (a *Api) SetTrustMode(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2318,15 +2341,15 @@ func (a *Api) SetTrustMode(c *gin.Context) {
 // @Description List account specific settings.
 // @Accept json
 // @Produce json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Success 200
 // @Param data body TrustModeResponse true "Request"
 // @Failure 400 {object} Error
 // @Router /v1/configuration/{number}/settings [get]
 func (a *Api) GetTrustMode(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2350,14 +2373,14 @@ func (a *Api) GetTrustMode(c *gin.Context) {
 // @Description Send a synchronization message with the local contacts list to all linked devices. This command should only be used if this is the primary device.
 // @Accept  json
 // @Produce  json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Success 204
 // @Failure 400 {object} Error
 // @Router /v1/contacts/{number}/sync [post]
 func (a *Api) SendContacts(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2378,15 +2401,15 @@ func (a *Api) SendContacts(c *gin.Context) {
 // @Description When running into rate limits, sometimes the limit can be lifted, by solving a CAPTCHA. To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html. The "challenge_token" is the token from the failed send attempt. The "captcha" is the captcha result, starting with signalcaptcha://
 // @Accept  json
 // @Produce  json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body RateLimitChallengeRequest true "Request"
 // @Success 204
 // @Failure 400 {object} Error
 // @Router /v1/accounts/{number}/rate-limit-challenge [post]
 func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2424,15 +2447,15 @@ func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
 // @Description Update the account attributes on the signal server.
 // @Accept  json
 // @Produce  json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body UpdateAccountSettingsRequest true "Request"
 // @Success 204
 // @Failure 400 {object} Error
 // @Router /v1/accounts/{number}/settings [put]
 func (a *Api) UpdateAccountSettings(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2461,16 +2484,16 @@ func (a *Api) UpdateAccountSettings(c *gin.Context) {
 // @Description Allows to set the username that should be used for this account. This can either be just the nickname (e.g. test) or the complete username with discriminator (e.g. test.123). Returns the new username with discriminator and the username link.
 // @Accept  json
 // @Produce  json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body SetUsernameRequest true "Request"
 // @Success 201 {object} client.SetUsernameResponse
 // @Success 204
 // @Failure 400 {object} Error
 // @Router /v1/accounts/{number}/username [post]
 func (a *Api) SetUsername(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2498,14 +2521,14 @@ func (a *Api) SetUsername(c *gin.Context) {
 // @Description Delete the username associated with this account.
 // @Accept  json
 // @Produce  json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Success 204
 // @Failure 400 {object} Error
 // @Router /v1/accounts/{number}/username [delete]
 func (a *Api) RemoveUsername(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2526,15 +2549,15 @@ func (a *Api) RemoveUsername(c *gin.Context) {
 // @Description List Installed Sticker Packs.
 // @Accept  json
 // @Produce  json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Success 204
 // @Failure 400 {object} Error
 // @Success 200 {object} []client.ListInstalledStickerPacksResponse
 // @Router /v1/sticker-packs/{number} [get]
 func (a *Api) ListInstalledStickerPacks(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2556,15 +2579,15 @@ func (a *Api) ListInstalledStickerPacks(c *gin.Context) {
 // @Description In order to add a sticker pack, browse to https://signalstickers.org/ and select the sticker pack you want to add. Then, press the "Add to Signal" button. If you look at the address bar in your browser you should see an URL in this format: https://signal.art/addstickers/#pack_id=XXX&pack_key=YYY, where XXX is the pack_id and YYY is the pack_key.
 // @Accept  json
 // @Produce  json
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Success 204
 // @Failure 400 {object} Error
 // @Param data body AddStickerPackRequest true "Request"
 // @Router /v1/sticker-packs/{number} [post]
 func (a *Api) AddStickerPack(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2593,13 +2616,13 @@ func (a *Api) AddStickerPack(c *gin.Context) {
 // @Description List all contacts for the given number.
 // @Produce  json
 // @Success 200 {object} []client.ListContactsResponse
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param all_recipients query string false "Include all known recipients, not only contacts." (default: false)"
 // @Router /v1/contacts/{number} [get]
 func (a *Api) ListContacts(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -2627,13 +2650,13 @@ func (a *Api) ListContacts(c *gin.Context) {
 // @Description List a specific contact.
 // @Produce  json
 // @Success 200 {object} client.ListContactsResponse
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param all_recipients query string false "Include all known recipients, not only contacts." (default: false)"
 // @Router /v1/contacts/{number}/{uuid} [get]
 func (a *Api) ListContact(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -2674,12 +2697,12 @@ func (a *Api) ListContact(c *gin.Context) {
 // @Description Returns the avatar of a contact.
 // @Produce  json
 // @Success 200 {string} string	"Image"
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Router /v1/contacts/{number}/{uuid}/avatar [get]
 func (a *Api) GetProfileAvatar(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -2710,13 +2733,13 @@ func (a *Api) GetProfileAvatar(c *gin.Context) {
 // @Produce  json
 // @Success 201
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body SetPinRequest true "Request"
 // @Router /v1/accounts/{number}/pin [post]
 func (a *Api) SetPin(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -2747,12 +2770,12 @@ func (a *Api) SetPin(c *gin.Context) {
 // @Produce  json
 // @Success 204
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Router /v1/accounts/{number}/pin [delete]
 func (a *Api) RemovePin(c *gin.Context) {
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 
@@ -2777,7 +2800,7 @@ func (a *Api) RemovePin(c *gin.Context) {
 // @Produce  json
 // @Success 201 {object} RemoteDeleteResponse
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body RemoteDeleteRequest true "Type"
 // @Router /v1/remote-delete/{number} [delete]
 func (a *Api) RemoteDelete(c *gin.Context) {
@@ -2788,9 +2811,9 @@ func (a *Api) RemoteDelete(c *gin.Context) {
 		return
 	}
 
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2814,7 +2837,7 @@ func (a *Api) RemoteDelete(c *gin.Context) {
 // @Produce  json
 // @Success 201 {object} CreatePollResponse
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body CreatePollRequest true "Type"
 // @Router /v1/polls/{number} [post]
 func (a *Api) CreatePoll(c *gin.Context) {
@@ -2825,9 +2848,9 @@ func (a *Api) CreatePoll(c *gin.Context) {
 		return
 	}
 
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2870,7 +2893,7 @@ func (a *Api) CreatePoll(c *gin.Context) {
 // @Produce  json
 // @Success 204
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body VoteRequest true "Type"
 // @Router /v1/polls/{number}/vote [post]
 func (a *Api) VoteInPoll(c *gin.Context) {
@@ -2881,9 +2904,9 @@ func (a *Api) VoteInPoll(c *gin.Context) {
 		return
 	}
 
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
@@ -2940,7 +2963,7 @@ func (a *Api) VoteInPoll(c *gin.Context) {
 // @Produce  json
 // @Success 204
 // @Failure 400 {object} Error
-// @Param number path string true "Registered Phone Number"
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
 // @Param data body ClosePollRequest true "Type"
 // @Router /v1/polls/{number} [delete]
 func (a *Api) ClosePoll(c *gin.Context) {
@@ -2951,9 +2974,9 @@ func (a *Api) ClosePoll(c *gin.Context) {
 		return
 	}
 
-	number, err := url.PathUnescape(c.Param("number"))
+	_, number, err := accountIdentifierFromParam(c)
 	if err != nil {
-		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
 	if number == "" {
