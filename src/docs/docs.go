@@ -119,14 +119,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/data.GroupPermissions"
                 }
             },
-            "required": [
-                "description",
-                "expiration_time",
-                "group_link",
-                "members",
-                "name",
-                "permissions"
-            ],
             "type": "object"
         },
         "api.CreateGroupResponse": {
@@ -167,7 +159,6 @@ const docTemplate = `{
                 }
             },
             "required": [
-                "allow_multiple_selections",
                 "answers",
                 "question",
                 "recipient"
@@ -193,9 +184,6 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             },
-            "required": [
-                "ignore_registered"
-            ],
             "type": "object"
         },
         "api.DeviceLinkUriResponse": {
@@ -244,7 +232,6 @@ const docTemplate = `{
                 }
             },
             "required": [
-                "duration",
                 "target_author",
                 "timestamp"
             ],
@@ -299,10 +286,6 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             },
-            "required": [
-                "captcha",
-                "use_voice"
-            ],
             "type": "object"
         },
         "api.RemoteDeleteRequest": {
@@ -347,7 +330,6 @@ const docTemplate = `{
                 }
             },
             "required": [
-                "reaction",
                 "recipient",
                 "target_author",
                 "timestamp"
@@ -386,7 +368,6 @@ const docTemplate = `{
             },
             "required": [
                 "account",
-                "challenge_tokens",
                 "error"
             ],
             "type": "object"
@@ -414,8 +395,6 @@ const docTemplate = `{
                 }
             },
             "required": [
-                "base64_attachment",
-                "is_group",
                 "message",
                 "number",
                 "recipients"
@@ -492,21 +471,9 @@ const docTemplate = `{
                 }
             },
             "required": [
-                "base64_attachments",
-                "edit_timestamp",
-                "link_preview",
-                "mentions",
                 "message",
-                "notify_self",
                 "number",
-                "quote_author",
-                "quote_mentions",
-                "quote_message",
-                "quote_timestamp",
-                "recipients",
-                "sticker",
-                "text_mode",
-                "view_once"
+                "recipients"
             ],
             "type": "object"
         },
@@ -566,10 +533,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             },
-            "required": [
-                "trust_all_known_keys",
-                "verified_safety_number"
-            ],
             "type": "object"
         },
         "api.TrustModeRequest": {
@@ -631,10 +594,6 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             },
-            "required": [
-                "delete_account",
-                "delete_local_data"
-            ],
             "type": "object"
         },
         "api.UpdateAccountSettingsRequest": {
@@ -646,10 +605,6 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             },
-            "required": [
-                "discoverable_by_number",
-                "share_number"
-            ],
             "type": "object"
         },
         "api.UpdateContactRequest": {
@@ -665,8 +620,6 @@ const docTemplate = `{
                 }
             },
             "required": [
-                "expiration_in_seconds",
-                "name",
                 "recipient"
             ],
             "type": "object"
@@ -697,14 +650,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/data.GroupPermissions"
                 }
             },
-            "required": [
-                "base64_avatar",
-                "description",
-                "expiration_time",
-                "group_link",
-                "name",
-                "permissions"
-            ],
             "type": "object"
         },
         "api.UpdateProfileRequest": {
@@ -720,8 +665,6 @@ const docTemplate = `{
                 }
             },
             "required": [
-                "about",
-                "base64_avatar",
                 "name"
             ],
             "type": "object"
@@ -732,9 +675,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             },
-            "required": [
-                "pin"
-            ],
             "type": "object"
         },
         "api.VoteRequest": {
@@ -1172,12 +1112,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             },
-            "required": [
-                "number",
-                "reason",
-                "username",
-                "uuid"
-            ],
             "type": "object"
         },
         "data.SendMessageErrors": {
@@ -1189,9 +1123,6 @@ const docTemplate = `{
                     "type": "array"
                 }
             },
-            "required": [
-                "recipients"
-            ],
             "type": "object"
         },
         "data.SendMessageResponse": {
@@ -1204,7 +1135,6 @@ const docTemplate = `{
                 }
             },
             "required": [
-                "errors",
                 "timestamp"
             ],
             "type": "object"

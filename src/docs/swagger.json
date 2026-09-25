@@ -114,14 +114,6 @@
                     "$ref": "#/definitions/data.GroupPermissions"
                 }
             },
-            "required": [
-                "description",
-                "expiration_time",
-                "group_link",
-                "members",
-                "name",
-                "permissions"
-            ],
             "type": "object"
         },
         "api.CreateGroupResponse": {
@@ -162,7 +154,6 @@
                 }
             },
             "required": [
-                "allow_multiple_selections",
                 "answers",
                 "question",
                 "recipient"
@@ -188,9 +179,6 @@
                     "type": "boolean"
                 }
             },
-            "required": [
-                "ignore_registered"
-            ],
             "type": "object"
         },
         "api.DeviceLinkUriResponse": {
@@ -239,7 +227,6 @@
                 }
             },
             "required": [
-                "duration",
                 "target_author",
                 "timestamp"
             ],
@@ -294,10 +281,6 @@
                     "type": "boolean"
                 }
             },
-            "required": [
-                "captcha",
-                "use_voice"
-            ],
             "type": "object"
         },
         "api.RemoteDeleteRequest": {
@@ -342,7 +325,6 @@
                 }
             },
             "required": [
-                "reaction",
                 "recipient",
                 "target_author",
                 "timestamp"
@@ -381,7 +363,6 @@
             },
             "required": [
                 "account",
-                "challenge_tokens",
                 "error"
             ],
             "type": "object"
@@ -409,8 +390,6 @@
                 }
             },
             "required": [
-                "base64_attachment",
-                "is_group",
                 "message",
                 "number",
                 "recipients"
@@ -487,21 +466,9 @@
                 }
             },
             "required": [
-                "base64_attachments",
-                "edit_timestamp",
-                "link_preview",
-                "mentions",
                 "message",
-                "notify_self",
                 "number",
-                "quote_author",
-                "quote_mentions",
-                "quote_message",
-                "quote_timestamp",
-                "recipients",
-                "sticker",
-                "text_mode",
-                "view_once"
+                "recipients"
             ],
             "type": "object"
         },
@@ -561,10 +528,6 @@
                     "type": "string"
                 }
             },
-            "required": [
-                "trust_all_known_keys",
-                "verified_safety_number"
-            ],
             "type": "object"
         },
         "api.TrustModeRequest": {
@@ -626,10 +589,6 @@
                     "type": "boolean"
                 }
             },
-            "required": [
-                "delete_account",
-                "delete_local_data"
-            ],
             "type": "object"
         },
         "api.UpdateAccountSettingsRequest": {
@@ -641,10 +600,6 @@
                     "type": "boolean"
                 }
             },
-            "required": [
-                "discoverable_by_number",
-                "share_number"
-            ],
             "type": "object"
         },
         "api.UpdateContactRequest": {
@@ -660,8 +615,6 @@
                 }
             },
             "required": [
-                "expiration_in_seconds",
-                "name",
                 "recipient"
             ],
             "type": "object"
@@ -692,14 +645,6 @@
                     "$ref": "#/definitions/data.GroupPermissions"
                 }
             },
-            "required": [
-                "base64_avatar",
-                "description",
-                "expiration_time",
-                "group_link",
-                "name",
-                "permissions"
-            ],
             "type": "object"
         },
         "api.UpdateProfileRequest": {
@@ -715,8 +660,6 @@
                 }
             },
             "required": [
-                "about",
-                "base64_avatar",
                 "name"
             ],
             "type": "object"
@@ -727,9 +670,6 @@
                     "type": "string"
                 }
             },
-            "required": [
-                "pin"
-            ],
             "type": "object"
         },
         "api.VoteRequest": {
@@ -1167,12 +1107,6 @@
                     "type": "string"
                 }
             },
-            "required": [
-                "number",
-                "reason",
-                "username",
-                "uuid"
-            ],
             "type": "object"
         },
         "data.SendMessageErrors": {
@@ -1184,9 +1118,6 @@
                     "type": "array"
                 }
             },
-            "required": [
-                "recipients"
-            ],
             "type": "object"
         },
         "data.SendMessageResponse": {
@@ -1199,7 +1130,6 @@
                 }
             },
             "required": [
-                "errors",
                 "timestamp"
             ],
             "type": "object"
