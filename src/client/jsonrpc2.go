@@ -262,7 +262,10 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 		err = json.Unmarshal([]byte(str), &resp2)
 		if err == nil {
 			if resp2.Id != "" {
-				if responseChan, ok := r.receivedResponsesById[resp2.Id]; ok {
+				r.receivedResponsesMutex.Lock()
+				responseChan, ok := r.receivedResponsesById[resp2.Id]
+				r.receivedResponsesMutex.Unlock()
+				if ok {
 					responseChan <- resp2
 				}
 			}
