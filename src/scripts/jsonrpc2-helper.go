@@ -25,8 +25,6 @@ func main() {
 	var tcpPort int64 = 6001
 	jsonRpc2ClientConfig.AddEntry(utils.MULTI_ACCOUNT_NUMBER, utils.JsonRpc2ClientConfigEntry{TcpPort: tcpPort})
 
-	args := []string{"--output=json", "--config", signalCliConfigDir}
-
 	signalCliBinary := "signal-cli"
 	signalMode := utils.GetEnv("MODE", "json-rpc")
 	if signalMode == "json-rpc-native" {
@@ -34,6 +32,8 @@ func main() {
 	} else if signalMode != "json-rpc" {
 		log.Fatal("The mode needs to be either 'json-rpc' or 'json-rpc-native'")
 	}
+
+	args := []string{signalCliBinary, "--output", "json", "--config", signalCliConfigDir}
 
 	trustNewIdentitiesEnv := utils.GetEnv("JSON_RPC_TRUST_NEW_IDENTITIES", "")
 	if trustNewIdentitiesEnv == "on-first-use" {
