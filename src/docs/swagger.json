@@ -461,6 +461,16 @@
                     ],
                     "type": "string"
                 },
+                "text_styles": {
+                    "example": [
+                        "0:5:BOLD",
+                        "10:3:ITALIC"
+                    ],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
                 "view_once": {
                     "type": "boolean"
                 }
@@ -5080,7 +5090,7 @@
                 "consumes": [
                     "application/json"
                 ],
-                "description": "Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: \\*italic text\\*, \\*\\*bold text\\*\\*, ~strikethrough text~, ||spoiler||, \\`monospace\\`. If you want to escape a formatting character, prefix it with two backslashes.",
+                "description": "Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: \\*italic text\\*, \\*\\*bold text\\*\\*, ~strikethrough text~, ||spoiler||, \\`monospace\\`. If you want to escape a formatting character, prefix it with two backslashes. Alternatively, pass the styles directly via text_styles in signal-cli's 'start:length:STYLE' format (STYLE is one of BOLD, ITALIC, SPOILER, STRIKETHROUGH, MONOSPACE); text_styles can't be combined with text_mode 'styled'.",
                 "parameters": [
                     {
                         "description": "Input Data",

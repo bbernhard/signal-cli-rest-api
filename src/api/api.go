@@ -138,6 +138,7 @@ type SendMessageV2 struct {
 	QuoteMessage      *string             `json:"quote_message,omitempty"`
 	QuoteMentions     []ds.MessageMention `json:"quote_mentions,omitempty"`
 	TextMode          *string             `json:"text_mode,omitempty" enums:"normal,styled"`
+	TextStyles        []string            `json:"text_styles,omitempty" example:"0:5:BOLD,10:3:ITALIC"`
 	EditTimestamp     *int64              `json:"edit_timestamp,omitempty"`
 	NotifySelf        *bool               `json:"notify_self,omitempty"`
 	LinkPreview       *ds.LinkPreviewType `json:"link_preview,omitempty"`
@@ -494,7 +495,7 @@ func (a *Api) Send(c *gin.Context) {
 
 // @Summary Send a signal message.
 // @Tags Messages
-// @Description Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: \*italic text\*, \*\*bold text\*\*, ~strikethrough text~, ||spoiler||, \`monospace\`. If you want to escape a formatting character, prefix it with two backslashes.
+// @Description Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: \*italic text\*, \*\*bold text\*\*, ~strikethrough text~, ||spoiler||, \`monospace\`. If you want to escape a formatting character, prefix it with two backslashes. Alternatively, pass the styles directly via text_styles in signal-cli's 'start:length:STYLE' format (STYLE is one of BOLD, ITALIC, SPOILER, STRIKETHROUGH, MONOSPACE); text_styles can't be combined with text_mode 'styled'.
 // @Accept  json
 // @Produce  json
 // @Success 201 {object} ds.SendMessageResponse
@@ -532,8 +533,21 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
+	if len(req.TextStyles) > 0 && req.TextMode != nil && *req.TextMode == "styled" {
+		c.JSON(400, Error{Msg: "'text_styles' can't be combined with text_mode 'styled'!"})
+		return
+	}
+
+	for _, textStyle := range req.TextStyles {
+		if !utils.IsValidTextStyle(textStyle) {
+			c.JSON(400, Error{Msg: "Invalid text style '" + textStyle + "' - expected format is 'start:length:STYLE' (e.g. '0:5:BOLD')"})
+			return
+		}
+	}
+
+	// the default text mode doesn't apply when the text styles are passed directly
 	textMode := req.TextMode
-	if textMode == nil {
+	if textMode == nil && len(req.TextStyles) == 0 {
 		defaultSignalTextMode := utils.GetEnv("DEFAULT_SIGNAL_TEXT_MODE", "normal")
 		if defaultSignalTextMode == "styled" {
 			styledStr := "styled"
@@ -549,7 +563,7 @@ func (a *Api) SendV2(c *gin.Context) {
 	data, err := a.signalClient.SendV2(
 		req.Number, req.Message, req.Recipients, req.Base64Attachments, req.Sticker,
 		req.Mentions, req.QuoteTimestamp, req.QuoteAuthor, req.QuoteMessage, req.QuoteMentions,
-		textMode, req.EditTimestamp, req.NotifySelf, req.LinkPreview, req.ViewOnce)
+		textMode, req.TextStyles, req.EditTimestamp, req.NotifySelf, req.LinkPreview, req.ViewOnce)
 	if err != nil {
 		switch err.(type) {
 		case *client.RateLimitErrorType:
