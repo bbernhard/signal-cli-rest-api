@@ -1167,9 +1167,13 @@
                 },
                 "targetSentTimestamp": {
                     "type": "integer"
+                },
+                "targetTimestamp": {
+                    "type": "integer"
                 }
             },
             "required": [
+                "targetTimestamp",
                 "targetSentTimestamp"
             ],
             "type": "object"
@@ -1191,6 +1195,9 @@
                 "id": {
                     "type": "string"
                 },
+                "isVoiceNote": {
+                    "type": "boolean"
+                },
                 "size": {
                     "type": "integer"
                 },
@@ -1201,6 +1208,9 @@
                     "type": "integer"
                 }
             },
+            "required": [
+                "isVoiceNote"
+            ],
             "type": "object"
         },
         "receive.AttachmentData": {
@@ -1467,10 +1477,22 @@
                 "expiresInSeconds": {
                     "type": "integer"
                 },
+                "groupCallUpdate": {
+                    "$ref": "#/definitions/receive.GroupCallUpdate"
+                },
                 "groupInfo": {
                     "$ref": "#/definitions/receive.GroupInfo"
                 },
+                "hasProfileKey": {
+                    "type": "boolean"
+                },
+                "isEndSession": {
+                    "type": "boolean"
+                },
                 "isExpirationUpdate": {
+                    "type": "boolean"
+                },
+                "isProfileKeyUpdate": {
                     "type": "boolean"
                 },
                 "mentions": {
@@ -1559,6 +1581,14 @@
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.GroupCallUpdate": {
+            "properties": {
+                "eraId": {
                     "type": "string"
                 }
             },
@@ -1956,11 +1986,15 @@
         },
         "receive.RemoteDelete": {
             "properties": {
+                "targetTimestamp": {
+                    "type": "integer"
+                },
                 "timestamp": {
                     "type": "integer"
                 }
             },
             "required": [
+                "targetTimestamp",
                 "timestamp"
             ],
             "type": "object"
@@ -2154,10 +2188,22 @@
                 "expiresInSeconds": {
                     "type": "integer"
                 },
+                "groupCallUpdate": {
+                    "$ref": "#/definitions/receive.GroupCallUpdate"
+                },
                 "groupInfo": {
                     "$ref": "#/definitions/receive.GroupInfo"
                 },
+                "hasProfileKey": {
+                    "type": "boolean"
+                },
+                "isEndSession": {
+                    "type": "boolean"
+                },
                 "isExpirationUpdate": {
+                    "type": "boolean"
+                },
+                "isProfileKeyUpdate": {
                     "type": "boolean"
                 },
                 "mentions": {

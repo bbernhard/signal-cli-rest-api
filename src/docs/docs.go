@@ -1172,9 +1172,13 @@ const docTemplate = `{
                 },
                 "targetSentTimestamp": {
                     "type": "integer"
+                },
+                "targetTimestamp": {
+                    "type": "integer"
                 }
             },
             "required": [
+                "targetTimestamp",
                 "targetSentTimestamp"
             ],
             "type": "object"
@@ -1196,6 +1200,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "isVoiceNote": {
+                    "type": "boolean"
+                },
                 "size": {
                     "type": "integer"
                 },
@@ -1206,6 +1213,9 @@ const docTemplate = `{
                     "type": "integer"
                 }
             },
+            "required": [
+                "isVoiceNote"
+            ],
             "type": "object"
         },
         "receive.AttachmentData": {
@@ -1472,10 +1482,22 @@ const docTemplate = `{
                 "expiresInSeconds": {
                     "type": "integer"
                 },
+                "groupCallUpdate": {
+                    "$ref": "#/definitions/receive.GroupCallUpdate"
+                },
                 "groupInfo": {
                     "$ref": "#/definitions/receive.GroupInfo"
                 },
+                "hasProfileKey": {
+                    "type": "boolean"
+                },
+                "isEndSession": {
+                    "type": "boolean"
+                },
                 "isExpirationUpdate": {
+                    "type": "boolean"
+                },
+                "isProfileKeyUpdate": {
                     "type": "boolean"
                 },
                 "mentions": {
@@ -1564,6 +1586,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "receive.GroupCallUpdate": {
+            "properties": {
+                "eraId": {
                     "type": "string"
                 }
             },
@@ -1961,11 +1991,15 @@ const docTemplate = `{
         },
         "receive.RemoteDelete": {
             "properties": {
+                "targetTimestamp": {
+                    "type": "integer"
+                },
                 "timestamp": {
                     "type": "integer"
                 }
             },
             "required": [
+                "targetTimestamp",
                 "timestamp"
             ],
             "type": "object"
@@ -2159,10 +2193,22 @@ const docTemplate = `{
                 "expiresInSeconds": {
                     "type": "integer"
                 },
+                "groupCallUpdate": {
+                    "$ref": "#/definitions/receive.GroupCallUpdate"
+                },
                 "groupInfo": {
                     "$ref": "#/definitions/receive.GroupInfo"
                 },
+                "hasProfileKey": {
+                    "type": "boolean"
+                },
+                "isEndSession": {
+                    "type": "boolean"
+                },
                 "isExpirationUpdate": {
+                    "type": "boolean"
+                },
+                "isProfileKeyUpdate": {
                     "type": "boolean"
                 },
                 "mentions": {
