@@ -208,6 +208,17 @@ const docTemplate = `{
             ],
             "type": "object"
         },
+        "api.JoinGroupByLinkRequest": {
+            "properties": {
+                "uri": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "uri"
+            ],
+            "type": "object"
+        },
         "api.LoggingConfiguration": {
             "properties": {
                 "Level": {
@@ -3405,6 +3416,53 @@ const docTemplate = `{
                     }
                 },
                 "summary": "Create a new Signal Group.",
+                "tags": [
+                    "Groups"
+                ]
+            }
+        },
+        "/v1/groups/{number}/join": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "description": "Join a Signal Group using an invitation link. The uri starts with https://signal.group/#",
+                "parameters": [
+                    {
+                        "description": "Registered Phone Number",
+                        "in": "path",
+                        "name": "number",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "description": "Invitation link",
+                        "in": "body",
+                        "name": "data",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.JoinGroupByLinkRequest"
+                        }
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                },
+                "summary": "Join a Signal Group via an invitation link.",
                 "tags": [
                     "Groups"
                 ]

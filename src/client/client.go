@@ -2054,6 +2054,26 @@ func (s *SignalClient) JoinGroup(number string, groupId string) error {
 	return err
 }
 
+func (s *SignalClient) JoinGroupByLink(number string, uri string) error {
+	var err error
+	var jsonRpc2Client *JsonRpc2Client
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			Uri string `json:"uri"`
+		}
+		request := Request{Uri: uri}
+		jsonRpc2Client, err = s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("joinGroup", &number, request)
+	} else {
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "joinGroup", "--uri", uri}
+		_, err = s.cliClient.Execute(true, cmd, "")
+	}
+	return err
+}
+
 func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	var err error
 	var jsonRpc2Client *JsonRpc2Client
