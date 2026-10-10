@@ -2628,8 +2628,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "201": {
+                        "description": "Created"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -3938,7 +3938,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "OK",
                         "schema": {
                             "type": "string"
@@ -3990,7 +3990,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "OK",
                         "schema": {
                             "type": "string"
@@ -4929,8 +4929,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "201": {
+                        "description": "Created"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -5104,7 +5104,10 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/data.SendMessageResponse"
+                            "items": {
+                                "$ref": "#/definitions/data.SendMessageResponse"
+                            },
+                            "type": "array"
                         }
                     },
                     "400": {

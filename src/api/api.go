@@ -497,7 +497,7 @@ func (a *Api) Send(c *gin.Context) {
 // @Description Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: \*italic text\*, \*\*bold text\*\*, ~strikethrough text~, ||spoiler||, \`monospace\`. If you want to escape a formatting character, prefix it with two backslashes.
 // @Accept  json
 // @Produce  json
-// @Success 201 {object} ds.SendMessageResponse
+// @Success 201 {array} ds.SendMessageResponse
 // @Failure 400 {object} SendMessageError
 // @Param data body SendMessageV2 true "Input Data"
 // @Router /v2/send [post]
@@ -1202,7 +1202,7 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 // @Description Pin a message in a Signal Group.
 // @Accept  json
 // @Produce  json
-// @Success 200 {string} string "OK"
+// @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param data body PinMessageInGroupRequest true "Pin"
 // @Param number path string true "Registered Phone Number"
@@ -1253,7 +1253,7 @@ func (a *Api) PinMessageInGroup(c *gin.Context) {
 // @Description Unpin a message in a Signal Group.
 // @Accept  json
 // @Produce  json
-// @Success 200 {string} string "OK"
+// @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param data body UnpinMessageInGroupRequest true "Unpin"
 // @Param number path string true "Registered Phone Number"
@@ -2426,7 +2426,7 @@ func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
 // @Produce  json
 // @Param number path string true "Registered Phone Number"
 // @Param data body UpdateAccountSettingsRequest true "Request"
-// @Success 204
+// @Success 201
 // @Failure 400 {object} Error
 // @Router /v1/accounts/{number}/settings [put]
 func (a *Api) UpdateAccountSettings(c *gin.Context) {
@@ -2557,7 +2557,7 @@ func (a *Api) ListInstalledStickerPacks(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param number path string true "Registered Phone Number"
-// @Success 204
+// @Success 201
 // @Failure 400 {object} Error
 // @Param data body AddStickerPackRequest true "Request"
 // @Router /v1/sticker-packs/{number} [post]
