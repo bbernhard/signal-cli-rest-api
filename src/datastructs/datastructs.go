@@ -47,6 +47,7 @@ type SignalCliSendRequest struct {
 	QuoteMessage      *string
 	QuoteMentions     []MessageMention
 	TextMode          *string
+	TextStyles        []string
 	EditTimestamp     *int64
 	NotifySelf        *bool
 	LinkPreview       *LinkPreviewType
