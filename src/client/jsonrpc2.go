@@ -259,12 +259,14 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 			// the envelope directly. Unwrap so the broadcast format is
 			// the same in both modes and downstream consumers (e.g. the
 			// websocket handler) don't have to know which mode is in use.
-			var manualWrapper struct {
-				Subscription int64           `json:"subscription"`
-				Result       json.RawMessage `json:"result"`
-			}
-			if err := json.Unmarshal(resp1.Params, &manualWrapper); err == nil && len(manualWrapper.Result) > 0 {
-				resp1.Params = manualWrapper.Result
+			if r.manualReceiveMode {
+				var manualWrapper struct {
+					Subscription int64           `json:"subscription"`
+					Result       json.RawMessage `json:"result"`
+				}
+				if err := json.Unmarshal(resp1.Params, &manualWrapper); err == nil && len(manualWrapper.Result) > 0 {
+					resp1.Params = manualWrapper.Result
+				}
 			}
 
 			r.receivedMessagesMutex.Lock()
