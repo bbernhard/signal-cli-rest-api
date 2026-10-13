@@ -1,16 +1,16 @@
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 5d127e4c..7ca155f9 100644
+index 64e29294..5d0e53cc 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -91,6 +91,7 @@ dependencies {
-     implementation(libs.logback)
-     implementation(libs.zxing)
+@@ -104,6 +104,7 @@ dependencies {
+         implementation(libs.micronaut.json.schema.generator)
+     }    
      implementation(project(":libsignal-cli"))
-+	implementation(files("/tmp/libsignal-client.jar"))
++    implementation(files("/tmp/libsignal-client.jar"))
  
      testImplementation(libs.junit.jupiter)
      testImplementation(platform(libs.junit.jupiter.bom))
-@@ -107,6 +108,10 @@ configurations {
+@@ -120,6 +121,10 @@ configurations {
      }
  }
  

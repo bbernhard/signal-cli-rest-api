@@ -6,4 +6,5 @@ import (
 
 type PluginHandler interface {
 	ExecutePlugin(pluginConfig PluginConfig) gin.HandlerFunc
+	InitPlugin(pluginConfig PluginConfig) error
 }

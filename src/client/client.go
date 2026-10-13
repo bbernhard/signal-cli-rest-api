@@ -119,6 +119,7 @@ type GroupEntry struct {
 	InternalId      string              `json:"internal_id"`
 	Members         []string            `json:"members"`
 	Blocked         bool                `json:"blocked"`
+	Member          bool                `json:"member"`
 	PendingInvites  []string            `json:"pending_invites"`
 	PendingRequests []string            `json:"pending_requests"`
 	InviteLink      string              `json:"invite_link"`
@@ -143,6 +144,7 @@ type ExpandedGroupEntry struct {
 	InternalId      string              `json:"internal_id"`
 	Members         []GroupMember       `json:"members"`
 	Blocked         bool                `json:"blocked"`
+	Member          bool                `json:"member"`
 	PendingInvites  []GroupMember       `json:"pending_invites"`
 	PendingRequests []GroupMember       `json:"pending_requests"`
 	InviteLink      string              `json:"invite_link"`
@@ -477,8 +479,8 @@ func validateLinkPreview(message string, linkPreview *ds.LinkPreviewType) error 
 	return nil
 }
 
-func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*SendResponse, error) {
-	var resp SendResponse
+func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*ds.SendMessageResponse, error) {
+	var rawData string
 	var linkPreviewAttachmentEntry *AttachmentEntry = nil
 
 	if len(signalCliSendRequest.Recipients) == 0 {
@@ -613,23 +615,13 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 			}
 		}
 
-		rawData, err := jsonRpc2Client.getRaw("send", &signalCliSendRequest.Number, request)
+		rawData, err = jsonRpc2Client.getRaw("send", &signalCliSendRequest.Number, request)
 		if err != nil {
 			cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
-			return nil, err
-		}
-
-		err = json.Unmarshal([]byte(rawData), &resp)
-		if err != nil {
-			cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
-
-			if strings.Contains(err.Error(), signalCliV2GroupError) {
-				return nil, errors.New("Cannot send message to group - please first update your profile.")
-			}
 			return nil, err
 		}
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", signalCliSendRequest.Number, "send", "--message-from-stdin"}
+		cmd := []string{"--output", "json", "--config", s.signalCliConfig, "-a", signalCliSendRequest.Number, "send", "--message-from-stdin"}
 		if signalCliSendRequest.RecipientType == ds.Number {
 			cmd = append(cmd, signalCliSendRequest.Recipients...)
 		} else if signalCliSendRequest.RecipientType == ds.Group {
@@ -717,23 +709,48 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*Send
 			cmd = append(cmd, "--view-once")
 		}
 
-		rawData, err := s.cliClient.Execute(true, cmd, signalCliSendRequest.Message)
+		rawData, err = s.cliClient.Execute(true, cmd, signalCliSendRequest.Message)
 		if err != nil {
 			cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
-			if strings.Contains(err.Error(), signalCliV2GroupError) {
-				return nil, errors.New("Cannot send message to group - please first update your profile.")
-			}
 			return nil, err
 		}
-		resp.Timestamp, err = strconv.ParseInt(strings.TrimSuffix(rawData, "\n"), 10, 64)
-		if err != nil {
-			cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
-			return nil, errors.New(strings.Replace(rawData, "\n", "", -1)) //in case we can't parse the timestamp, it means signal-cli threw an error. So instead of returning the parsing error, return the actual error from signal-cli
+	}
+
+	type SignalCliSendResponse struct {
+		Timestamp int64 `json:"timestamp"`
+		Results   []struct {
+			RecipientAddress struct {
+				Uuid     string `json:"uuid"`
+				Number   string `json:"number"`
+				Username string `json:"username"`
+			} `json:"recipientAddress"`
+			Type string `json:"type"`
+		} `json:"results"`
+	}
+
+	var signalCliSendResponse SignalCliSendResponse
+	err = json.Unmarshal([]byte(rawData), &signalCliSendResponse)
+	if err != nil {
+		cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
+
+		if strings.Contains(err.Error(), signalCliV2GroupError) {
+			return nil, errors.New("Cannot send message to group - please first update your profile.")
 		}
+		return nil, err
 	}
 
 	cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
 
+	resp := ds.SendMessageResponse{Timestamp: strconv.FormatInt(signalCliSendResponse.Timestamp, 10)}
+	for _, entry := range signalCliSendResponse.Results {
+		if entry.Type != "SUCCESS" {
+			if resp.Errors == nil {
+				resp.Errors = &ds.SendMessageErrors{}
+			}
+			sendMessageError := ds.SendMessageError{Uuid: entry.RecipientAddress.Uuid, Number: entry.RecipientAddress.Number, Username: entry.RecipientAddress.Username, Reason: entry.Type}
+			resp.Errors.Recipients = append(resp.Errors.Recipients, sendMessageError)
+		}
+	}
 	return &resp, nil
 }
 
@@ -749,6 +766,8 @@ func (s *SignalClient) About() About {
 }
 
 func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha string) error {
+	var err error
+	var jsonRpc2Client *JsonRpc2Client
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			UseVoice bool   `json:"voice,omitempty"`
@@ -765,12 +784,11 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 			request.Captcha = captcha
 		}
 
-		jsonRpc2Client, err := s.getJsonRpc2Client()
+		jsonRpc2Client, err = s.getJsonRpc2Client()
 		if err != nil {
 			return err
 		}
 		_, err = jsonRpc2Client.getRaw("register", nil, request)
-		return err
 	} else {
 		command := []string{"--config", s.signalCliConfig, "-a", number, "register"}
 
@@ -782,9 +800,16 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 			command = append(command, []string{"--captcha", captcha}...)
 		}
 
-		_, err := s.cliClient.Execute(true, command, "")
-		return err
+		_, err = s.cliClient.Execute(true, command, "")
 	}
+
+	if err != nil {
+		if !useVoice && strings.Contains(err.Error(), "StatusCode: 400 (InvalidTransportModeException)") {
+			return &InvalidTransportError{Description: "Couldn't use SMS verification to register number."}
+		}
+	}
+
+	return err
 }
 
 func (s *SignalClient) UnregisterNumber(number string, deleteAccount bool, deleteLocalData bool) error {
@@ -891,7 +916,7 @@ func (s *SignalClient) VerifyRegisteredNumber(number string, token string, pin s
 	}
 }
 
-func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (*SendResponse, error) {
+func (s *SignalClient) SendV1(number string, message string, recipients []string, base64Attachments []string, isGroup bool) (*ds.SendMessageResponse, error) {
 	recipientType := ds.Number
 	if isGroup {
 		recipientType = ds.Group
@@ -900,8 +925,8 @@ func (s *SignalClient) SendV1(number string, message string, recipients []string
 	signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: recipients, Base64Attachments: base64Attachments,
 		RecipientType: recipientType, Sticker: "", Mentions: nil, QuoteTimestamp: nil, QuoteAuthor: nil, QuoteMessage: nil,
 		QuoteMentions: nil, TextMode: nil, EditTimestamp: nil, LinkPreview: nil}
-	timestamp, err := s.send(signalCliSendRequest)
-	return timestamp, err
+	resp, err := s.send(signalCliSendRequest)
+	return resp, err
 }
 
 func (s *SignalClient) getJsonRpc2Client() (*JsonRpc2Client, error) {
@@ -921,7 +946,7 @@ func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 
 func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, sticker string, mentions []ds.MessageMention,
 	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []ds.MessageMention, textMode *string, editTimestamp *int64, notifySelf *bool,
-	linkPreview *ds.LinkPreviewType, viewOnce *bool) (*[]SendResponse, error) {
+	linkPreview *ds.LinkPreviewType, viewOnce *bool) (*[]ds.SendMessageResponse, error) {
 	if len(recps) == 0 {
 		return nil, errors.New("Please provide at least one recipient")
 	}
@@ -967,17 +992,17 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		return nil, errors.New("A signal message cannot be sent to more than one group at once! Please use multiple REST API calls for that.")
 	}
 
-	timestamps := []SendResponse{}
+	responses := []ds.SendMessageResponse{}
 	for _, group := range groups {
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: []string{group}, Base64Attachments: base64Attachments,
 			RecipientType: ds.Group, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
 			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
-		timestamp, err := s.send(signalCliSendRequest)
+		resp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
 		}
-		timestamps = append(timestamps, *timestamp)
+		responses = append(responses, *resp)
 	}
 
 	if len(numbers) > 0 {
@@ -985,11 +1010,11 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 			RecipientType: ds.Number, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
 			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
-		timestamp, err := s.send(signalCliSendRequest)
+		resp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
 		}
-		timestamps = append(timestamps, *timestamp)
+		responses = append(responses, *resp)
 	}
 
 	if len(usernames) > 0 {
@@ -997,14 +1022,14 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 			RecipientType: ds.Username, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
 			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
-		timestamp, err := s.send(signalCliSendRequest)
+		resp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
 		}
-		timestamps = append(timestamps, *timestamp)
+		responses = append(responses, *resp)
 	}
 
-	return &timestamps, nil
+	return &responses, nil
 }
 
 func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments bool, ignoreStories bool, ignoreAvatars bool, ignoreStickers bool, maxMessages int64, sendReadReceipts bool) (string, error) {
@@ -1080,8 +1105,8 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 	var internalGroupId string
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			Name                    string   `json:"name"`
-			Members                 []string `json:"members"`
+			Name                    string   `json:"name,omitempty"`
+			Members                 []string `json:"members,omitempty"`
 			Link                    string   `json:"link,omitempty"`
 			Description             string   `json:"description,omitempty"`
 			EditGroupPermissions    string   `json:"setPermissionEditDetails,omitempty"`
@@ -1135,8 +1160,16 @@ func (s *SignalClient) CreateGroup(number string, name string, members []string,
 		}
 		internalGroupId = resp.GroupId
 	} else {
-		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup", "-n", name, "-m"}
-		cmd = append(cmd, prefixUsernameMembers(members)...)
+		cmd := []string{"--config", s.signalCliConfig, "-a", number, "updateGroup"}
+
+		if name != "" {
+			cmd = append(cmd, []string{"--n", name}...)
+		}
+
+		if len(members) > 0 {
+			cmd = append(cmd, "-m")
+			cmd = append(cmd, prefixUsernameMembers(members)...)
+		}
 
 		if addMembersPermission != DefaultGroupPermission {
 			cmd = append(cmd, []string{"--set-permission-add-member", addMembersPermission.String()}...)
@@ -1314,6 +1347,25 @@ func (s *SignalClient) RemoveAdminsFromGroup(number string, groupId string, admi
 	return s.updateGroupAdmins(number, groupId, admins, false)
 }
 
+func signalCliGroupEntryToExpandedGroupEntry(signalCliGroupEntry SignalCliGroupEntry) ExpandedGroupEntry {
+	var groupEntry ExpandedGroupEntry
+	groupEntry.InternalId = signalCliGroupEntry.Id
+	groupEntry.Name = signalCliGroupEntry.Name
+	groupEntry.Id = convertInternalGroupIdToGroupId(signalCliGroupEntry.Id)
+	groupEntry.Blocked = signalCliGroupEntry.IsBlocked
+	groupEntry.Member = signalCliGroupEntry.IsMember
+	groupEntry.Description = signalCliGroupEntry.Description
+	groupEntry.Permissions.SendMessages = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
+	groupEntry.Permissions.EditGroup = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
+	groupEntry.Permissions.AddMembers = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionAddMember)
+	groupEntry.Members = signalCliGroupEntry.Members
+	groupEntry.PendingInvites = signalCliGroupEntry.PendingMembers
+	groupEntry.PendingRequests = signalCliGroupEntry.RequestingMembers
+	groupEntry.Admins = signalCliGroupEntry.Admins
+	groupEntry.InviteLink = signalCliGroupEntry.GroupInviteLink
+	return groupEntry
+}
+
 func (s *SignalClient) GetGroupsExpanded(number string) ([]ExpandedGroupEntry, error) {
 	groupEntries := []ExpandedGroupEntry{}
 
@@ -1344,22 +1396,7 @@ func (s *SignalClient) GetGroupsExpanded(number string) ([]ExpandedGroupEntry, e
 	}
 
 	for _, signalCliGroupEntry := range signalCliGroupEntries {
-		var groupEntry ExpandedGroupEntry
-		groupEntry.InternalId = signalCliGroupEntry.Id
-		groupEntry.Name = signalCliGroupEntry.Name
-		groupEntry.Id = convertInternalGroupIdToGroupId(signalCliGroupEntry.Id)
-		groupEntry.Blocked = signalCliGroupEntry.IsBlocked
-		groupEntry.Description = signalCliGroupEntry.Description
-		groupEntry.Permissions.SendMessages = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
-		groupEntry.Permissions.EditGroup = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionSendMessage)
-		groupEntry.Permissions.AddMembers = signalCliGroupPermissionToRestApiGroupPermission(signalCliGroupEntry.PermissionAddMember)
-		groupEntry.Members = signalCliGroupEntry.Members
-		groupEntry.PendingInvites = signalCliGroupEntry.PendingMembers
-		groupEntry.PendingRequests = signalCliGroupEntry.RequestingMembers
-		groupEntry.Admins = signalCliGroupEntry.Admins
-		groupEntry.InviteLink = signalCliGroupEntry.GroupInviteLink
-
-		groupEntries = append(groupEntries, groupEntry)
+		groupEntries = append(groupEntries, signalCliGroupEntryToExpandedGroupEntry(signalCliGroupEntry))
 	}
 
 	return groupEntries, nil
@@ -1374,7 +1411,7 @@ func (s *SignalClient) GetGroups(number string) ([]GroupEntry, error) {
 	groupEntries := []GroupEntry{}
 	for _, expandedGroupEntry := range expandedGroupEntries {
 		groupEntry := GroupEntry{InternalId: expandedGroupEntry.InternalId, Name: expandedGroupEntry.Name,
-			Id: expandedGroupEntry.Id, Blocked: expandedGroupEntry.Blocked, Description: expandedGroupEntry.Description,
+			Id: expandedGroupEntry.Id, Blocked: expandedGroupEntry.Blocked, Member: expandedGroupEntry.Member, Description: expandedGroupEntry.Description,
 			Permissions: expandedGroupEntry.Permissions, InviteLink: expandedGroupEntry.InviteLink}
 
 		members := []string{}

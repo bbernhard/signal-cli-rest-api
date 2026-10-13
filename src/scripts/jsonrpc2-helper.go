@@ -1,31 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os/exec"
+	"os"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	log "github.com/sirupsen/logrus"
 )
-
-const supervisorctlConfigTemplate = `
-[program:%s]
-process_name=%s
-command=%s --output=json --config %s%s daemon%s %s%s%s%s --tcp 127.0.0.1:%d
-autostart=true
-autorestart=true
-startretries=10
-user=signal-api
-directory=/usr/bin/
-redirect_stderr=true
-stdout_logfile=/var/log/%s/out.log
-stderr_logfile=/var/log/%s/err.log
-stdout_logfile_maxbytes=50MB
-stdout_logfile_backups=10
-numprocs=1
-`
 
 func main() {
 	signalCliConfigDir := "/home/.local/share/signal-cli/"
@@ -40,7 +23,6 @@ func main() {
 	jsonRpc2ClientConfig := utils.NewJsonRpc2ClientConfig()
 
 	var tcpPort int64 = 6001
-
 	jsonRpc2ClientConfig.AddEntry(utils.MULTI_ACCOUNT_NUMBER, utils.JsonRpc2ClientConfigEntry{TcpPort: tcpPort})
 
 	signalCliBinary := "signal-cli"
@@ -51,83 +33,64 @@ func main() {
 		log.Fatal("The mode needs to be either 'json-rpc' or 'json-rpc-native'")
 	}
 
-	signalCliIgnoreAttachments := ""
-	ignoreAttachments := utils.GetEnv("JSON_RPC_IGNORE_ATTACHMENTS", "")
-	if ignoreAttachments == "true" {
-		signalCliIgnoreAttachments = " --ignore-attachments"
-	}
+	args := []string{signalCliBinary, "--output", "json", "--config", signalCliConfigDir}
 
-	signalCliIgnoreStories := ""
-	ignoreStories := utils.GetEnv("JSON_RPC_IGNORE_STORIES", "")
-	if ignoreStories == "true" {
-		signalCliIgnoreStories = " --ignore-stories"
-	}
-
-	signalCliIgnoreAvatars := ""
-	ignoreAvatars := utils.GetEnv("JSON_RPC_IGNORE_AVATARS", "")
-	if ignoreAvatars == "true" {
-		signalCliIgnoreAvatars = " --ignore-avatars"
-	}
-
-	signalCliIgnoreStickers := ""
-	ignoreStickers := utils.GetEnv("JSON_RPC_IGNORE_STICKERS", "")
-	if ignoreStickers == "true" {
-		signalCliIgnoreStickers = " --ignore-stickers"
-	}
-
-	// Receive mode: by default signal-cli auto-receives messages on the
-	// daemon and pushes them as JSON-RPC notifications, regardless of
-	// whether any websocket subscriber is connected. In a deploy where
-	// the subscribing client briefly disconnects, those notifications
-	// have nowhere to go and are silently dropped. With manual receive
-	// mode, signal-cli only fetches messages when explicitly requested
-	// via subscribeReceive — see jsonrpc2.go — so messages stay buffered
-	// on the Signal servers until a subscriber re-attaches.
-	signalCliReceiveMode := ""
-	receiveMode := utils.GetEnv("JSON_RPC_RECEIVE_MODE", "")
-	if receiveMode == "manual" {
-		signalCliReceiveMode = " --receive-mode=manual"
-	} else if receiveMode != "" && receiveMode != "on-start" {
-		log.Fatal("Invalid JSON_RPC_RECEIVE_MODE environment variable set! Must be 'manual' or 'on-start'.")
-	}
-
-	supervisorctlProgramName := "signal-cli-json-rpc-1"
-	supervisorctlLogFolder := "/var/log/" + supervisorctlProgramName
-	_, err := exec.Command("mkdir", "-p", supervisorctlLogFolder).Output()
-	if err != nil {
-		log.Fatal("Couldn't create log folder ", supervisorctlLogFolder, ": ", err.Error())
-	}
-
-	trustNewIdentities := ""
 	trustNewIdentitiesEnv := utils.GetEnv("JSON_RPC_TRUST_NEW_IDENTITIES", "")
 	if trustNewIdentitiesEnv == "on-first-use" {
-		trustNewIdentities = " --trust-new-identities on-first-use"
+		args = append(args, []string{"--trust-new-identities", "on-first-use"}...)
 	} else if trustNewIdentitiesEnv == "always" {
-		trustNewIdentities = " --trust-new-identities always"
+		args = append(args, []string{"--trust-new-identities", "always"}...)
 	} else if trustNewIdentitiesEnv == "never" {
-		trustNewIdentities = " --trust-new-identities never"
+		args = append(args, []string{"--trust-new-identities", "never"}...)
 	} else if trustNewIdentitiesEnv != "" {
 		log.Fatal("Invalid JSON_RPC_TRUST_NEW_IDENTITIES environment variable set!")
 	}
 
-	log.Info("Updated jsonrpc2.yml")
+	args = append(args, "daemon")
 
-	//write supervisorctl config
-	supervisorctlConfigFilename := "/etc/supervisor/conf.d/" + "signal-cli-json-rpc-1.conf"
-
-	supervisorctlConfig := fmt.Sprintf(supervisorctlConfigTemplate, supervisorctlProgramName, supervisorctlProgramName, signalCliBinary,
-		signalCliConfigDir, trustNewIdentities, signalCliReceiveMode, signalCliIgnoreAttachments, signalCliIgnoreStories,
-		signalCliIgnoreAvatars, signalCliIgnoreStickers, tcpPort,
-		supervisorctlProgramName, supervisorctlProgramName)
-
-	err = ioutil.WriteFile(supervisorctlConfigFilename, []byte(supervisorctlConfig), 0644)
-	if err != nil {
-		log.Fatal("Couldn't write ", supervisorctlConfigFilename, ": ", err.Error())
+	ignoreStories := utils.GetEnv("JSON_RPC_IGNORE_STORIES", "")
+	if ignoreStories == "true" {
+		args = append(args, "--ignore-stories")
 	}
 
+	ignoreAvatars := utils.GetEnv("JSON_RPC_IGNORE_AVATARS", "")
+	if ignoreAvatars == "true" {
+		args = append(args, "--ignore-avatars")
+	}
+
+	ignoreStickers := utils.GetEnv("JSON_RPC_IGNORE_STICKERS", "")
+	if ignoreStickers == "true" {
+		args = append(args, "--ignore-stickers")
+	}
+
+	ignoreAttachments := utils.GetEnv("JSON_RPC_IGNORE_ATTACHMENTS", "")
+	if ignoreAttachments == "true" {
+		args = append(args, "--ignore-attachments")
+	}
+
+	receiveMode := utils.GetEnv("JSON_RPC_RECEIVE_MODE", "")
+	if receiveMode == "on-start" {
+		args = append(args, "--receive-mode=on-start")
+	} else if receiveMode == "manual" {
+		args = append(args, "--receive-mode=manual")
+	} else if receiveMode != "" {
+		log.Fatal("Invalid JSON_RPC_RECEIVE_MODE environment variable set!")
+	}
+
+	args = append(args, []string{"--tcp", "127.0.0.1:" + strconv.FormatInt(tcpPort, 10)}...)
+
 	// write jsonrpc.yml config file
-	err = jsonRpc2ClientConfig.Persist(signalCliConfigDir + "jsonrpc2.yml")
+	err := jsonRpc2ClientConfig.Persist(signalCliConfigDir + "jsonrpc2.yml")
 	if err != nil {
 		log.Fatal("Couldn't persist jsonrpc2.yaml: ", err.Error())
+	}
+
+	log.Info("Updated jsonrpc2.yml")
+
+	env := os.Environ()
+
+	err = syscall.Exec("/usr/bin/"+signalCliBinary, args, env)
+	if err != nil {
+		log.Fatal("Couldn't start signal-cli in json-rpc mode: ", err.Error())
 	}
 }

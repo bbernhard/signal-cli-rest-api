@@ -23,3 +23,11 @@ type InternalError struct {
 func (e *InternalError) Error() string {
 	return e.Description
 }
+
+type InvalidTransportError struct {
+	Description string
+}
+
+func (e *InvalidTransportError) Error() string {
+	return e.Description
+}

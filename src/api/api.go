@@ -39,8 +39,8 @@ type UpdateContactRequest struct {
 }
 
 type CreateGroupRequest struct {
-	Name           string              `json:"name"`
-	Members        []string            `json:"members"`
+	Name           string              `json:"name,omitempty"`
+	Members        []string            `json:"members,omitempty"`
 	Description    string              `json:"description,omitempty"`
 	Permissions    ds.GroupPermissions `json:"permissions,omitempty"`
 	GroupLinkState string              `json:"group_link,omitempty" enums:"disabled,enabled,enabled-with-approval"`
@@ -171,10 +171,6 @@ type UpdateProfileRequest struct {
 type TrustIdentityRequest struct {
 	VerifiedSafetyNumber *string `json:"verified_safety_number,omitempty"`
 	TrustAllKnownKeys    *bool   `json:"trust_all_known_keys,omitempty" example:"false"`
-}
-
-type SendMessageResponse struct {
-	Timestamp string `json:"timestamp"`
 }
 
 type RemoteDeleteResponse struct {
@@ -324,8 +320,14 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 
 	err = a.signalClient.RegisterNumber(number, req.UseVoice, req.Captcha)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
+		switch err.(type) {
+		case *client.InvalidTransportError:
+			c.JSON(400, Error{Msg: "Couldn't use SMS verification to register the specified number. Wait 60 seconds and try again with {\"use_voice\": true}"})
+			return
+		default:
+			c.JSON(400, Error{Msg: err.Error()})
+			return
+		}
 	}
 	c.Writer.WriteHeader(201)
 }
@@ -470,7 +472,6 @@ func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
 // @Router /v1/send [post]
 // @Deprecated
 func (a *Api) Send(c *gin.Context) {
-
 	var req SendMessageV1
 	err := c.BindJSON(&req)
 	if err != nil {
@@ -483,12 +484,12 @@ func (a *Api) Send(c *gin.Context) {
 		base64Attachments = append(base64Attachments, req.Base64Attachment)
 	}
 
-	timestamp, err := a.signalClient.SendV1(req.Number, req.Message, req.Recipients, base64Attachments, req.IsGroup)
+	resp, err := a.signalClient.SendV1(req.Number, req.Message, req.Recipients, base64Attachments, req.IsGroup)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
 	}
-	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt(timestamp.Timestamp, 10)})
+	c.JSON(201, resp)
 }
 
 // @Summary Send a signal message.
@@ -496,7 +497,7 @@ func (a *Api) Send(c *gin.Context) {
 // @Description Send a signal message. Set the text_mode to 'styled' in case you want to add formatting to your text message. Styling Options: \*italic text\*, \*\*bold text\*\*, ~strikethrough text~, ||spoiler||, \`monospace\`. If you want to escape a formatting character, prefix it with two backslashes.
 // @Accept  json
 // @Produce  json
-// @Success 201 {object} SendMessageResponse
+// @Success 201 {array} ds.SendMessageResponse
 // @Failure 400 {object} SendMessageError
 // @Param data body SendMessageV2 true "Input Data"
 // @Router /v2/send [post]
@@ -568,7 +569,7 @@ func (a *Api) SendV2(c *gin.Context) {
 		return
 	}
 
-	c.JSON(201, SendMessageResponse{Timestamp: strconv.FormatInt((*data)[0].Timestamp, 10)})
+	c.JSON(201, data)
 }
 
 func (a *Api) handleSignalReceive(ws *websocket.Conn, number string, stop chan struct{}) {
@@ -870,6 +871,11 @@ func (a *Api) AddMembersToGroup(c *gin.Context) {
 	err = c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	if len(req.Members) == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - group members missing"})
 		return
 	}
 
@@ -1196,7 +1202,7 @@ func (a *Api) DeleteGroup(c *gin.Context) {
 // @Description Pin a message in a Signal Group.
 // @Accept  json
 // @Produce  json
-// @Success 200 {string} string "OK"
+// @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param data body PinMessageInGroupRequest true "Pin"
 // @Param number path string true "Registered Phone Number"
@@ -1247,7 +1253,7 @@ func (a *Api) PinMessageInGroup(c *gin.Context) {
 // @Description Unpin a message in a Signal Group.
 // @Accept  json
 // @Produce  json
-// @Success 200 {string} string "OK"
+// @Success 201 {string} string "OK"
 // @Failure 400 {object} Error
 // @Param data body UnpinMessageInGroupRequest true "Unpin"
 // @Param number path string true "Registered Phone Number"
@@ -1276,6 +1282,16 @@ func (a *Api) UnpinMessageInGroup(c *gin.Context) {
 	err = c.BindJSON(&req)
 	if err != nil {
 		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+
+	if req.TargetAuthor == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - target author missing"})
+		return
+	}
+
+	if req.Timestamp == 0 {
+		c.JSON(400, Error{Msg: "Couldn't process request - timestamp missing"})
 		return
 	}
 
@@ -2385,6 +2401,16 @@ func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
 		return
 	}
 
+	if req.ChallengeToken == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - challenge token missing"})
+		return
+	}
+
+	if req.Captcha == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - captcha missing"})
+		return
+	}
+
 	err = a.signalClient.SubmitRateLimitChallenge(number, req.ChallengeToken, req.Captcha)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
@@ -2400,7 +2426,7 @@ func (a *Api) SubmitRateLimitChallenge(c *gin.Context) {
 // @Produce  json
 // @Param number path string true "Registered Phone Number"
 // @Param data body UpdateAccountSettingsRequest true "Request"
-// @Success 204
+// @Success 201
 // @Failure 400 {object} Error
 // @Router /v1/accounts/{number}/settings [put]
 func (a *Api) UpdateAccountSettings(c *gin.Context) {
@@ -2531,7 +2557,7 @@ func (a *Api) ListInstalledStickerPacks(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param number path string true "Registered Phone Number"
-// @Success 204
+// @Success 201
 // @Failure 400 {object} Error
 // @Param data body AddStickerPackRequest true "Request"
 // @Router /v1/sticker-packs/{number} [post]

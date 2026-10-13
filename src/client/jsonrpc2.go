@@ -200,6 +200,8 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 				ChallengeTokens: challengeTokens,
 				Err:             errors.New(resp.Err.Message),
 			}
+		} else if resp.Err.Code == -4 {
+			return "", errors.New("Unable to complete request due to untrusted recipient keys")
 		}
 		return "", errors.New(resp.Err.Message)
 	}
@@ -286,7 +288,10 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 		err = json.Unmarshal([]byte(str), &resp2)
 		if err == nil {
 			if resp2.Id != "" {
-				if responseChan, ok := r.receivedResponsesById[resp2.Id]; ok {
+				r.receivedResponsesMutex.Lock()
+				responseChan, ok := r.receivedResponsesById[resp2.Id]
+				r.receivedResponsesMutex.Unlock()
+				if ok {
 					responseChan <- resp2
 				}
 			}

@@ -1,0 +1,3 @@
+endpoint: persistence/query-message
+method: GET
+version: 2

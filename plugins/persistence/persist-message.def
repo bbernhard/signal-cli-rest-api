@@ -1,0 +1,3 @@
+endpoint: persistence/persist-message
+method: POST
+version: 2
