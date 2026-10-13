@@ -66,23 +66,25 @@ type receiveSubscription struct {
 }
 
 type JsonRpc2Client struct {
-	conn                       net.Conn
-	receivedResponsesById      map[string]chan JsonRpc2MessageResponse
-	receivedMessagesChannels   map[string]chan JsonRpc2ReceivedMessage
-	receiveSubscriptions       map[string]*receiveSubscription // account -> sub state
-	channelAccountByUuid       map[string]string               // channelUuid -> account
-	signalCliApiConfig         *utils.SignalCliApiConfig
-	number                     string
-	receivedMessagesMutex      sync.Mutex
-	receivedResponsesMutex     sync.Mutex
-	receiveSubscriptionsMutex  sync.Mutex
-	address                    string
+	conn                      net.Conn
+	receivedResponsesById     map[string]chan JsonRpc2MessageResponse
+	receivedMessagesChannels  map[string]chan JsonRpc2ReceivedMessage
+	receiveSubscriptions      map[string]*receiveSubscription // account -> sub state
+	channelAccountByUuid      map[string]string               // channelUuid -> account
+	signalCliApiConfig        *utils.SignalCliApiConfig
+	number                    string
+	manualReceiveMode         bool
+	receivedMessagesMutex     sync.Mutex
+	receivedResponsesMutex    sync.Mutex
+	receiveSubscriptionsMutex sync.Mutex
+	address                   string
 }
 
-func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string) *JsonRpc2Client {
+func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string, manualRcpReceiveMode bool) *JsonRpc2Client {
 	return &JsonRpc2Client{
 		signalCliApiConfig:       signalCliApiConfig,
 		number:                   number,
+		manualReceiveMode:        manualRcpReceiveMode,
 		receivedResponsesById:    make(map[string]chan JsonRpc2MessageResponse),
 		receivedMessagesChannels: make(map[string]chan JsonRpc2ReceivedMessage),
 		receiveSubscriptions:     make(map[string]*receiveSubscription),
@@ -301,11 +303,6 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 	}
 }
 
-// subscribeReceive starts receiving messages for an account by calling
-// signal-cli's subscribeReceive JSON-RPC method. Only relevant when
-// signal-cli was launched with --receive-mode=manual; in auto mode the
-// daemon pushes notifications without an explicit subscribe call.
-// Returns the subscription id assigned by signal-cli.
 func (r *JsonRpc2Client) subscribeReceive(account string) (int64, error) {
 	type subscribeReceiveArgs struct{}
 	resultStr, err := r.getRaw("subscribeReceive", &account, subscribeReceiveArgs{})
@@ -319,8 +316,6 @@ func (r *JsonRpc2Client) subscribeReceive(account string) (int64, error) {
 	return subscriptionId, nil
 }
 
-// unsubscribeReceive cancels a manual-mode subscription previously
-// returned by subscribeReceive.
 func (r *JsonRpc2Client) unsubscribeReceive(account string, subscriptionId int64) error {
 	type unsubscribeReceiveArgs struct {
 		Subscription int64 `json:"subscription"`
@@ -329,10 +324,6 @@ func (r *JsonRpc2Client) unsubscribeReceive(account string, subscriptionId int64
 	return err
 }
 
-// acquireReceiveSubscription ensures an active manual-mode subscription
-// exists for the given account, refcounting concurrent websocket
-// subscribers. The first caller for an account triggers a real
-// subscribeReceive RPC; subsequent callers just bump the refcount.
 func (r *JsonRpc2Client) acquireReceiveSubscription(account string) error {
 	r.receiveSubscriptionsMutex.Lock()
 	defer r.receiveSubscriptionsMutex.Unlock()
@@ -341,45 +332,42 @@ func (r *JsonRpc2Client) acquireReceiveSubscription(account string) error {
 		sub.refcount++
 		return nil
 	}
+
 	id, err := r.subscribeReceive(account)
 	if err != nil {
 		return err
 	}
+
 	r.receiveSubscriptions[account] = &receiveSubscription{id: id, refcount: 1}
 	log.Infof("Subscribed to receive notifications for account %s (subscription=%d)", account, id)
 	return nil
 }
 
-// releaseReceiveSubscription decrements the per-account refcount and
-// cancels the subscription with signal-cli if it drops to zero.
-func (r *JsonRpc2Client) releaseReceiveSubscription(account string) {
+func (r *JsonRpc2Client) releaseReceiveSubscription(account string) error {
 	r.receiveSubscriptionsMutex.Lock()
 	defer r.receiveSubscriptionsMutex.Unlock()
 
 	sub, ok := r.receiveSubscriptions[account]
 	if !ok {
-		return
+		return nil
 	}
+
 	sub.refcount--
 	if sub.refcount > 0 {
-		return
+		return nil
 	}
-	if err := r.unsubscribeReceive(account, sub.id); err != nil {
+
+	err := r.unsubscribeReceive(account, sub.id)
+	if err != nil {
 		log.Warnf("unsubscribeReceive failed for account %s (subscription=%d): %s", account, sub.id, err.Error())
 	} else {
 		log.Infof("Unsubscribed from receive notifications for account %s (subscription=%d)", account, sub.id)
 	}
+
 	delete(r.receiveSubscriptions, account)
+	return err
 }
 
-// GetReceiveChannel returns a channel that will receive messages for the
-// given account. If signal-cli is in manual receive-mode, it also acquires
-// a subscription so that signal-cli starts forwarding messages for the
-// account; in auto mode, account is unused (notifications flow regardless).
-//
-// account may be empty when the caller does not need a subscription
-// (e.g. legacy callers in auto mode); in that case no subscribeReceive
-// RPC is issued.
 func (r *JsonRpc2Client) GetReceiveChannel(account string) (chan JsonRpc2ReceivedMessage, string, error) {
 	c := make(chan JsonRpc2ReceivedMessage, 64)
 
@@ -388,8 +376,10 @@ func (r *JsonRpc2Client) GetReceiveChannel(account string) (chan JsonRpc2Receive
 		return c, "", err
 	}
 
-	if err := r.acquireReceiveSubscription(account); err != nil {
-		return c, "", fmt.Errorf("subscribeReceive failed for account %s: %w", account, err)
+	if r.manualReceiveMode {
+		if err := r.acquireReceiveSubscription(account); err != nil {
+			return c, "", fmt.Errorf("Couldn't create subscription for account %s: %w", account, err)
+		}
 	}
 
 	r.receivedMessagesMutex.Lock()
@@ -407,7 +397,9 @@ func (r *JsonRpc2Client) RemoveReceiveChannel(channelUuid string) {
 	delete(r.channelAccountByUuid, channelUuid)
 	r.receivedMessagesMutex.Unlock()
 
-	if account != "" {
-		r.releaseReceiveSubscription(account)
+	if r.manualReceiveMode {
+		if err := r.releaseReceiveSubscription(account); err != nil {
+			log.Errorf("Couldn't release subscription for account %s: %s", account, err.Error())
+		}
 	}
 }
