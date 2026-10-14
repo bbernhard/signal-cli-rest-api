@@ -69,8 +69,8 @@ type JsonRpc2Client struct {
 	conn                      net.Conn
 	receivedResponsesById     map[string]chan JsonRpc2MessageResponse
 	receivedMessagesChannels  map[string]chan JsonRpc2ReceivedMessage
-	receiveSubscriptions      map[string]*receiveSubscription // account -> sub state
-	channelAccountByUuid      map[string]string               // channelUuid -> account
+	receiveSubscriptions      map[string]*receiveSubscription
+	accountsByChannelUuid     map[string]string
 	signalCliApiConfig        *utils.SignalCliApiConfig
 	number                    string
 	manualReceiveMode         bool
@@ -88,7 +88,7 @@ func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number stri
 		receivedResponsesById:    make(map[string]chan JsonRpc2MessageResponse),
 		receivedMessagesChannels: make(map[string]chan JsonRpc2ReceivedMessage),
 		receiveSubscriptions:     make(map[string]*receiveSubscription),
-		channelAccountByUuid:     make(map[string]string),
+		accountsByChannelUuid:    make(map[string]string),
 	}
 }
 
@@ -313,7 +313,7 @@ func (r *JsonRpc2Client) subscribeReceive(account string) (int64, error) {
 	}
 	var subscriptionId int64
 	if err := json.Unmarshal([]byte(resultStr), &subscriptionId); err != nil {
-		return 0, fmt.Errorf("subscribeReceive: couldn't parse subscription id from %q: %w", resultStr, err)
+		return 0, err
 	}
 	return subscriptionId, nil
 }
@@ -361,7 +361,7 @@ func (r *JsonRpc2Client) releaseReceiveSubscription(account string) error {
 
 	err := r.unsubscribeReceive(account, sub.id)
 	if err != nil {
-		log.Warnf("unsubscribeReceive failed for account %s (subscription=%d): %s", account, sub.id, err.Error())
+		log.Warnf("Couldn't unsubscribed from receive notifications for account %s (subscription=%d): %s", account, sub.id, err.Error())
 	} else {
 		log.Infof("Unsubscribed from receive notifications for account %s (subscription=%d)", account, sub.id)
 	}
@@ -386,7 +386,7 @@ func (r *JsonRpc2Client) GetReceiveChannel(account string) (chan JsonRpc2Receive
 
 	r.receivedMessagesMutex.Lock()
 	r.receivedMessagesChannels[channelUuid.String()] = c
-	r.channelAccountByUuid[channelUuid.String()] = account
+	r.accountsByChannelUuid[channelUuid.String()] = account
 	r.receivedMessagesMutex.Unlock()
 
 	return c, channelUuid.String(), nil
@@ -395,8 +395,8 @@ func (r *JsonRpc2Client) GetReceiveChannel(account string) (chan JsonRpc2Receive
 func (r *JsonRpc2Client) RemoveReceiveChannel(channelUuid string) {
 	r.receivedMessagesMutex.Lock()
 	delete(r.receivedMessagesChannels, channelUuid)
-	account := r.channelAccountByUuid[channelUuid]
-	delete(r.channelAccountByUuid, channelUuid)
+	account := r.accountsByChannelUuid[channelUuid]
+	delete(r.accountsByChannelUuid, channelUuid)
 	r.receivedMessagesMutex.Unlock()
 
 	if r.manualReceiveMode {
