@@ -341,7 +341,7 @@ func (r *JsonRpc2Client) acquireReceiveSubscription(account string) error {
 	}
 
 	r.receiveSubscriptions[account] = &receiveSubscription{id: id, refcount: 1}
-	log.Infof("Subscribed to receive notifications for account %s (subscription=%d)", account, id)
+	log.Debugf("Subscribed to receive notifications for account %s (subscription=%d)", account, id)
 	return nil
 }
 
@@ -363,7 +363,7 @@ func (r *JsonRpc2Client) releaseReceiveSubscription(account string) error {
 	if err != nil {
 		log.Warnf("Couldn't unsubscribed from receive notifications for account %s (subscription=%d): %s", account, sub.id, err.Error())
 	} else {
-		log.Infof("Unsubscribed from receive notifications for account %s (subscription=%d)", account, sub.id)
+		log.Debugf("Unsubscribed from receive notifications for account %s (subscription=%d)", account, sub.id)
 	}
 
 	delete(r.receiveSubscriptions, account)
