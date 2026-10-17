@@ -68,6 +68,15 @@ func main() {
 		args = append(args, "--ignore-attachments")
 	}
 
+	receiveMode := utils.GetEnv("JSON_RPC_RECEIVE_MODE", "")
+	if receiveMode == "on-start" {
+		args = append(args, "--receive-mode=on-start")
+	} else if receiveMode == "manual" {
+		args = append(args, "--receive-mode=manual")
+	} else if receiveMode != "" {
+		log.Fatal("Invalid JSON_RPC_RECEIVE_MODE environment variable set!")
+	}
+
 	args = append(args, []string{"--tcp", "127.0.0.1:" + strconv.FormatInt(tcpPort, 10)}...)
 
 	// write jsonrpc.yml config file

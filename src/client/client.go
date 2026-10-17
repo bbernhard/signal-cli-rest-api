@@ -53,6 +53,13 @@ const (
 	JsonRpc
 )
 
+type JsonRpcReceiveMode int
+
+const (
+	OnStart JsonRpcReceiveMode = iota + 1
+	Manual
+)
+
 type GroupLinkState int
 
 const (
@@ -406,10 +413,11 @@ type SignalClient struct {
 	signalCliApiConfig       *utils.SignalCliApiConfig
 	cliClient                *CliClient
 	receiveWebhookUrl        string
+	jsonRpcReceiveMode       JsonRpcReceiveMode
 }
 
 func NewSignalClient(signalCliConfig string, attachmentTmpDir string, avatarTmpDir string, signalCliMode SignalCliMode,
-	jsonRpc2ClientConfigPath string, signalCliApiConfigPath string, receiveWebhookUrl string) *SignalClient {
+	jsonRpc2ClientConfigPath string, signalCliApiConfigPath string, receiveWebhookUrl string, jsonRpcReceiveMode JsonRpcReceiveMode) *SignalClient {
 	return &SignalClient{
 		signalCliConfig:          signalCliConfig,
 		attachmentTmpDir:         attachmentTmpDir,
@@ -419,6 +427,7 @@ func NewSignalClient(signalCliConfig string, attachmentTmpDir string, avatarTmpD
 		jsonRpc2Clients:          make(map[string]*JsonRpc2Client),
 		signalCliApiConfigPath:   signalCliApiConfigPath,
 		receiveWebhookUrl:        receiveWebhookUrl,
+		jsonRpcReceiveMode:       jsonRpcReceiveMode,
 	}
 }
 
@@ -442,7 +451,7 @@ func (s *SignalClient) Init(maxRetries int) error {
 
 		tcpPortsNumberMapping := s.jsonRpc2ClientConfig.GetTcpPortsForNumbers()
 		for number, tcpPort := range tcpPortsNumberMapping {
-			s.jsonRpc2Clients[number] = NewJsonRpc2Client(s.signalCliApiConfig, number)
+			s.jsonRpc2Clients[number] = NewJsonRpc2Client(s.signalCliApiConfig, number, s.jsonRpcReceiveMode)
 			err := s.jsonRpc2Clients[number].Dial("127.0.0.1:"+strconv.FormatInt(tcpPort, 10), maxRetries)
 			if err != nil {
 				return err
@@ -1084,12 +1093,12 @@ func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments b
 	}
 }
 
-func (s *SignalClient) GetReceiveChannel() (chan JsonRpc2ReceivedMessage, string, error) {
+func (s *SignalClient) GetReceiveChannel(number string) (chan JsonRpc2ReceivedMessage, string, error) {
 	jsonRpc2Client, err := s.getJsonRpc2Client()
 	if err != nil {
 		return nil, "", err
 	}
-	return jsonRpc2Client.GetReceiveChannel()
+	return jsonRpc2Client.GetReceiveChannel(number)
 }
 
 func (s *SignalClient) RemoveReceiveChannel(channelUuid string) {
