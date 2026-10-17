@@ -158,7 +158,9 @@ func main() {
 
 	jsonRpcReceiveMode := client.OnStart
 	jsonRpcReceiveModeValue := utils.GetEnv("JSON_RPC_RECEIVE_MODE", "")
-	if jsonRpcReceiveModeValue == "on-start" {
+	if jsonRpcReceiveModeValue != "" && signalCliMode != client.JsonRpc {
+		log.Fatal("Env variable JSON_RPC_RECEIVE_MODE can't be used with normal or native mode")
+	} else if jsonRpcReceiveModeValue == "on-start" {
 		jsonRpcReceiveMode = client.OnStart
 	} else if jsonRpcReceiveModeValue == "manual" {
 		jsonRpcReceiveMode = client.Manual
