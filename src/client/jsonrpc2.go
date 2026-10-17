@@ -347,26 +347,30 @@ func (r *JsonRpc2Client) acquireReceiveSubscription(account string) error {
 
 func (r *JsonRpc2Client) releaseReceiveSubscription(account string) error {
 	r.receiveSubscriptionsMutex.Lock()
-	defer r.receiveSubscriptionsMutex.Unlock()
 
 	sub, ok := r.receiveSubscriptions[account]
 	if !ok {
+		r.receiveSubscriptionsMutex.Unlock()
 		return nil
 	}
 
 	sub.refcount--
 	if sub.refcount > 0 {
+		r.receiveSubscriptionsMutex.Unlock()
 		return nil
 	}
 
+	delete(r.receiveSubscriptions, account)
 	err := r.unsubscribeReceive(account, sub.id)
+
+	r.receiveSubscriptionsMutex.Unlock()
+
 	if err != nil {
 		log.Warnf("Couldn't unsubscribed from receive notifications for account %s (subscription=%d): %s", account, sub.id, err.Error())
 	} else {
 		log.Debugf("Unsubscribed from receive notifications for account %s (subscription=%d)", account, sub.id)
 	}
 
-	delete(r.receiveSubscriptions, account)
 	return err
 }
 
