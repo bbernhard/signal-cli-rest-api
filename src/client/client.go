@@ -53,6 +53,13 @@ const (
 	JsonRpc
 )
 
+type JsonRpcReceiveMode int
+
+const (
+	OnStart JsonRpcReceiveMode = iota + 1
+	Manual
+)
+
 type GroupLinkState int
 
 const (
@@ -406,11 +413,11 @@ type SignalClient struct {
 	signalCliApiConfig       *utils.SignalCliApiConfig
 	cliClient                *CliClient
 	receiveWebhookUrl        string
-	receiveManualMode        bool
+	jsonRpcReceiveMode       JsonRpcReceiveMode
 }
 
 func NewSignalClient(signalCliConfig string, attachmentTmpDir string, avatarTmpDir string, signalCliMode SignalCliMode,
-	jsonRpc2ClientConfigPath string, signalCliApiConfigPath string, receiveWebhookUrl string, receiveManualMode bool) *SignalClient {
+	jsonRpc2ClientConfigPath string, signalCliApiConfigPath string, receiveWebhookUrl string, jsonRpcReceiveMode JsonRpcReceiveMode) *SignalClient {
 	return &SignalClient{
 		signalCliConfig:          signalCliConfig,
 		attachmentTmpDir:         attachmentTmpDir,
@@ -420,7 +427,7 @@ func NewSignalClient(signalCliConfig string, attachmentTmpDir string, avatarTmpD
 		jsonRpc2Clients:          make(map[string]*JsonRpc2Client),
 		signalCliApiConfigPath:   signalCliApiConfigPath,
 		receiveWebhookUrl:        receiveWebhookUrl,
-		receiveManualMode:        receiveManualMode,
+		jsonRpcReceiveMode:       jsonRpcReceiveMode,
 	}
 }
 
@@ -444,7 +451,7 @@ func (s *SignalClient) Init(maxRetries int) error {
 
 		tcpPortsNumberMapping := s.jsonRpc2ClientConfig.GetTcpPortsForNumbers()
 		for number, tcpPort := range tcpPortsNumberMapping {
-			s.jsonRpc2Clients[number] = NewJsonRpc2Client(s.signalCliApiConfig, number, s.receiveManualMode)
+			s.jsonRpc2Clients[number] = NewJsonRpc2Client(s.signalCliApiConfig, number, s.jsonRpcReceiveMode)
 			err := s.jsonRpc2Clients[number].Dial("127.0.0.1:"+strconv.FormatInt(tcpPort, 10), maxRetries)
 			if err != nil {
 				return err

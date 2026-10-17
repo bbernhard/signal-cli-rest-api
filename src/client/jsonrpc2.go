@@ -73,18 +73,18 @@ type JsonRpc2Client struct {
 	accountsByChannelUuid     map[string]string
 	signalCliApiConfig        *utils.SignalCliApiConfig
 	number                    string
-	manualReceiveMode         bool
+	jsonRpcReceiveMode        JsonRpcReceiveMode
 	receivedMessagesMutex     sync.Mutex
 	receivedResponsesMutex    sync.Mutex
 	receiveSubscriptionsMutex sync.Mutex
 	address                   string
 }
 
-func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string, manualRcpReceiveMode bool) *JsonRpc2Client {
+func NewJsonRpc2Client(signalCliApiConfig *utils.SignalCliApiConfig, number string, jsonRpcReceiveMode JsonRpcReceiveMode) *JsonRpc2Client {
 	return &JsonRpc2Client{
 		signalCliApiConfig:       signalCliApiConfig,
 		number:                   number,
-		manualReceiveMode:        manualRcpReceiveMode,
+		jsonRpcReceiveMode:       jsonRpcReceiveMode,
 		receivedResponsesById:    make(map[string]chan JsonRpc2MessageResponse),
 		receivedMessagesChannels: make(map[string]chan JsonRpc2ReceivedMessage),
 		receiveSubscriptions:     make(map[string]*receiveSubscription),
@@ -259,7 +259,7 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 			// the envelope directly. Unwrap so the broadcast format is
 			// the same in both modes and downstream consumers (e.g. the
 			// websocket handler) don't have to know which mode is in use.
-			if r.manualReceiveMode {
+			if r.jsonRpcReceiveMode == Manual {
 				var manualWrapper struct {
 					Subscription int64           `json:"subscription"`
 					Result       json.RawMessage `json:"result"`
@@ -378,7 +378,7 @@ func (r *JsonRpc2Client) GetReceiveChannel(account string) (chan JsonRpc2Receive
 		return c, "", err
 	}
 
-	if r.manualReceiveMode {
+	if r.jsonRpcReceiveMode == Manual {
 		if err := r.acquireReceiveSubscription(account); err != nil {
 			return c, "", fmt.Errorf("Couldn't create subscription for account %s: %w", account, err)
 		}
@@ -399,7 +399,7 @@ func (r *JsonRpc2Client) RemoveReceiveChannel(channelUuid string) {
 	delete(r.accountsByChannelUuid, channelUuid)
 	r.receivedMessagesMutex.Unlock()
 
-	if r.manualReceiveMode {
+	if r.jsonRpcReceiveMode == Manual {
 		if err := r.releaseReceiveSubscription(account); err != nil {
 			log.Errorf("Couldn't release subscription for account %s: %s", account, err.Error())
 		}
