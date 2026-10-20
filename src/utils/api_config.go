@@ -2,10 +2,49 @@ package utils
 
 import (
 	"errors"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+
+	"gopkg.in/yaml.v2"
 )
+
+func writeFileAtomic(name string, data []byte, perm os.FileMode) error {
+	dir := filepath.Dir(name)
+
+	f, err := os.CreateTemp(dir, ".tmp-*")
+	if err != nil {
+		return err
+	}
+
+	tmp := f.Name()
+	defer os.Remove(tmp)
+
+	err = f.Chmod(perm)
+	if err != nil {
+		f.Close()
+		return err
+	}
+
+	_, err = f.Write(data)
+	if err != nil {
+		f.Close()
+		return err
+	}
+
+	err = f.Sync()
+	if err != nil {
+		f.Close()
+		return err
+	}
+
+	err = f.Close()
+	if err != nil {
+		return err
+	}
+
+	return os.Rename(tmp, name)
+}
 
 type SignalCliTrustMode int
 
@@ -92,5 +131,5 @@ func (c *SignalCliApiConfig) Persist() error {
 		return err
 	}
 
-	return ioutil.WriteFile(c.path, out, 0644)
+	return writeFileAtomic(c.path, out, 0644)
 }

@@ -157,6 +157,18 @@ func main() {
 		}
 	}
 
+	jsonRpcReceiveMode := client.OnStart
+	jsonRpcReceiveModeValue := utils.GetEnv("JSON_RPC_RECEIVE_MODE", "")
+	if jsonRpcReceiveModeValue != "" && signalCliMode != client.JsonRpc {
+		log.Fatal("Env variable JSON_RPC_RECEIVE_MODE can't be used with normal or native mode")
+	} else if jsonRpcReceiveModeValue == "on-start" {
+		jsonRpcReceiveMode = client.OnStart
+	} else if jsonRpcReceiveModeValue == "manual" {
+		jsonRpcReceiveMode = client.Manual
+	} else if jsonRpcReceiveModeValue != "" {
+		log.Fatal("Invalid JSON_RPC_RECEIVE_MODE environment variable set!")
+	}
+
 	webhookUrl := utils.GetEnv("RECEIVE_WEBHOOK_URL", "")
 	if webhookUrl != "" && signalCliMode != client.JsonRpc {
 		log.Fatal("Env variable RECEIVE_WEBHOOK_URL can only be used with mode json-rpc!")
@@ -164,7 +176,7 @@ func main() {
 
 	jsonRpc2ClientConfigPathPath := *signalCliConfig + "/jsonrpc2.yml"
 	signalCliApiConfigPath := *signalCliConfig + "/api-config.yml"
-	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath, signalCliApiConfigPath, webhookUrl)
+	signalClient := client.NewSignalClient(*signalCliConfig, *attachmentTmpDir, *avatarTmpDir, signalCliMode, jsonRpc2ClientConfigPathPath, signalCliApiConfigPath, webhookUrl, jsonRpcReceiveMode)
 	err = signalClient.Init(60)
 	if err != nil {
 		log.Fatal("Couldn't init Signal Client: ", err.Error())

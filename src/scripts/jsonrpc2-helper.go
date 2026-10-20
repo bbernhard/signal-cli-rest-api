@@ -25,8 +25,6 @@ func main() {
 	var tcpPort int64 = 6001
 	jsonRpc2ClientConfig.AddEntry(utils.MULTI_ACCOUNT_NUMBER, utils.JsonRpc2ClientConfigEntry{TcpPort: tcpPort})
 
-	args := []string{"--output=json", "--config", signalCliConfigDir}
-
 	signalCliBinary := "signal-cli"
 	signalMode := utils.GetEnv("MODE", "json-rpc")
 	if signalMode == "json-rpc-native" {
@@ -34,6 +32,8 @@ func main() {
 	} else if signalMode != "json-rpc" {
 		log.Fatal("The mode needs to be either 'json-rpc' or 'json-rpc-native'")
 	}
+
+	args := []string{signalCliBinary, "--output", "json", "--config", signalCliConfigDir}
 
 	trustNewIdentitiesEnv := utils.GetEnv("JSON_RPC_TRUST_NEW_IDENTITIES", "")
 	if trustNewIdentitiesEnv == "on-first-use" {
@@ -66,6 +66,15 @@ func main() {
 	ignoreAttachments := utils.GetEnv("JSON_RPC_IGNORE_ATTACHMENTS", "")
 	if ignoreAttachments == "true" {
 		args = append(args, "--ignore-attachments")
+	}
+
+	receiveMode := utils.GetEnv("JSON_RPC_RECEIVE_MODE", "")
+	if receiveMode == "on-start" {
+		args = append(args, "--receive-mode=on-start")
+	} else if receiveMode == "manual" {
+		args = append(args, "--receive-mode=manual")
+	} else if receiveMode != "" {
+		log.Fatal("Invalid JSON_RPC_RECEIVE_MODE environment variable set!")
 	}
 
 	args = append(args, []string{"--tcp", "127.0.0.1:" + strconv.FormatInt(tcpPort, 10)}...)
