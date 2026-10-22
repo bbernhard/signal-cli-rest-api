@@ -1684,7 +1684,7 @@ func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int) ([]by
 			return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
 		}
 
-		q, err := qrcode.NewWithForcedVersion(string(resp.DeviceLinkUri), qrCodeVersion, qrcode.Highest)
+		q, err := encodeLinkQR(resp.DeviceLinkUri, qrCodeVersion)
 		if err != nil {
 			return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
 		}
@@ -1699,14 +1699,14 @@ func (s *SignalClient) GetQrCodeLink(deviceName string, qrCodeVersion int) ([]by
 
 		return png, nil
 	}
-	command := []string{"--config", s.signalCliConfig, "link", "-n", deviceName}
+	command := deviceLinkCommand(s.signalCliConfig, deviceName)
 
 	tsdeviceLink, err := s.cliClient.Execute(false, command, "")
 	if err != nil {
 		return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
 	}
 
-	q, err := qrcode.NewWithForcedVersion(string(tsdeviceLink), qrCodeVersion, qrcode.Highest)
+	q, err := encodeLinkQR(tsdeviceLink, qrCodeVersion)
 	if err != nil {
 		return []byte{}, errors.New("Couldn't create QR code: " + err.Error())
 	}
@@ -1745,7 +1745,7 @@ func (s *SignalClient) GetDeviceLinkUri(deviceName string) (string, error) {
 		return resp.DeviceLinkUri, nil
 	}
 
-	cmd := []string{"--config", s.signalCliConfig, "link", "-n", deviceName}
+	cmd := deviceLinkCommand(s.signalCliConfig, deviceName)
 	deviceLinkUri, err := s.cliClient.Execute(false, cmd, "")
 	if err != nil {
 		return "", errors.New("Couldn't create link URI: " + err.Error())
@@ -1771,8 +1771,73 @@ func (s *SignalClient) finishLinkAsync(jsonRpc2Client *JsonRpc2Client, deviceNam
 	}()
 }
 
-func (s *SignalClient) GetAccounts() ([]string, error) {
-	accounts := make([]string, 0)
+// Account is one linked or registered signal-cli account.
+// Number is empty when the account has no phone number. In that case Identifier is the ACI.
+type Account struct {
+	Number string  `json:"number" example:"+12025550123"`
+	Aci    *string `json:"aci" example:"11111111-1111-4111-8111-111111111111" extensions:"x-nullable=true"`
+}
+
+// Identifier is the value other endpoints accept in the :number path parameter.
+func (a Account) Identifier() string {
+	if a.Number != "" {
+		return a.Number
+	}
+	if a.Aci != nil {
+		return *a.Aci
+	}
+	return ""
+}
+
+type signalCliListedAccount struct {
+	Number *string `json:"number"`
+	Aci    *string `json:"aci"`
+}
+
+// ParseListedAccounts maps signal-cli listAccounts JSON into REST accounts.
+// A null or empty number with a present aci is a phone-numberless account.
+func ParseListedAccounts(raw string) ([]Account, error) {
+	var parsed []signalCliListedAccount
+	if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
+		return nil, err
+	}
+
+	accounts := make([]Account, 0, len(parsed))
+	for _, item := range parsed {
+		account := Account{}
+		if item.Number != nil {
+			account.Number = *item.Number
+		}
+		if item.Aci != nil && *item.Aci != "" {
+			aci := *item.Aci
+			account.Aci = &aci
+		}
+		if account.Identifier() == "" {
+			continue
+		}
+		accounts = append(accounts, account)
+	}
+	return accounts, nil
+}
+
+// encodeLinkQR builds a QR code for a device link URI.
+// version <= 0 selects the smallest version that fits. A positive version is forced.
+func encodeLinkQR(content string, version int) (*qrcode.QRCode, error) {
+	if version <= 0 {
+		return qrcode.New(content, qrcode.Highest)
+	}
+	return qrcode.NewWithForcedVersion(content, version, qrcode.Highest)
+}
+
+// deviceLinkCommand builds `signal-cli link -n <device>`.
+// Upstream forbids -a/--account on link. Numberless accounts are advertised
+// by capabilities=nopni inside the URI signal-cli prints.
+func deviceLinkCommand(signalCliConfig string, deviceName string) []string {
+	return []string{"--config", signalCliConfig, "link", "-n", deviceName}
+}
+
+func (s *SignalClient) GetAccounts() ([]Account, error) {
+	accounts := make([]Account, 0)
 	var rawData string
 	var err error
 	var jsonRpc2Client *JsonRpc2Client
@@ -1794,21 +1859,7 @@ func (s *SignalClient) GetAccounts() ([]string, error) {
 		}
 	}
 
-	type Account struct {
-		Number string `json:"number"`
-	}
-	accountObjs := []Account{}
-
-	err = json.Unmarshal([]byte(rawData), &accountObjs)
-	if err != nil {
-		return accounts, err
-	}
-
-	for _, account := range accountObjs {
-		accounts = append(accounts, account.Number)
-	}
-
-	return accounts, nil
+	return ParseListedAccounts(rawData)
 }
 
 func (s *SignalClient) GetAttachments() ([]string, error) {
