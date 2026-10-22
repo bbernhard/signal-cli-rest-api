@@ -501,8 +501,8 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*ds.S
 		return nil, err
 	}
 
-	signalCliTextFormatStrings := []string{}
-	if signalCliSendRequest.TextMode != nil && *signalCliSendRequest.TextMode == "styled" {
+	signalCliTextFormatStrings := signalCliSendRequest.TextStyles
+	if len(signalCliTextFormatStrings) == 0 && signalCliSendRequest.TextMode != nil && *signalCliSendRequest.TextMode == "styled" {
 		textstyleParser := utils.NewTextstyleParser(signalCliSendRequest.Message)
 		signalCliSendRequest.Message, signalCliTextFormatStrings = textstyleParser.Parse()
 	}
@@ -954,7 +954,7 @@ func (s *SignalClient) getJsonRpc2Clients() []*JsonRpc2Client {
 }
 
 func (s *SignalClient) SendV2(number string, message string, recps []string, base64Attachments []string, sticker string, mentions []ds.MessageMention,
-	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []ds.MessageMention, textMode *string, editTimestamp *int64, notifySelf *bool,
+	quoteTimestamp *int64, quoteAuthor *string, quoteMessage *string, quoteMentions []ds.MessageMention, textMode *string, textStyles []string, editTimestamp *int64, notifySelf *bool,
 	linkPreview *ds.LinkPreviewType, viewOnce *bool) (*[]ds.SendMessageResponse, error) {
 	if len(recps) == 0 {
 		return nil, errors.New("Please provide at least one recipient")
@@ -1006,7 +1006,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: []string{group}, Base64Attachments: base64Attachments,
 			RecipientType: ds.Group, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
+			TextMode: textMode, TextStyles: textStyles, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
 		resp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
@@ -1018,7 +1018,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: numbers, Base64Attachments: base64Attachments,
 			RecipientType: ds.Number, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
+			TextMode: textMode, TextStyles: textStyles, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
 		resp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
@@ -1030,7 +1030,7 @@ func (s *SignalClient) SendV2(number string, message string, recps []string, bas
 		signalCliSendRequest := ds.SignalCliSendRequest{Number: number, Message: message, Recipients: usernames, Base64Attachments: base64Attachments,
 			RecipientType: ds.Username, Sticker: sticker, Mentions: mentions, QuoteTimestamp: quoteTimestamp,
 			QuoteAuthor: quoteAuthor, QuoteMessage: quoteMessage, QuoteMentions: quoteMentions,
-			TextMode: textMode, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
+			TextMode: textMode, TextStyles: textStyles, EditTimestamp: editTimestamp, NotifySelf: notifySelf, LinkPreview: linkPreview, ViewOnce: viewOnce}
 		resp, err := s.send(signalCliSendRequest)
 		if err != nil {
 			return nil, err
