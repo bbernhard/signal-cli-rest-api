@@ -75,6 +75,10 @@ type ChangeGroupAdminsRequest struct {
 	Admins []string `json:"admins"`
 }
 
+type JoinGroupByLinkRequest struct {
+	Uri string `json:"uri"`
+}
+
 type LoggingConfiguration struct {
 	Level string `json:"Level"`
 }
@@ -1731,6 +1735,47 @@ func (a *Api) JoinGroup(c *gin.Context) {
 	}
 
 	err = a.signalClient.JoinGroup(number, internalGroupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Join a Signal Group via an invitation link.
+// @Tags Groups
+// @Description Join a Signal Group using an invitation link. The uri starts with https://signal.group/#
+// @Accept  json
+// @Produce  json
+// @Success 204 {string} OK
+// @Failure 400 {object} Error
+// @Param number path string true "Registered Phone Number"
+// @Param data body JoinGroupByLinkRequest true "Invitation link"
+// @Router /v1/groups/{number}/join [post]
+func (a *Api) JoinGroupByLink(c *gin.Context) {
+	number, err := url.PathUnescape(c.Param("number"))
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - malformed number"})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	var req JoinGroupByLinkRequest
+	err = c.BindJSON(&req)
+	if err != nil {
+		c.JSON(400, Error{Msg: "Couldn't process request - invalid request"})
+		return
+	}
+	if req.Uri == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - uri missing"})
+		return
+	}
+
+	err = a.signalClient.JoinGroupByLink(number, req.Uri)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
