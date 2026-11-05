@@ -125,6 +125,16 @@ e.g:
 
   `curl -X DELETE -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/+431212131491291/ckRzaEd4VmRzNnJaASAEsasa'`
 
+- Terminate (end) a group for everyone
+
+  Permanently end the group with the given group id for all members. Afterwards nobody, not even an admin, can send messages or start calls in the group, but members keep the message history. This can't be undone. The account must be an admin of the group, and only groups v2 are supported.
+
+  `curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/<number>/<group id>/terminate'`
+
+  e.g:
+
+  `curl -X POST -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/groups/+431212131491291/group.ckRzaEd4VmRzNnJaASAEsasa/terminate'`
+
 - Link a device
 
   `curl -X GET -H "Content-Type: application/json" 'http://127.0.0.1:8080/v1/qrcodelink?device_name=<device name>'`

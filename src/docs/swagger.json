@@ -4077,6 +4077,51 @@
                 ]
             }
         },
+        "/v1/groups/{number}/{groupid}/terminate": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "description": "Permanently end the specified Signal Group for everyone (\"End group\" in the Signal apps). Afterwards no member, not even an admin, can send messages or start calls in the group; members keep the existing message history. This can't be undone. Requires admin rights in the group and is only supported for groups v2.",
+                "parameters": [
+                    {
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
+                        "in": "path",
+                        "name": "number",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "description": "Group ID",
+                        "in": "path",
+                        "name": "groupid",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                },
+                "summary": "Terminate a Signal Group for all members.",
+                "tags": [
+                    "Groups"
+                ]
+            }
+        },
         "/v1/health": {
             "get": {
                 "description": "Internally used by the docker container to perform the health check.",
