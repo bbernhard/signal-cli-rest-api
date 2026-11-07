@@ -7,4 +7,5 @@ if [ "$MODE" != "json-rpc" ] && [ "$MODE" != "json-rpc-native" ]; then
     exit 0 
 fi
 
+exec 1>/dev/null
 exec jsonrpc2-helper

@@ -49,6 +49,13 @@ func stripInfoAndWarnMessages(input string) (string, string, string) {
 	return output, infoMessages, warnMessages
 }
 
+func isAccountSelector(candidate string) bool {
+	if _, _, err := utils.ParseAccountIdentifier(candidate); err == nil {
+		return true
+	}
+	return utils.IsPhoneNumber(candidate)
+}
+
 func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, error) {
 	containerId, err := getContainerId()
 
@@ -71,7 +78,7 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 	//check if args contain number
 	trustModeStr := ""
 	for i, arg := range args {
-		if (arg == "-a" || arg == "--account") && (((i + 1) < len(args)) && (utils.IsPhoneNumber(args[i+1]))) {
+		if (arg == "-a" || arg == "--account") && (i+1) < len(args) && isAccountSelector(args[i+1]) {
 			number := args[i+1]
 			trustMode, err := s.signalCliApiConfig.GetTrustModeForNumber(number)
 			if err == nil {

@@ -385,6 +385,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "number": {
+                    "description": "Account identifier (E.164 phone number or ACI UUID)",
                     "type": "string"
                 },
                 "recipients": {
@@ -433,6 +434,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "number": {
+                    "description": "Account identifier (E.164 phone number or ACI UUID)",
                     "type": "string"
                 },
                 "quote_author": {
@@ -752,6 +754,24 @@ const docTemplate = `{
                 "mode",
                 "version",
                 "versions"
+            ],
+            "type": "object"
+        },
+        "client.Account": {
+            "properties": {
+                "aci": {
+                    "example": "11111111-1111-4111-8111-111111111111",
+                    "type": "string",
+                    "x-nullable": "true"
+                },
+                "number": {
+                    "example": "+12025550123",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "aci",
+                "number"
             ],
             "type": "object"
         },
@@ -1162,9 +1182,13 @@ const docTemplate = `{
                 },
                 "targetSentTimestamp": {
                     "type": "integer"
+                },
+                "targetTimestamp": {
+                    "type": "integer"
                 }
             },
             "required": [
+                "targetTimestamp",
                 "targetSentTimestamp"
             ],
             "type": "object"
@@ -1977,11 +2001,15 @@ const docTemplate = `{
         },
         "receive.RemoteDelete": {
             "properties": {
+                "targetTimestamp": {
+                    "type": "integer"
+                },
                 "timestamp": {
                     "type": "integer"
                 }
             },
             "required": [
+                "targetTimestamp",
                 "timestamp"
             ],
             "type": "object"
@@ -2468,7 +2496,7 @@ const docTemplate = `{
         },
         "/v1/accounts": {
             "get": {
-                "description": "Lists all of the accounts linked or registered",
+                "description": "Lists all of the accounts linked or registered. number is an empty string when the account has no phone number; use aci as the account identifier on other endpoints in that case.",
                 "produces": [
                     "application/json"
                 ],
@@ -2477,7 +2505,7 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "items": {
-                                "type": "string"
+                                "$ref": "#/definitions/client.Account"
                             },
                             "type": "array"
                         }
@@ -2500,7 +2528,7 @@ const docTemplate = `{
                 "description": "Removes a Signal Pin",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -2530,7 +2558,7 @@ const docTemplate = `{
                 "description": "Sets a new Signal Pin",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -2574,7 +2602,7 @@ const docTemplate = `{
                 "description": "When running into rate limits, sometimes the limit can be lifted, by solving a CAPTCHA. To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html. The \"challenge_token\" is the token from the failed send attempt. The \"captcha\" is the captcha result, starting with signalcaptcha://",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -2618,7 +2646,7 @@ const docTemplate = `{
                 "description": "Update the account attributes on the signal server.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -2638,8 +2666,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "201": {
+                        "description": "Created"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -2662,7 +2690,7 @@ const docTemplate = `{
                 "description": "Delete the username associated with this account.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -2695,7 +2723,7 @@ const docTemplate = `{
                 "description": "Allows to set the username that should be used for this account. This can either be just the nickname (e.g. test) or the complete username with discriminator (e.g. test.123). Returns the new username with discriminator and the username link.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -2909,7 +2937,7 @@ const docTemplate = `{
                 "description": "List account specific settings.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -2951,7 +2979,7 @@ const docTemplate = `{
                 "description": "Set account specific settings.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -2992,7 +3020,7 @@ const docTemplate = `{
                 "description": "List all contacts for the given number.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3031,7 +3059,7 @@ const docTemplate = `{
                 "description": "Updates the info associated to a number on the contact list.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3075,7 +3103,7 @@ const docTemplate = `{
                 "description": "Send a synchronization message with the local contacts list to all linked devices. This command should only be used if this is the primary device.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3107,7 +3135,7 @@ const docTemplate = `{
                 "description": "List a specific contact.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3142,7 +3170,7 @@ const docTemplate = `{
                 "description": "Returns the avatar of a contact.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3174,7 +3202,7 @@ const docTemplate = `{
                 "description": "List linked devices associated to this device.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3213,7 +3241,7 @@ const docTemplate = `{
                 "description": "Links another device to this device. Only works, if this is the master device.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3257,7 +3285,7 @@ const docTemplate = `{
                 "description": "Delete all local data for the specified account. Only use this after unregistering the account or after removing a linked device.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3297,7 +3325,7 @@ const docTemplate = `{
                 "description": "Remove a linked device from the primary account.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3336,7 +3364,7 @@ const docTemplate = `{
                 "description": "List all Signal Groups.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3390,7 +3418,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3428,7 +3456,7 @@ const docTemplate = `{
                 "description": "Delete the specified Signal Group.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3471,7 +3499,7 @@ const docTemplate = `{
                 "description": "List a specific Signal Group.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3520,7 +3548,7 @@ const docTemplate = `{
                 "description": "Update the state of a Signal Group.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3583,7 +3611,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3635,7 +3663,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3680,7 +3708,7 @@ const docTemplate = `{
                 "description": "Returns the avatar of a Signal Group.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3725,7 +3753,7 @@ const docTemplate = `{
                 "description": "Block the specified Signal Group.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3770,7 +3798,7 @@ const docTemplate = `{
                 "description": "Join the specified Signal Group.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3824,7 +3852,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3876,7 +3904,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3930,7 +3958,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -3948,7 +3976,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "OK",
                         "schema": {
                             "type": "string"
@@ -3982,7 +4010,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4000,7 +4028,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "OK",
                         "schema": {
                             "type": "string"
@@ -4027,7 +4055,7 @@ const docTemplate = `{
                 "description": "Quit the specified Signal Group.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4089,7 +4117,7 @@ const docTemplate = `{
                 "description": "List all identities for the given number.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4130,7 +4158,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4169,7 +4197,7 @@ const docTemplate = `{
                 "description": "Close a poll",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4211,7 +4239,7 @@ const docTemplate = `{
                 "description": "Create a new poll",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4258,7 +4286,7 @@ const docTemplate = `{
                 "description": "Answer a poll",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4308,7 +4336,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4340,7 +4368,7 @@ const docTemplate = `{
         },
         "/v1/qrcodelink": {
             "get": {
-                "description": "Link device and generate QR code",
+                "description": "Link this service as a secondary device. Numberless accounts use the same QR flow: signal-cli advertises capabilities=nopni in the link URI. The link command does not take an account selector. After linking, call list accounts and use the ACI when number is empty.",
                 "parameters": [
                     {
                         "description": "Device Name",
@@ -4350,7 +4378,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     {
-                        "description": "QRCode Version (defaults to 10)",
+                        "description": "QR code version. Omit to use the smallest version that fits the link URI.",
                         "in": "query",
                         "name": "qrcode_version",
                         "type": "integer"
@@ -4381,7 +4409,7 @@ const docTemplate = `{
         },
         "/v1/qrcodelink/raw": {
             "get": {
-                "description": "Generate the deviceLinkUri string for linking without scanning a QR code.",
+                "description": "Generate the deviceLinkUri string for linking without scanning a QR code. Numberless accounts use the same URI. signal-cli advertises capabilities=nopni. Do not pass an account selector to link. After linking, use the ACI from list accounts when number is empty.",
                 "parameters": [
                     {
                         "description": "Device Name",
@@ -4431,7 +4459,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered phone number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4476,7 +4504,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered phone number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4523,7 +4551,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "Registered phone number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4561,7 +4589,7 @@ const docTemplate = `{
                 "description": "Receives Signal Messages from the Signal Network. If you are running the docker container in normal/native mode, this is a GET endpoint. In json-rpc mode this is a websocket endpoint.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4641,7 +4669,7 @@ const docTemplate = `{
                 "description": "Register a phone number with the signal network.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4684,7 +4712,7 @@ const docTemplate = `{
                 "description": "Verify a registered phone number with the signal network.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4737,7 +4765,7 @@ const docTemplate = `{
                 "description": "Delete a signal message",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4784,7 +4812,7 @@ const docTemplate = `{
                 "description": "Check if one or more phone numbers are registered with the Signal Service.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4877,7 +4905,7 @@ const docTemplate = `{
                 "description": "List Installed Sticker Packs.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4919,7 +4947,7 @@ const docTemplate = `{
                 "description": "In order to add a sticker pack, browse to https://signalstickers.org/ and select the sticker pack you want to add. Then, press the \"Add to Signal\" button. If you look at the address bar in your browser you should see an URL in this format: https://signal.art/addstickers/#pack_id=XXX\u0026pack_key=YYY, where XXX is the pack_id and YYY is the pack_key.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -4939,8 +4967,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "201": {
+                        "description": "Created"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -4963,7 +4991,7 @@ const docTemplate = `{
                 "description": "Hide Typing Indicator.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -5008,7 +5036,7 @@ const docTemplate = `{
                 "description": "Show Typing Indicator.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -5055,7 +5083,7 @@ const docTemplate = `{
                 "description": "Disables push support for this device. **WARNING:** If *delete_account* is set to *true*, the account will be deleted from the Signal Server. This cannot be undone without loss.",
                 "parameters": [
                     {
-                        "description": "Registered Phone Number",
+                        "description": "Account identifier (E.164 phone number or ACI UUID)",
                         "in": "path",
                         "name": "number",
                         "required": true,
@@ -5114,7 +5142,10 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/data.SendMessageResponse"
+                            "items": {
+                                "$ref": "#/definitions/data.SendMessageResponse"
+                            },
+                            "type": "array"
                         }
                     },
                     "400": {
