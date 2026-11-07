@@ -1546,7 +1546,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/receive.StoryContext"
                 },
                 "styledMessage": {
-                    "description": "The text in the markup of text_mode 'styled' (e.g. **bold**), built from message and textStyles. Added by signal-cli-rest-api.",
+                    "description": "The text in the markup of text_mode 'styled' (e.g. **bold**), built from message and textStyles. Only set when there are textStyles. Added by signal-cli-rest-api.",
                     "type": "string"
                 },
                 "textStyles": {
@@ -1895,7 +1895,7 @@ const docTemplate = `{
                     "type": "array"
                 },
                 "styledText": {
-                    "description": "The text in the markup of text_mode 'styled' (e.g. **bold**), built from text and textStyles. Added by signal-cli-rest-api.",
+                    "description": "The text in the markup of text_mode 'styled' (e.g. **bold**), built from text and textStyles. Only set when there are textStyles. Added by signal-cli-rest-api.",
                     "type": "string"
                 },
                 "text": {
@@ -2265,7 +2265,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/receive.StoryContext"
                 },
                 "styledMessage": {
-                    "description": "The text in the markup of text_mode 'styled' (e.g. **bold**), built from message and textStyles. Added by signal-cli-rest-api.",
+                    "description": "The text in the markup of text_mode 'styled' (e.g. **bold**), built from message and textStyles. Only set when there are textStyles. Added by signal-cli-rest-api.",
                     "type": "string"
                 },
                 "textStyles": {

@@ -262,7 +262,7 @@ func rewriteSchemaRefs(value interface{}, titleByFile map[string]string) interfa
 }
 
 func addStyledTextProperties(definitions map[string]interface{}) error {
-	const description = "The text in the markup of text_mode 'styled' (e.g. **bold**), built from %s and textStyles. Added by signal-cli-rest-api."
+	const description = "The text in the markup of text_mode 'styled' (e.g. **bold**), built from %s and textStyles. Only set when there are textStyles. Added by signal-cli-rest-api."
 	for _, field := range []struct{ definition, textKey, styledKey string }{
 		{"DataMessage", "message", "styledMessage"},
 		{"SyncDataMessage", "message", "styledMessage"},

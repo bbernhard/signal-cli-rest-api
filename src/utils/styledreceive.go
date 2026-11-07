@@ -21,7 +21,8 @@ var styledTextFields = []struct{ object, textKey, styledKey string }{
 }
 
 // AddStyledMessages adds the text in the markup of text_mode 'styled' to a received message,
-// as styledMessage next to message and styledText next to the text of quotes.
+// as styledMessage next to message and styledText next to the text of quotes. Text without
+// textStyles is skipped.
 func AddStyledMessages(payload []byte) []byte {
 	for _, field := range styledTextFields {
 		object := "envelope." + field.object + "."
@@ -32,6 +33,9 @@ func AddStyledMessages(payload []byte) []byte {
 		var styles []TextStyleRange
 		if rawStyles := gjson.GetBytes(payload, object+"textStyles"); rawStyles.IsArray() {
 			_ = json.Unmarshal([]byte(rawStyles.Raw), &styles)
+		}
+		if len(styles) == 0 {
+			continue
 		}
 		if updated, err := sjson.SetRawBytes(payload, object+field.styledKey, jsonString(FormatTextStyles(text.Str, styles))); err == nil {
 			payload = updated

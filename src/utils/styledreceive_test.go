@@ -32,15 +32,6 @@ func TestAddStyledMessagesDataMessage(t *testing.T) {
 	}
 }
 
-func TestAddStyledMessagesWithoutStyles(t *testing.T) {
-	payload := `{"envelope":{"dataMessage":{"timestamp":1,"message":"*not italic*"}},"account":"+1"}`
-	got := decodeJson(t, AddStyledMessages([]byte(payload)))
-	styled := got["envelope"].(map[string]any)["dataMessage"].(map[string]any)["styledMessage"]
-	if styled != `\*not italic\*` {
-		t.Errorf("got %q", styled)
-	}
-}
-
 func TestAddStyledMessagesSyncAndEdit(t *testing.T) {
 	payload := `{"envelope":{` +
 		`"editMessage":{"targetSentTimestamp":1,"dataMessage":{"timestamp":2,"message":"edited","textStyles":[{"style":"STRIKETHROUGH","start":0,"length":6}]}},` +
@@ -68,6 +59,9 @@ func TestAddStyledMessagesKeepsOtherPayloads(t *testing.T) {
 	for _, payload := range []string{
 		`{"envelope":{"receiptMessage":{"when":1,"isDelivery":true}},"account":"+1"}`,
 		`{"envelope":{"dataMessage":{"timestamp":1,"message":null}},"account":"+1"}`,
+		`{"envelope":{"dataMessage":{"timestamp":1,"message":"*not italic*"}},"account":"+1"}`,
+		`{"envelope":{"dataMessage":{"timestamp":1,"message":"*not italic*","textStyles":[]}},"account":"+1"}`,
+		`{"envelope":{"dataMessage":{"timestamp":1,"message":"hi","quote":{"id":1,"text":"*quoted*","textStyles":[]}}},"account":"+1"}`,
 		`{"jsonrpc":"2.0","result":{"timestamp":1},"id":"x"}`,
 		`not json`,
 		``,
@@ -79,9 +73,9 @@ func TestAddStyledMessagesKeepsOtherPayloads(t *testing.T) {
 }
 
 func TestAddStyledMessagesKeepsTheRestOfThePayload(t *testing.T) {
-	payload := `{"envelope":{"timestamp":1700000000000123,"dataMessage":{"timestamp":1700000000000123,"message":"hi 👋 <b>"}},"account":"+1"}`
+	payload := `{"envelope":{"timestamp":1700000000000123,"dataMessage":{"timestamp":1700000000000123,"message":"hi 👋 <b>","textStyles":[{"style":"BOLD","start":0,"length":2}]}},"account":"+1"}`
 	got := string(AddStyledMessages([]byte(payload)))
-	want := `{"envelope":{"timestamp":1700000000000123,"dataMessage":{"timestamp":1700000000000123,"message":"hi 👋 <b>","styledMessage":"hi 👋 <b>"}},"account":"+1"}`
+	want := `{"envelope":{"timestamp":1700000000000123,"dataMessage":{"timestamp":1700000000000123,"message":"hi 👋 <b>","textStyles":[{"style":"BOLD","start":0,"length":2}],"styledMessage":"**hi** 👋 <b>"}},"account":"+1"}`
 	if got != want {
 		t.Errorf("got %s\nwanted %s", got, want)
 	}
