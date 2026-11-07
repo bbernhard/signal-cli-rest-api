@@ -1545,6 +1545,10 @@ const docTemplate = `{
                 "storyContext": {
                     "$ref": "#/definitions/receive.StoryContext"
                 },
+                "styledMessage": {
+                    "description": "The text in the markup of text_mode 'styled' (e.g. **bold**), built from message and textStyles. Added by signal-cli-rest-api.",
+                    "type": "string"
+                },
                 "textStyles": {
                     "items": {
                         "$ref": "#/definitions/receive.TextStyle"
@@ -1889,6 +1893,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/receive.Mention"
                     },
                     "type": "array"
+                },
+                "styledText": {
+                    "description": "The text in the markup of text_mode 'styled' (e.g. **bold**), built from text and textStyles. Added by signal-cli-rest-api.",
+                    "type": "string"
                 },
                 "text": {
                     "type": "string"
@@ -2255,6 +2263,10 @@ const docTemplate = `{
                 },
                 "storyContext": {
                     "$ref": "#/definitions/receive.StoryContext"
+                },
+                "styledMessage": {
+                    "description": "The text in the markup of text_mode 'styled' (e.g. **bold**), built from message and textStyles. Added by signal-cli-rest-api.",
+                    "type": "string"
                 },
                 "textStyles": {
                     "items": {

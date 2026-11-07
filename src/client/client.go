@@ -1082,7 +1082,7 @@ func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments b
 
 		jsonStr := "["
 		for i, line := range lines {
-			jsonStr += line
+			jsonStr += string(utils.AddStyledMessages([]byte(line)))
 			if i != (len(lines) - 1) {
 				jsonStr += ","
 			}

@@ -259,6 +259,7 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 			// the envelope directly. Unwrap so the broadcast format is
 			// the same in both modes and downstream consumers (e.g. the
 			// websocket handler) don't have to know which mode is in use.
+			paramsPath := "params"
 			if r.jsonRpcReceiveMode == Manual {
 				var manualWrapper struct {
 					Subscription int64           `json:"subscription"`
@@ -266,8 +267,10 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 				}
 				if err := json.Unmarshal(resp1.Params, &manualWrapper); err == nil && len(manualWrapper.Result) > 0 {
 					resp1.Params = manualWrapper.Result
+					paramsPath = "params.result"
 				}
 			}
+			resp1.Params = utils.AddStyledMessages(resp1.Params)
 
 			r.receivedMessagesMutex.Lock()
 			for _, c := range r.receivedMessagesChannels {
@@ -281,7 +284,10 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 			r.receivedMessagesMutex.Unlock()
 
 			if receiveWebhookUrl != "" {
-				err = postMessageToWebhook(receiveWebhookUrl, []byte(str))
+				notification, err := sjson.SetRawBytes([]byte(str), paramsPath, resp1.Params)
+				if err == nil {
+					err = postMessageToWebhook(receiveWebhookUrl, notification)
+				}
 				if err != nil {
 					log.Error("Couldn't post data to webhook: ", err)
 				}
