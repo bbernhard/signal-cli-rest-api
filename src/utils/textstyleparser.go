@@ -17,11 +17,10 @@ package utils
 // Markers that don't match up are kept as literal text, so "5 * 3" stays as is.
 // The text of a monospace span is taken literally.
 //
-// A backslash escapes one marker character. A backslash in front of any other
-// character is kept as is, which means paths like C:\Users are left alone. A
-// marker run right after an escaped marker of the same kind can't open a style,
-// which keeps "\**not bold\**" literal, as with the previous parser. To get a
-// literal backslash in front of a marker, double it: "\\*".
+// A backslash escapes one marker character, as in CommonMark, so a literal "**"
+// is written "\*\*". A backslash in front of any other character is kept as is,
+// which means paths like C:\Users are left alone. To get a literal backslash in
+// front of a marker, double it: "\\*".
 
 import (
 	"slices"
@@ -130,16 +129,11 @@ func parseTextStyles(input string) (string, []TextStyleRange) {
 		}
 	}
 
-	escapedAt := -1
 	for i := 0; i < n; {
 		c := src[i]
 
 		if c == EscapeCharacter {
-			var escaped int
-			buf, i, escaped = readEscape(src, i, buf)
-			if escaped >= 0 {
-				escapedAt = escaped
-			}
+			buf, i = readEscape(src, i, buf)
 			continue
 		}
 
@@ -149,10 +143,8 @@ func parseTextStyles(input string) (string, []TextStyleRange) {
 			continue
 		}
 
-		afterEscapedSame := escapedAt == i-1 && i > 0 && src[i-1] == c
-
 		if c == '`' {
-			if !afterEscapedSame && !unicode.IsSpace(at(i+1)) {
+			if !unicode.IsSpace(at(i + 1)) {
 				if content, end, ok := scanCodeSpan(src, i+1); ok {
 					flush()
 					nodes = append(nodes, &mdNode{text: content, mono: true})
@@ -170,7 +162,7 @@ func parseTextStyles(input string) (string, []TextStyleRange) {
 			j++
 		}
 		k := j - i
-		canOpen := !afterEscapedSame && !unicode.IsSpace(at(j))
+		canOpen := !unicode.IsSpace(at(j))
 		canClose := !unicode.IsSpace(at(i - 1))
 		valid := c == '*' || (c == '~' && k <= 2) || (c == '|' && k == 2)
 		if !valid || (!canOpen && !canClose) {
@@ -222,20 +214,20 @@ func parseTextStyles(input string) (string, []TextStyleRange) {
 }
 
 // in front of a marker two backslashes give one and an odd one escapes the marker
-func readEscape(src []rune, i int, buf []rune) ([]rune, int, int) {
+func readEscape(src []rune, i int, buf []rune) ([]rune, int) {
 	j := i
 	for j < len(src) && src[j] == EscapeCharacter {
 		j++
 	}
 	k := j - i
 	if j == len(src) || !isMarker(src[j]) {
-		return appendBackslashes(buf, k), j, -1
+		return appendBackslashes(buf, k), j
 	}
 	buf = appendBackslashes(buf, k/2)
 	if k%2 == 0 {
-		return buf, j, -1
+		return buf, j
 	}
-	return append(buf, src[j]), j + 1, j
+	return append(buf, src[j]), j + 1
 }
 
 // inside a code span only escapes are processed
@@ -244,7 +236,7 @@ func scanCodeSpan(src []rune, start int) ([]rune, int, bool) {
 	for p := start; p < len(src); {
 		c := src[p]
 		if c == EscapeCharacter {
-			content, p, _ = readEscape(src, p, content)
+			content, p = readEscape(src, p, content)
 			continue
 		}
 		if c == '`' && len(content) > 0 && !unicode.IsSpace(src[p-1]) {
@@ -387,26 +379,11 @@ func styleMasks(runes []rune, styles []TextStyleRange) []uint8 {
 	return masks
 }
 
-// a style can't start right after its own marker as a literal (`\***bold**`), so it gets widened
-func normalizeMasks(runes []rune, masks []uint8) []uint8 {
-	for bit, s := range styleBits {
-		markerChar := rune(s.marker[0])
-		for i := 1; i < len(runes); i++ {
-			if !unicode.IsSpace(runes[i]) && masks[i]&(1<<bit) != 0 && masks[i-1]&(1<<bit) == 0 {
-				for a := i; a > 0 && runes[a-1] == markerChar; a-- {
-					masks[a-1] |= 1 << bit
-				}
-			}
-		}
-	}
-	return masks
-}
-
 // FormatTextStyles converts signal-cli text styles into the markup of text_mode 'styled'.
 // Styles on whitespace and some bold/italic overlaps within a word can't be written and are dropped.
 func FormatTextStyles(message string, styles []TextStyleRange) string {
 	runes := []rune(message)
-	masks := normalizeMasks(runes, styleMasks(runes, styles))
+	masks := styleMasks(runes, styles)
 
 	if !slices.ContainsFunc(masks, func(mask uint8) bool { return mask != 0 }) {
 		if !strings.ContainsAny(message, "*~|`\\") {

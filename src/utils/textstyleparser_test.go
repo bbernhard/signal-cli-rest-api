@@ -133,10 +133,21 @@ func TestEscapeAsterisks(t *testing.T) {
 }
 
 func TestEscapeAsterisks1(t *testing.T) {
-	textstyleParser := NewTextstyleParser("\\**escaped text\\**")
+	textstyleParser := NewTextstyleParser("\\*\\*escaped text\\*\\*")
 	message, signalCliFormatStrings := textstyleParser.Parse()
 	expectMessageEqual(t, message, "**escaped text**")
 	expectFormatStringsEqual(t, signalCliFormatStrings, []string{})
+}
+
+func TestEscapeOnlyOneAsterisk(t *testing.T) {
+	textstyleParser := NewTextstyleParser("\\**escaped text\\**")
+	message, signalCliFormatStrings := textstyleParser.Parse()
+	expectMessageEqual(t, message, "*escaped text*")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"1:13:ITALIC"})
+
+	message, signalCliFormatStrings = NewTextstyleParser("\\***bold**").Parse()
+	expectMessageEqual(t, message, "*bold")
+	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"1:4:BOLD"})
 }
 
 func TestEscapeBackticks(t *testing.T) {
@@ -268,7 +279,7 @@ func checkRoundTrip(t *testing.T, message string, styles []TextStyleRange) bool 
 		t.Fatalf("text changed: %q with %v -> %q -> %q", message, styles, markup, text)
 	}
 	runes := []rune(message)
-	want := normalizeMasks(runes, styleMasks(runes, styles))
+	want := styleMasks(runes, styles)
 	got := styleMasks(runes, parsedStyles)
 	exact := true
 	for i, r := range runes {
