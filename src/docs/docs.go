@@ -770,6 +770,12 @@ const docTemplate = `{
                 "about": {
                     "type": "string"
                 },
+                "badges": {
+                    "items": {
+                        "$ref": "#/definitions/client.ProfileBadge"
+                    },
+                    "type": "array"
+                },
                 "given_name": {
                     "type": "string"
                 },
@@ -785,6 +791,7 @@ const docTemplate = `{
             },
             "required": [
                 "about",
+                "badges",
                 "given_name",
                 "has_avatar",
                 "last_updated_timestamp",
@@ -1011,6 +1018,29 @@ const docTemplate = `{
                 "family_name",
                 "given_name",
                 "name"
+            ],
+            "type": "object"
+        },
+        "client.ProfileBadge": {
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "expiration_timestamp": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "visible": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "category",
+                "expiration_timestamp",
+                "id",
+                "visible"
             ],
             "type": "object"
         },
