@@ -165,15 +165,20 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 
 	log.Debug("json-rpc command: ", string(fullCommandBytes))
 
-	_, err = r.conn.Write([]byte(string(fullCommandBytes) + "\n"))
-	if err != nil {
-		return "", err
-	}
-
-	responseChan := make(chan JsonRpc2MessageResponse)
+	// Register the response channel before writing the request, so neither a fast
+	// response nor a lost connection can slip in between and leave us waiting.
+	responseChan := make(chan JsonRpc2MessageResponse, 1)
 	r.receivedResponsesMutex.Lock()
 	r.receivedResponsesById[u.String()] = responseChan
 	r.receivedResponsesMutex.Unlock()
+
+	_, err = r.conn.Write([]byte(string(fullCommandBytes) + "\n"))
+	if err != nil {
+		r.receivedResponsesMutex.Lock()
+		delete(r.receivedResponsesById, u.String())
+		r.receivedResponsesMutex.Unlock()
+		return "", err
+	}
 
 	var resp JsonRpc2MessageResponse
 	resp = <-responseChan
@@ -241,6 +246,7 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 		if err != nil {
 			log.Error("Lost connection to signal-cli...attempting to reconnect (", err.Error(), ")")
 			r.conn.Close()
+			r.failPendingRequests("Lost connection to signal-cli; the request may or may not have been processed")
 			err = r.Dial(r.address, 15)
 			if err != nil {
 				log.Fatal("Unable to reconnect to signal-cli: ", err.Error(), "...aborting")
@@ -296,12 +302,30 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 				responseChan, ok := r.receivedResponsesById[resp2.Id]
 				r.receivedResponsesMutex.Unlock()
 				if ok {
-					responseChan <- resp2
+					select {
+					case responseChan <- resp2:
+					default:
+						log.Warn("Dropping duplicate json-rpc response for id ", resp2.Id)
+					}
 				}
 			}
 		} else {
 			log.Warn("Received unparsable message: ", str)
 		}
+	}
+}
+
+// failPendingRequests answers every request still waiting for a response with an
+// error. Responses to requests sent over a lost connection never arrive.
+func (r *JsonRpc2Client) failPendingRequests(message string) {
+	r.receivedResponsesMutex.Lock()
+	defer r.receivedResponsesMutex.Unlock()
+	for id, responseChan := range r.receivedResponsesById {
+		select {
+		case responseChan <- JsonRpc2MessageResponse{Id: id, Err: Error{Code: -1, Message: message}}:
+		default:
+		}
+		delete(r.receivedResponsesById, id)
 	}
 }
 
