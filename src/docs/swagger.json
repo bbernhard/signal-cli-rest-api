@@ -4082,7 +4082,7 @@
                 "consumes": [
                     "application/json"
                 ],
-                "description": "Permanently end the specified Signal Group for everyone (\"End group\" in the Signal apps). Afterwards no member, not even an admin, can send messages or start calls in the group; members keep the existing message history. This can't be undone. Requires admin rights in the group and is only supported for groups v2.",
+                "description": "Permanently end the specified Signal Group for everyone (\"End group\" in the Signal apps). Afterwards no member, not even an admin, can send messages or start calls in the group; members keep the existing message history. This can't be undone. Requires admin rights in the group.",
                 "parameters": [
                     {
                         "description": "Account identifier (E.164 phone number or ACI UUID)",

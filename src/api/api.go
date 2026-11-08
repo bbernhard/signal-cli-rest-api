@@ -1792,7 +1792,7 @@ func (a *Api) QuitGroup(c *gin.Context) {
 
 // @Summary Terminate a Signal Group for all members.
 // @Tags Groups
-// @Description Permanently end the specified Signal Group for everyone ("End group" in the Signal apps). Afterwards no member, not even an admin, can send messages or start calls in the group; members keep the existing message history. This can't be undone. Requires admin rights in the group and is only supported for groups v2.
+// @Description Permanently end the specified Signal Group for everyone ("End group" in the Signal apps). Afterwards no member, not even an admin, can send messages or start calls in the group; members keep the existing message history. This can't be undone. Requires admin rights in the group.
 // @Accept  json
 // @Produce  json
 // @Success 204 {string} OK
