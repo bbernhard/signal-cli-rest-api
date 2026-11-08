@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -3153,6 +3155,22 @@ func (s *SignalClient) CreatePoll(number string, recipient string, question stri
 	return strconv.FormatInt(resp.Timestamp, 10), nil
 }
 
+// pollVoteCount returns the vote count to send with a poll vote. Signal clients
+// keep a voter's vote with the highest count and ignore votes whose count is not
+// higher than the one they already have, so every new vote on the same poll needs
+// a larger count. Deriving it from the time since the poll was created (in tenths
+// of a second) keeps it increasing across votes and restarts without storing state.
+func pollVoteCount(pollTimestamp int64, now time.Time) int32 {
+	elapsed := (now.UnixMilli() - pollTimestamp) / 100
+	if elapsed < 1 {
+		return 1
+	}
+	if elapsed > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	return int32(elapsed)
+}
+
 func (s *SignalClient) VoteInPoll(number string, recipient string, pollAuthor string, pollTimestamp int64, selectedAnswers []int32) error {
 	var err error
 	var jsonRpc2Client *JsonRpc2Client
@@ -3179,6 +3197,8 @@ func (s *SignalClient) VoteInPoll(number string, recipient string, pollAuthor st
 		signalCliSelectedAnswers = append(signalCliSelectedAnswers, selectedAnswer-1)
 	}
 
+	voteCount := pollVoteCount(pollTimestamp, time.Now())
+
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			Recipient       string  `json:"recipient,omitempty"`
@@ -3189,7 +3209,7 @@ func (s *SignalClient) VoteInPoll(number string, recipient string, pollAuthor st
 			SelectedAnswers []int32 `json:"option"`
 			VoteCount       int32   `json:"vote-count"`
 		}
-		req := Request{PollAuthor: pollAuthor, PollTimestamp: pollTimestamp, SelectedAnswers: signalCliSelectedAnswers, VoteCount: 1}
+		req := Request{PollAuthor: pollAuthor, PollTimestamp: pollTimestamp, SelectedAnswers: signalCliSelectedAnswers, VoteCount: voteCount}
 
 		if recipientType == ds.Number {
 			req.Recipient = recp
@@ -3230,7 +3250,7 @@ func (s *SignalClient) VoteInPoll(number string, recipient string, pollAuthor st
 			cmd = append(cmd, strconv.Itoa(int(val)))
 		}
 
-		cmd = append(cmd, "--vote-count", "1")
+		cmd = append(cmd, "--vote-count", strconv.Itoa(int(voteCount)))
 
 		_, err = s.cliClient.Execute(true, cmd, "")
 		if err != nil {
