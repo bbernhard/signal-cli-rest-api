@@ -2335,7 +2335,7 @@ func (s *SignalClient) SendReceipt(number string, recipient string, receipt_type
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
 			Recipient   string `json:"recipient,omitempty"`
-			ReceiptType string `json:"receipt-type"`
+			ReceiptType string `json:"type"`
 			Timestamp   int64  `json:"target-timestamp"`
 		}
 		request := Request{}
@@ -2359,6 +2359,9 @@ func (s *SignalClient) SendReceipt(number string, recipient string, receipt_type
 	}
 
 	cmd = append(cmd, []string{"-t", strconv.FormatInt(timestamp, 10)}...)
+	if receipt_type != "" {
+		cmd = append(cmd, []string{"--type", receipt_type}...)
+	}
 
 	_, err = s.cliClient.Execute(true, cmd, "")
 	return err
