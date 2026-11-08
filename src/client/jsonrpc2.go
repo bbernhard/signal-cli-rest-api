@@ -235,6 +235,20 @@ func postMessageToWebhook(webhookUrl string, data []byte) error {
 }
 
 func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
+	// Post to the webhook in the order received, but not from this loop: it also reads the
+	// responses to the API calls, which a webhook handler may make before it returns.
+	var webhookMessages chan []byte
+	if receiveWebhookUrl != "" {
+		webhookMessages = make(chan []byte, 1000)
+		go func() {
+			for data := range webhookMessages {
+				if err := postMessageToWebhook(receiveWebhookUrl, data); err != nil {
+					log.Error("Couldn't post data to webhook: ", err)
+				}
+			}
+		}()
+	}
+
 	connbuf := bufio.NewReader(r.conn)
 	for {
 		str, err := connbuf.ReadString('\n')
@@ -280,11 +294,8 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 			}
 			r.receivedMessagesMutex.Unlock()
 
-			if receiveWebhookUrl != "" {
-				err = postMessageToWebhook(receiveWebhookUrl, []byte(str))
-				if err != nil {
-					log.Error("Couldn't post data to webhook: ", err)
-				}
+			if webhookMessages != nil {
+				webhookMessages <- []byte(str)
 			}
 		}
 
