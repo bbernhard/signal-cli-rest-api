@@ -230,10 +230,12 @@ type ListInstalledStickerPacksResponse struct {
 }
 
 type ProfileBadge struct {
-	Id                  string `json:"id"`
-	Category            string `json:"category"`
-	ExpirationTimestamp *int64 `json:"expiration_timestamp"`
-	Visible             bool   `json:"visible"`
+	Id       string `json:"id"`
+	Category string `json:"category"`
+	// Milliseconds since the epoch. Signal only discloses this for the account's own profile, so it is null for other contacts.
+	ExpirationTimestamp *int64 `json:"expiration_timestamp" extensions:"x-nullable=true"`
+	// Signal only discloses this for the account's own profile, so it is false for other contacts, whose badges are always displayed ones.
+	Visible bool `json:"visible"`
 }
 
 type ContactProfile struct {

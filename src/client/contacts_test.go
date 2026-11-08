@@ -6,8 +6,9 @@ import (
 )
 
 // TestSignalCliProfileBadgesToProfileBadges verifies that the badges of signal-cli's
-// `listContacts` output are carried through to the REST response, including badges
-// without an expiration.
+// `listContacts` output are carried through to the REST response, both in the shape
+// of the account's own badge and of another contact's, which has no expiration and
+// is reported as not visible.
 func TestSignalCliProfileBadgesToProfileBadges(t *testing.T) {
 	const sampleBadgesJSON = `[
 	  {"id": "BOOST", "category": "donor", "expirationTimestamp": 1767225600000, "visible": true},

@@ -1027,12 +1027,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "expiration_timestamp": {
-                    "type": "integer"
+                    "description": "Milliseconds since the epoch. Signal only discloses this for the account's own profile, so it is null for other contacts.",
+                    "type": "integer",
+                    "x-nullable": "true"
                 },
                 "id": {
                     "type": "string"
                 },
                 "visible": {
+                    "description": "Signal only discloses this for the account's own profile, so it is false for other contacts, whose badges are always displayed ones.",
                     "type": "boolean"
                 }
             },
