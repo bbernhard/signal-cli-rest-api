@@ -229,12 +229,46 @@ type ListInstalledStickerPacksResponse struct {
 	Author    string `json:"author"`
 }
 
+type ProfileBadge struct {
+	Id       string `json:"id"`
+	Category string `json:"category"`
+	// Milliseconds since the epoch. Signal only discloses this for the account's own profile, so it is null for other contacts.
+	ExpirationTimestamp *int64 `json:"expiration_timestamp" extensions:"x-nullable=true"`
+	// Signal only discloses this for the account's own profile, so it is false for other contacts, whose badges are always displayed ones.
+	Visible bool `json:"visible"`
+}
+
 type ContactProfile struct {
-	GivenName            string `json:"given_name"`
-	FamilyName           string `json:"lastname"`
-	About                string `json:"about"`
-	HasAvatar            bool   `json:"has_avatar"`
-	LastUpdatedTimestamp int64  `json:"last_updated_timestamp"`
+	GivenName            string         `json:"given_name"`
+	FamilyName           string         `json:"lastname"`
+	About                string         `json:"about"`
+	HasAvatar            bool           `json:"has_avatar"`
+	LastUpdatedTimestamp int64          `json:"last_updated_timestamp"`
+	Badges               []ProfileBadge `json:"badges"`
+}
+
+// SignalCliProfileBadge mirrors a badge in the profile of signal-cli's `listContacts` output.
+type SignalCliProfileBadge struct {
+	Id                  string `json:"id"`
+	Category            string `json:"category"`
+	ExpirationTimestamp *int64 `json:"expirationTimestamp"`
+	Visible             bool   `json:"visible"`
+}
+
+// signalCliProfileBadgesToProfileBadges always returns a non-nil slice, so that
+// the badges are serialized as [] when signal-cli doesn't report any (signal-cli
+// versions before 0.14.10 don't include badges in their output).
+func signalCliProfileBadgesToProfileBadges(badges []SignalCliProfileBadge) []ProfileBadge {
+	result := make([]ProfileBadge, 0, len(badges))
+	for _, badge := range badges {
+		result = append(result, ProfileBadge{
+			Id:                  badge.Id,
+			Category:            badge.Category,
+			ExpirationTimestamp: badge.ExpirationTimestamp,
+			Visible:             badge.Visible,
+		})
+	}
+	return result
 }
 
 type Nickname struct {
@@ -2838,11 +2872,12 @@ func (s *SignalClient) AddStickerPack(number string, packId string, packKey stri
 
 func (s *SignalClient) ListContacts(number string, allRecipients bool, recipient string) ([]ListContactsResponse, error) {
 	type SignalCliProfileResponse struct {
-		LastUpdateTimestamp int64  `json:"lastUpdateTimestamp"`
-		GivenName           string `json:"givenName"`
-		FamilyName          string `json:"familyName"`
-		About               string `json:"about"`
-		HasAvatar           bool   `json:"hasAvatar"`
+		LastUpdateTimestamp int64                   `json:"lastUpdateTimestamp"`
+		GivenName           string                  `json:"givenName"`
+		FamilyName          string                  `json:"familyName"`
+		About               string                  `json:"about"`
+		HasAvatar           bool                    `json:"hasAvatar"`
+		Badges              []SignalCliProfileBadge `json:"badges"`
 	}
 
 	type ListContactsSignalCliResponse struct {
@@ -2932,6 +2967,7 @@ func (s *SignalClient) ListContacts(number string, allRecipients bool, recipient
 		entry.Profile.LastUpdatedTimestamp = value.Profile.LastUpdateTimestamp
 		entry.Profile.GivenName = value.Profile.GivenName
 		entry.Profile.FamilyName = value.Profile.FamilyName
+		entry.Profile.Badges = signalCliProfileBadgesToProfileBadges(value.Profile.Badges)
 		entry.Nickname.Name = value.Nickname
 		entry.Nickname.GivenName = value.NickGivenName
 		entry.Nickname.FamilyName = value.NickFamilyName
