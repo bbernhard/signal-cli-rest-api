@@ -163,3 +163,16 @@ func TestBoldItalic(t *testing.T) {
 	expectMessageEqual(t, message, "Bold Italic Text")
 	expectFormatStringsEqual(t, signalCliFormatStrings, []string{"0:16:BOLD", "0:16:ITALIC"})
 }
+
+func TestIsValidTextStyle(t *testing.T) {
+	for _, textStyle := range []string{"0:5:BOLD", "10:3:ITALIC", "2:1:SPOILER", "0:4:STRIKETHROUGH", "7:2:MONOSPACE"} {
+		if !IsValidTextStyle(textStyle) {
+			t.Errorf("expected %q to be valid", textStyle)
+		}
+	}
+	for _, textStyle := range []string{"", "foo", "0:5", "0:5:bold", "0:5:NORMAL", "-1:5:BOLD", "+1:5:BOLD", "a:5:BOLD", "0:5:BOLD:X"} {
+		if IsValidTextStyle(textStyle) {
+			t.Errorf("expected %q to be invalid", textStyle)
+		}
+	}
+}

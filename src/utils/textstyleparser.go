@@ -2,6 +2,7 @@ package utils
 
 import (
 	"strconv"
+	"strings"
 	"unicode/utf16"
 	"unicode/utf8"
 )
@@ -27,6 +28,20 @@ const (
 )
 
 const EscapeCharacter rune = '\\'
+
+// IsValidTextStyle checks a signal-cli text style in the format start:length:STYLE
+func IsValidTextStyle(textStyle string) bool {
+	parts := strings.SplitN(textStyle, ":", 3)
+	if len(parts) != 3 {
+		return false
+	}
+	for _, num := range parts[:2] {
+		if _, err := strconv.ParseUint(num, 10, 32); err != nil {
+			return false
+		}
+	}
+	return StringInSlice(parts[2], []string{Bold, Italic, Monospace, Strikethrough, Spoiler})
+}
 
 func getUtf16StringLength(s string) int {
 	runes := []rune(s) //turn string to slice
