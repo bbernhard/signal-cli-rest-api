@@ -1790,6 +1790,42 @@ func (a *Api) QuitGroup(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// @Summary Terminate a Signal Group for all members.
+// @Tags Groups
+// @Description Permanently end the specified Signal Group for everyone ("End group" in the Signal apps). Afterwards no member, not even an admin, can send messages or start calls in the group; members keep the existing message history. This can't be undone. Requires admin rights in the group.
+// @Accept  json
+// @Produce  json
+// @Success 204 {string} OK
+// @Failure 400 {object} Error
+// @Param number path string true "Account identifier (E.164 phone number or ACI UUID)"
+// @Param groupid path string true "Group ID"
+// @Router /v1/groups/{number}/{groupid}/terminate [post]
+func (a *Api) TerminateGroup(c *gin.Context) {
+	_, number, err := accountIdentifierFromParam(c)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	if number == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - number missing"})
+		return
+	}
+
+	groupId := c.Param("groupid")
+	internalGroupId, err := client.ConvertGroupIdToInternalGroupId(groupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+
+	err = a.signalClient.TerminateGroup(number, internalGroupId)
+	if err != nil {
+		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 // @Summary Update the state of a Signal Group.
 // @Tags Groups
 // @Description Update the state of a Signal Group.

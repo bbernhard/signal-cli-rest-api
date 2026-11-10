@@ -2135,6 +2135,25 @@ func (s *SignalClient) QuitGroup(number string, groupId string) error {
 	return err
 }
 
+func (s *SignalClient) TerminateGroup(number string, groupId string) error {
+	var err error
+	var jsonRpc2Client *JsonRpc2Client
+	if s.signalCliMode == JsonRpc {
+		type Request struct {
+			GroupId string `json:"groupId"`
+		}
+		request := Request{GroupId: groupId}
+		jsonRpc2Client, err = s.getJsonRpc2Client()
+		if err != nil {
+			return err
+		}
+		_, err = jsonRpc2Client.getRaw("terminateGroup", &number, request)
+	} else {
+		_, err = s.cliClient.Execute(true, []string{"--config", s.signalCliConfig, "-a", number, "terminateGroup", "-g", groupId}, "")
+	}
+	return err
+}
+
 func (s *SignalClient) UpdateGroup(number string, groupId string, base64Avatar *string, groupDescription *string, groupName *string, expirationTime *int,
 	groupLinkState *GroupLinkState, editGroupPermission GroupPermission, addMembersPermission GroupPermission, sendMessagesPermission GroupPermission) error {
 	var err error
