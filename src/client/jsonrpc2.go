@@ -15,6 +15,7 @@ import (
 	"github.com/bbernhard/signal-cli-rest-api/utils"
 	uuid "github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
+	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
 
@@ -116,6 +117,16 @@ func (r *JsonRpc2Client) Dial(address string, maxRetries int) error {
 	return nil
 }
 
+// redactSecretParams returns a copy of a JSON-RPC request with secret params masked, so they don't end up in the logs.
+func redactSecretParams(request []byte) []byte {
+	for _, key := range []string{"recoveryKey", "totp", "pin"} {
+		if gjson.GetBytes(request, "params."+key).Exists() {
+			request, _ = sjson.SetBytes(request, "params."+key, "***")
+		}
+	}
+	return request
+}
+
 func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{}) (string, error) {
 	type Request struct {
 		JsonRpc string      `json:"jsonrpc"`
@@ -163,7 +174,7 @@ func (r *JsonRpc2Client) getRaw(command string, account *string, args interface{
 		}
 	}
 
-	log.Debug("json-rpc command: ", string(fullCommandBytes))
+	log.Debug("json-rpc command: ", string(redactSecretParams(fullCommandBytes)))
 
 	_, err = r.conn.Write([]byte(string(fullCommandBytes) + "\n"))
 	if err != nil {

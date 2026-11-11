@@ -282,6 +282,18 @@ const docTemplate = `{
                 "captcha": {
                     "type": "string"
                 },
+                "recovery_key": {
+                    "description": "64-character Recovery Key shown by Signal Android. Recovers the account without SMS verification.",
+                    "type": "string"
+                },
+                "reregister": {
+                    "description": "Register even if the account is still registered locally.",
+                    "type": "boolean"
+                },
+                "totp": {
+                    "description": "Six-digit TOTP token, only needed if recovery asks for it.",
+                    "type": "string"
+                },
                 "use_voice": {
                     "type": "boolean"
                 }
@@ -4701,7 +4713,7 @@ const docTemplate = `{
                 "consumes": [
                     "application/json"
                 ],
-                "description": "Register a phone number with the signal network.",
+                "description": "Register a phone number with the signal network. An existing account can instead be recovered with its Recovery Key (recovery_key), in which case no verification is needed. Accounts without a phone number can only be recovered this way, using their ACI (Account Key) as identifier. If the response asks for a TOTP token, repeat the request with totp.",
                 "parameters": [
                     {
                         "description": "Account identifier (E.164 phone number or ACI UUID)",

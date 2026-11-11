@@ -56,6 +56,18 @@ func isAccountSelector(candidate string) bool {
 	return utils.IsPhoneNumber(candidate)
 }
 
+// redactSecretArgs returns a copy of args with secret values masked, so they don't end up in the logs.
+func redactSecretArgs(args []string) []string {
+	redacted := append([]string{}, args...)
+	for i := 1; i < len(redacted); i++ {
+		switch redacted[i-1] {
+		case "--recovery-key", "--totp", "--pin", "setPin":
+			redacted[i] = "***"
+		}
+	}
+	return redacted
+}
+
 func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, error) {
 	containerId, err := getContainerId()
 
@@ -100,7 +112,7 @@ func (s *CliClient) Execute(wait bool, args []string, stdin string) (string, err
 	if stdin != "" {
 		fullCmd += "echo '" + stdin + "' | "
 	}
-	fullCmd += signalCliBinary + " " + strings.Join(args, " ")
+	fullCmd += signalCliBinary + " " + strings.Join(redactSecretArgs(args), " ")
 
 	log.Debug("*) su signal-api")
 	log.Debug("*) ", fullCmd)
