@@ -219,6 +219,17 @@ const docTemplate = `{
             ],
             "type": "object"
         },
+        "api.MemberLabel": {
+            "properties": {
+                "emoji": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "api.PinMessageInGroupRequest": {
             "properties": {
                 "duration": {
@@ -645,6 +656,9 @@ const docTemplate = `{
                     ],
                     "type": "string"
                 },
+                "member_label": {
+                    "$ref": "#/definitions/api.MemberLabel"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -818,6 +832,12 @@ const docTemplate = `{
                 "member": {
                     "type": "boolean"
                 },
+                "member_label": {
+                    "type": "string"
+                },
+                "member_label_emoji": {
+                    "type": "string"
+                },
                 "members": {
                     "items": {
                         "type": "string"
@@ -851,6 +871,8 @@ const docTemplate = `{
                 "internal_id",
                 "invite_link",
                 "member",
+                "member_label",
+                "member_label_emoji",
                 "members",
                 "name",
                 "pending_invites",
