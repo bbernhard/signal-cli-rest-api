@@ -3,8 +3,11 @@ package client
 import (
 	"flag"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	ds "github.com/bbernhard/signal-cli-rest-api/datastructs"
 )
 
 func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *testing.T) {
@@ -106,5 +109,67 @@ func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *tes
 				return
 			}
 		})
+	}
+}
+
+func Test_Attachment_StoreBase64AsTemporaryFile_RejectsFileNamesWithPaths(t *testing.T) {
+	for _, name := range []string{".", "..", "../../outside", "/outside", "dir/file", `dir\file`, "file\x00name"} {
+		t.Run(name, func(t *testing.T) {
+			parent := t.TempDir()
+			tmpDir := filepath.Join(parent, "tmp") + string(os.PathSeparator)
+			if err := os.Mkdir(tmpDir, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			outside := filepath.Join(parent, "outside")
+			if err := os.WriteFile(outside, []byte("original"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+
+			attachmentEntry := &AttachmentEntry{Base64: "aGVsbG8=", FileName: name, attachmentTmpDir: tmpDir}
+			if err := attachmentEntry.storeBase64AsTemporaryFile(); err == nil {
+				t.Errorf("storeBase64AsTemporaryFile accepted filename %q", name)
+			}
+			attachmentEntry.cleanUp()
+
+			entries, err := os.ReadDir(tmpDir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(entries) != 0 {
+				t.Errorf("attachment tmp dir has entries %v", entries)
+			}
+			content, err := os.ReadFile(outside)
+			if err != nil || string(content) != "original" {
+				t.Errorf("file next to the tmp dir got %q, %v; want \"original\"", content, err)
+			}
+		})
+	}
+}
+
+func Test_Send_RemovesAttachmentsWhenJsonRpcClientIsMissing(t *testing.T) {
+	tmpDir := t.TempDir() + string(os.PathSeparator)
+	signalClient := &SignalClient{
+		attachmentTmpDir: tmpDir,
+		signalCliMode:    JsonRpc,
+		jsonRpc2Clients:  map[string]*JsonRpc2Client{},
+	}
+
+	_, err := signalClient.send(ds.SignalCliSendRequest{
+		Number:            "+4915100000000",
+		Recipients:        []string{"+4915100000001"},
+		RecipientType:     ds.Number,
+		Message:           "hello",
+		Base64Attachments: []string{"data:text/plain;filename=hello.txt;base64,aGVsbG8="},
+	})
+	if err == nil {
+		t.Fatal("send succeeded without a JSON-RPC client")
+	}
+
+	entries, err := os.ReadDir(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Errorf("attachment tmp dir has entries %v after the failed send", entries)
 	}
 }

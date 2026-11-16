@@ -86,6 +86,13 @@ func (attachmentEntry *AttachmentEntry) storeBase64AsTemporaryFile() error {
 		attachmentEntry.FileName = fileNameUuid.String() + mimeType.Extension()
 	}
 
+	// The filename comes from the caller and is joined to a directory below,
+	// and cleanUp removes the result, so it must name one entry in that directory.
+	name := attachmentEntry.FileName
+	if name == "." || name == ".." || strings.ContainsAny(name, "/\\\x00") {
+		return errors.New("The attachment filename must be a single file name.")
+	}
+
 	dirNameUuid, err := uuid.NewV4()
 	if err != nil {
 		return err
@@ -101,6 +108,7 @@ func (attachmentEntry *AttachmentEntry) storeBase64AsTemporaryFile() error {
 
 	f, err := os.Create(attachmentEntry.FilePath)
 	if err != nil {
+		attachmentEntry.cleanUp()
 		return err
 	}
 	defer f.Close()

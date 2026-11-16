@@ -536,6 +536,7 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*ds.S
 	if s.signalCliMode == JsonRpc {
 		jsonRpc2Client, err := s.getJsonRpc2Client()
 		if err != nil {
+			cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
 			return nil, err
 		}
 
