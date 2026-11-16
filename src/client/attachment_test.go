@@ -28,13 +28,13 @@ func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *tes
 			"+base64 -data -filename", "base64,MTIzNDU=", false, "base64,MTIzNDU=", false, "", "", "base64,MTIzNDU=",
 		},
 		{
-			"+base64 +data -filename", "data:someData;base64,MTIzNDU=", true, "MTIzNDU=", true, "", "someData", "data:someData;base64,MTIzNDU=",
+			"+base64 +data -filename", "data:someData;base64,MTIzNDU=", true, "MTIzNDU=", true, "", "somedata", "data:somedata;base64,MTIzNDU=",
 		},
 		{
 			"+base64 -data +filename", "filename=file.name;base64,MTIzNDU=", false, "filename=file.name;base64,MTIzNDU=", false, "", "", "filename=file.name;base64,MTIzNDU=",
 		},
 		{
-			"+base64 +data +filename", "data:someData;filename=file.name;base64,MTIzNDU=", true, "MTIzNDU=", true, "file.name", "someData", "data:someData;filename=file.name;base64,MTIzNDU=",
+			"+base64 +data +filename", "data:someData;filename=file.name;base64,MTIzNDU=", true, "MTIzNDU=", true, "file.name", "somedata", "data:somedata; filename=file.name;base64,MTIzNDU=",
 		},
 		{
 			"-base64 -data -filename", "INVALIDMTIzNDU=", false, "INVALIDMTIzNDU=", false, "", "", "INVALIDMTIzNDU=",
@@ -57,7 +57,10 @@ func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *tes
 
 	for _, tt := range testCases {
 		t.Run(tt.nameTest, func(t *testing.T) {
-			attachmentEntry := NewAttachmentEntry(tt.inputData, *attachmentTmp)
+			attachmentEntry, err := NewAttachmentEntry(tt.inputData, *attachmentTmp)
+			if err != nil {
+				t.Fatalf("NewAttachmentEntry: %v", err)
+			}
 
 			if attachmentEntry.isWithMetaData() != tt.resultIsWithMetaData {
 				t.Errorf("isWithMetaData() got \"%v\", want \"%v\"", attachmentEntry.isWithMetaData(), tt.resultIsWithMetaData)
@@ -79,7 +82,7 @@ func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *tes
 				t.Errorf("toDataForSignal() got \"%v\", want \"%v\"", attachmentEntry.toDataForSignal(), tt.toDataForSignal)
 			}
 
-			err := attachmentEntry.storeBase64AsTemporaryFile()
+			err = attachmentEntry.storeBase64AsTemporaryFile()
 			if err != nil && tt.base64Valid {
 				t.Error("storeBase64AsTemporaryFile error: %w", err)
 				return
@@ -107,6 +110,60 @@ func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *tes
 			if info != nil && !os.IsNotExist(err) && tt.base64Valid {
 				t.Error("dir exists after cleanUp")
 				return
+			}
+		})
+	}
+}
+
+func Test_Attachment_ExtractMetadata_ParsesMimeParameters(t *testing.T) {
+	testCases := []struct {
+		nameTest         string
+		inputData        string
+		mimeInfoExpected string
+		fileNameExpected string
+	}{
+		{"quoted filename", `data:text/plain;filename="my file.txt";base64,aGVsbG8=`, "text/plain", "my file.txt"},
+		{"space before parameter", `data:text/plain; filename=file.txt;base64,aGVsbG8=`, "text/plain", "file.txt"},
+		{"RFC 2231 filename", `data:text/plain;filename*=utf-8''r%C3%A4ksm%C3%B6rg%C3%A5s.txt;base64,aGVsbG8=`, "text/plain", "räksmörgås.txt"},
+		{"mixed case media type", `data:Text/Plain;base64,aGVsbG8=`, "text/plain", ""},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.nameTest, func(t *testing.T) {
+			attachmentEntry, err := NewAttachmentEntry(tt.inputData, t.TempDir()+string(os.PathSeparator))
+			if err != nil {
+				t.Fatalf("NewAttachmentEntry: %v", err)
+			}
+			if attachmentEntry.MimeInfo != tt.mimeInfoExpected {
+				t.Errorf("MimeInfo got %q, want %q", attachmentEntry.MimeInfo, tt.mimeInfoExpected)
+			}
+			if attachmentEntry.FileName != tt.fileNameExpected {
+				t.Errorf("FileName got %q, want %q", attachmentEntry.FileName, tt.fileNameExpected)
+			}
+
+			again, err := NewAttachmentEntry(attachmentEntry.toDataForSignal(), "")
+			if err != nil {
+				t.Fatalf("NewAttachmentEntry(%q): %v", attachmentEntry.toDataForSignal(), err)
+			}
+			if again.MimeInfo != attachmentEntry.MimeInfo || again.FileName != attachmentEntry.FileName || again.Base64 != attachmentEntry.Base64 {
+				t.Errorf("toDataForSignal() = %q parses to %+v, want %+v", attachmentEntry.toDataForSignal(), again, attachmentEntry)
+			}
+		})
+	}
+}
+
+func Test_Attachment_ExtractMetadata_RejectsInvalidMimeParameters(t *testing.T) {
+	for _, inputData := range []string{
+		"data:text/plain;filename=my file.txt;base64,aGVsbG8=",
+		"data:text/plain;filename=räksmörgås.txt;base64,aGVsbG8=",
+		"data:text/plain;filename=../../outside;base64,aGVsbG8=",
+		"data:text/plain;filename=a.txt;filename=b.txt;base64,aGVsbG8=",
+		"data:text/plain;filename=a.txt;extra;base64,aGVsbG8=",
+		"data:;filename=a.txt;base64,aGVsbG8=",
+	} {
+		t.Run(inputData, func(t *testing.T) {
+			if attachmentEntry, err := NewAttachmentEntry(inputData, ""); err == nil {
+				t.Errorf("NewAttachmentEntry accepted it as %+v", attachmentEntry)
 			}
 		})
 	}

@@ -522,9 +522,10 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*ds.S
 
 	attachmentEntries := []AttachmentEntry{}
 	for _, base64Attachment := range signalCliSendRequest.Base64Attachments {
-		attachmentEntry := NewAttachmentEntry(base64Attachment, s.attachmentTmpDir)
-
-		err := attachmentEntry.storeBase64AsTemporaryFile()
+		attachmentEntry, err := NewAttachmentEntry(base64Attachment, s.attachmentTmpDir)
+		if err == nil {
+			err = attachmentEntry.storeBase64AsTemporaryFile()
+		}
 		if err != nil {
 			cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
 			return nil, err
@@ -615,8 +616,10 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*ds.S
 			request.PreviewDescription = &signalCliSendRequest.LinkPreview.Description
 
 			if signalCliSendRequest.LinkPreview.Base64Thumbnail != "" {
-				linkPreviewAttachmentEntry = NewAttachmentEntry(signalCliSendRequest.LinkPreview.Base64Thumbnail, s.attachmentTmpDir)
-				err := linkPreviewAttachmentEntry.storeBase64AsTemporaryFile()
+				linkPreviewAttachmentEntry, err = NewAttachmentEntry(signalCliSendRequest.LinkPreview.Base64Thumbnail, s.attachmentTmpDir)
+				if err == nil {
+					err = linkPreviewAttachmentEntry.storeBase64AsTemporaryFile()
+				}
 				if err != nil {
 					cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
 					return nil, err
@@ -696,8 +699,10 @@ func (s *SignalClient) send(signalCliSendRequest ds.SignalCliSendRequest) (*ds.S
 			cmd = append(cmd, signalCliSendRequest.LinkPreview.Title)
 
 			if signalCliSendRequest.LinkPreview.Base64Thumbnail != "" {
-				linkPreviewAttachmentEntry = NewAttachmentEntry(signalCliSendRequest.LinkPreview.Base64Thumbnail, s.attachmentTmpDir)
-				err := linkPreviewAttachmentEntry.storeBase64AsTemporaryFile()
+				linkPreviewAttachmentEntry, err = NewAttachmentEntry(signalCliSendRequest.LinkPreview.Base64Thumbnail, s.attachmentTmpDir)
+				if err == nil {
+					err = linkPreviewAttachmentEntry.storeBase64AsTemporaryFile()
+				}
 				if err != nil {
 					cleanupAttachmentEntries(attachmentEntries, linkPreviewAttachmentEntry)
 					return nil, err
