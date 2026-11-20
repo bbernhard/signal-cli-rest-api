@@ -1226,6 +1226,26 @@ const docTemplate = `{
             },
             "type": "object"
         },
+        "receive.Badge": {
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "expirationTimestamp": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "visible": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "visible"
+            ],
+            "type": "object"
+        },
         "receive.CallMessage": {
             "properties": {
                 "answerMessage": {
@@ -1841,6 +1861,12 @@ const docTemplate = `{
                 },
                 "aboutEmoji": {
                     "type": "string"
+                },
+                "badges": {
+                    "items": {
+                        "$ref": "#/definitions/receive.Badge"
+                    },
+                    "type": "array"
                 },
                 "familyName": {
                     "type": "string"
