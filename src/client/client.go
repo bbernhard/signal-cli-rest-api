@@ -436,7 +436,7 @@ func (s *SignalClient) GetSignalCliMode() SignalCliMode {
 }
 
 func (s *SignalClient) Init(maxRetries int) error {
-	s.signalCliApiConfig = utils.NewSignalCliApiConfig()
+	s.signalCliApiConfig = utils.NewSignalCliApiConfig(s.signalCliConfig)
 	err := s.signalCliApiConfig.Load(s.signalCliApiConfigPath)
 	if err != nil {
 		return err
@@ -774,16 +774,21 @@ func (s *SignalClient) About() About {
 	return about
 }
 
-func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha string) error {
+// RegisterNumber registers an account. With a recoveryKey an existing account is recovered instead
+// (no verification needed), which is the only way to register an account without a phone number.
+func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha string, recoveryKey string, totp string, reregister bool) error {
 	var err error
 	var jsonRpc2Client *JsonRpc2Client
 	if s.signalCliMode == JsonRpc {
 		type Request struct {
-			UseVoice bool   `json:"voice,omitempty"`
-			Captcha  string `json:"captcha,omitempty"`
-			Account  string `json:"account,omitempty"`
+			UseVoice    bool   `json:"voice,omitempty"`
+			Captcha     string `json:"captcha,omitempty"`
+			Account     string `json:"account,omitempty"`
+			RecoveryKey string `json:"recoveryKey,omitempty"`
+			Totp        string `json:"totp,omitempty"`
+			Reregister  bool   `json:"reregister,omitempty"`
 		}
-		request := Request{Account: number}
+		request := Request{Account: number, RecoveryKey: recoveryKey, Totp: totp, Reregister: reregister}
 
 		if useVoice {
 			request.UseVoice = useVoice
@@ -807,6 +812,18 @@ func (s *SignalClient) RegisterNumber(number string, useVoice bool, captcha stri
 
 		if captcha != "" {
 			command = append(command, []string{"--captcha", captcha}...)
+		}
+
+		if recoveryKey != "" {
+			command = append(command, []string{"--recovery-key", recoveryKey}...)
+		}
+
+		if totp != "" {
+			command = append(command, []string{"--totp", totp}...)
+		}
+
+		if reregister {
+			command = append(command, "--reregister")
 		}
 
 		_, err = s.cliClient.Execute(true, command, "")
@@ -1091,6 +1108,11 @@ func (s *SignalClient) Receive(number string, timeout int64, ignoreAttachments b
 
 		return jsonStr, nil
 	}
+}
+
+// CanonicalAccount maps the ACI of a numbered account to its phone number (see utils.CanonicalAccount).
+func (s *SignalClient) CanonicalAccount(account string) string {
+	return utils.CanonicalAccount(s.signalCliConfig, account)
 }
 
 func (s *SignalClient) GetReceiveChannel(number string) (chan JsonRpc2ReceivedMessage, string, error) {

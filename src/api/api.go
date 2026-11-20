@@ -84,8 +84,11 @@ type Configuration struct {
 }
 
 type RegisterNumberRequest struct {
-	UseVoice bool   `json:"use_voice,omitempty"`
-	Captcha  string `json:"captcha,omitempty"`
+	UseVoice    bool   `json:"use_voice,omitempty"`
+	Captcha     string `json:"captcha,omitempty"`
+	RecoveryKey string `json:"recovery_key,omitempty"` // 64-character Recovery Key shown by Signal Android. Recovers the account without SMS verification.
+	Totp        string `json:"totp,omitempty"`         // Six-digit TOTP token, only needed if recovery asks for it.
+	Reregister  bool   `json:"reregister,omitempty"`   // Register even if the account is still registered locally.
 }
 
 type UnregisterNumberRequest struct {
@@ -290,7 +293,7 @@ func (a *Api) About(c *gin.Context) {
 
 // @Summary Register a phone number.
 // @Tags Devices
-// @Description Register a phone number with the signal network.
+// @Description Register a phone number with the signal network. An existing account can instead be recovered with its Recovery Key (recovery_key), in which case no verification is needed. Accounts without a phone number can only be recovered this way, using their ACI (Account Key) as identifier. If the response asks for a TOTP token, repeat the request with totp.
 // @Accept  json
 // @Produce  json
 // @Success 201
@@ -299,7 +302,7 @@ func (a *Api) About(c *gin.Context) {
 // @Param data body RegisterNumberRequest false "Additional Settings"
 // @Router /v1/register/{number} [post]
 func (a *Api) RegisterNumber(c *gin.Context) {
-	_, number, err := accountIdentifierFromParam(c)
+	typ, number, err := accountIdentifierFromParam(c)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
 		return
@@ -326,7 +329,13 @@ func (a *Api) RegisterNumber(c *gin.Context) {
 		return
 	}
 
-	err = a.signalClient.RegisterNumber(number, req.UseVoice, req.Captcha)
+	// without a phone number there is nothing to send a verification code to
+	if typ == utils.IdentifierACI && req.RecoveryKey == "" {
+		c.JSON(400, Error{Msg: "Couldn't process request - registering by ACI requires a recovery_key"})
+		return
+	}
+
+	err = a.signalClient.RegisterNumber(number, req.UseVoice, req.Captcha, req.RecoveryKey, req.Totp, req.Reregister)
 	if err != nil {
 		switch err.(type) {
 		case *client.InvalidTransportError:
@@ -430,9 +439,13 @@ func (a *Api) DeleteLocalAccountData(c *gin.Context) {
 // @Param token path string true "Verification Code"
 // @Router /v1/register/{number}/verify/{token} [post]
 func (a *Api) VerifyRegisteredNumber(c *gin.Context) {
-	_, number, err := accountIdentifierFromParam(c)
+	typ, number, err := accountIdentifierFromParam(c)
 	if err != nil {
 		c.JSON(400, Error{Msg: err.Error()})
+		return
+	}
+	if typ == utils.IdentifierACI {
+		c.JSON(400, Error{Msg: "Couldn't process request - only phone numbers can be verified, accounts registered with a recovery_key need no verification"})
 		return
 	}
 	token := c.Param("token")
@@ -724,7 +737,8 @@ func (a *Api) Receive(c *gin.Context) {
 		}
 		defer ws.Close()
 		var stop = make(chan struct{})
-		go a.handleSignalReceive(ws, number, stop)
+		// receive events carry the phone number of numbered accounts, so filter by the canonical account
+		go a.handleSignalReceive(ws, a.signalClient.CanonicalAccount(number), stop)
 		go a.wsPing(ws, stop)
 		wsPong(ws, stop)
 	} else {
