@@ -3,8 +3,9 @@ package client
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"mime"
 	"os"
-	"reflect"
 	"strings"
 
 	"github.com/gabriel-vasile/mimetype"
@@ -20,7 +21,7 @@ type AttachmentEntry struct {
 	attachmentTmpDir string
 }
 
-func NewAttachmentEntry(attachmentData string, attachmentTmpDir string) *AttachmentEntry {
+func NewAttachmentEntry(attachmentData string, attachmentTmpDir string) (*AttachmentEntry, error) {
 	attachmentEntry := AttachmentEntry{
 		MimeInfo:         "",
 		FileName:         "",
@@ -30,39 +31,33 @@ func NewAttachmentEntry(attachmentData string, attachmentTmpDir string) *Attachm
 		attachmentTmpDir: attachmentTmpDir,
 	}
 
-	attachmentEntry.extractMetaData(attachmentData)
+	if err := attachmentEntry.extractMetaData(attachmentData); err != nil {
+		return nil, err
+	}
 
-	return &attachmentEntry
+	return &attachmentEntry, nil
 }
 
-func (attachmentEntry *AttachmentEntry) extractMetaData(attachmentData string) {
+func (attachmentEntry *AttachmentEntry) extractMetaData(attachmentData string) error {
 	base64FlagIndex := strings.LastIndex(attachmentData, "base64,")
 
 	if !strings.Contains(attachmentData, "data:") || base64FlagIndex == -1 {
 		attachmentEntry.Base64 = attachmentData
-		return
+		return nil
 	}
 
 	attachmentEntry.Base64 = attachmentData[base64FlagIndex+len("base64,"):]
 	if base64FlagIndex == 0 {
-		return
-	}
-	metaDataKeys := map[string]string{
-		"data:":     "MimeInfo",
-		"filename=": "FileName",
+		return nil
 	}
 
-	for _, metaDataLineItem := range strings.Split(attachmentData[:base64FlagIndex-1], ";") {
-		for metaDataKey, metaDataFieldName := range metaDataKeys {
-			flagIndex := strings.Index(metaDataLineItem, metaDataKey)
-
-			if flagIndex != 0 {
-				continue
-			}
-
-			attachmentEntry.setFieldValueByName(metaDataFieldName, metaDataLineItem[len(metaDataKey):])
-		}
+	mimeInfo, params, err := mime.ParseMediaType(strings.TrimPrefix(attachmentData[:base64FlagIndex-1], "data:"))
+	if err != nil {
+		return fmt.Errorf("Invalid attachment metadata: %w", err)
 	}
+	attachmentEntry.MimeInfo = mimeInfo
+	attachmentEntry.FileName = params["filename"]
+	return nil
 }
 
 func (attachmentEntry *AttachmentEntry) storeBase64AsTemporaryFile() error {
@@ -86,6 +81,13 @@ func (attachmentEntry *AttachmentEntry) storeBase64AsTemporaryFile() error {
 		attachmentEntry.FileName = fileNameUuid.String() + mimeType.Extension()
 	}
 
+	// The filename comes from the caller and is joined to a directory below,
+	// and cleanUp removes the result, so it must name one entry in that directory.
+	name := attachmentEntry.FileName
+	if name == "." || name == ".." || strings.ContainsAny(name, "/\\\x00") {
+		return errors.New("The attachment filename must be a single file name.")
+	}
+
 	dirNameUuid, err := uuid.NewV4()
 	if err != nil {
 		return err
@@ -101,6 +103,7 @@ func (attachmentEntry *AttachmentEntry) storeBase64AsTemporaryFile() error {
 
 	f, err := os.Create(attachmentEntry.FilePath)
 	if err != nil {
+		attachmentEntry.cleanUp()
 		return err
 	}
 	defer f.Close()
@@ -129,26 +132,6 @@ func (attachmentEntry *AttachmentEntry) cleanUp() {
 	}
 }
 
-func (attachmentEntry *AttachmentEntry) setFieldValueByName(fieldName string, fieldValue string) {
-	reflectPointer := reflect.ValueOf(attachmentEntry)
-	reflectStructure := reflectPointer.Elem()
-
-	if reflectStructure.Kind() != reflect.Struct {
-		return
-	}
-
-	field := reflectStructure.FieldByName(fieldName)
-	if !field.IsValid() {
-		return
-	}
-
-	if !field.CanSet() || field.Kind() != reflect.String {
-		return
-	}
-
-	field.SetString(fieldValue)
-}
-
 func (attachmentEntry *AttachmentEntry) isWithMetaData() bool {
 	return len(attachmentEntry.MimeInfo) > 0 && len(attachmentEntry.Base64) > 0
 }
@@ -162,11 +145,9 @@ func (attachmentEntry *AttachmentEntry) toDataForSignal() string {
 		return attachmentEntry.Base64
 	}
 
-	result := "data:" + attachmentEntry.MimeInfo
-
-	if len(attachmentEntry.FileName) > 0 {
-		result = result + ";filename=" + attachmentEntry.FileName
+	params := map[string]string{}
+	if attachmentEntry.FileName != "" {
+		params["filename"] = attachmentEntry.FileName
 	}
-
-	return result + ";base64," + attachmentEntry.Base64
+	return "data:" + mime.FormatMediaType(attachmentEntry.MimeInfo, params) + ";base64," + attachmentEntry.Base64
 }

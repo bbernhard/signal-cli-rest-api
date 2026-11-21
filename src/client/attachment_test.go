@@ -3,8 +3,11 @@ package client
 import (
 	"flag"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	ds "github.com/bbernhard/signal-cli-rest-api/datastructs"
 )
 
 func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *testing.T) {
@@ -25,13 +28,13 @@ func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *tes
 			"+base64 -data -filename", "base64,MTIzNDU=", false, "base64,MTIzNDU=", false, "", "", "base64,MTIzNDU=",
 		},
 		{
-			"+base64 +data -filename", "data:someData;base64,MTIzNDU=", true, "MTIzNDU=", true, "", "someData", "data:someData;base64,MTIzNDU=",
+			"+base64 +data -filename", "data:someData;base64,MTIzNDU=", true, "MTIzNDU=", true, "", "somedata", "data:somedata;base64,MTIzNDU=",
 		},
 		{
 			"+base64 -data +filename", "filename=file.name;base64,MTIzNDU=", false, "filename=file.name;base64,MTIzNDU=", false, "", "", "filename=file.name;base64,MTIzNDU=",
 		},
 		{
-			"+base64 +data +filename", "data:someData;filename=file.name;base64,MTIzNDU=", true, "MTIzNDU=", true, "file.name", "someData", "data:someData;filename=file.name;base64,MTIzNDU=",
+			"+base64 +data +filename", "data:someData;filename=file.name;base64,MTIzNDU=", true, "MTIzNDU=", true, "file.name", "somedata", "data:somedata; filename=file.name;base64,MTIzNDU=",
 		},
 		{
 			"-base64 -data -filename", "INVALIDMTIzNDU=", false, "INVALIDMTIzNDU=", false, "", "", "INVALIDMTIzNDU=",
@@ -54,7 +57,10 @@ func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *tes
 
 	for _, tt := range testCases {
 		t.Run(tt.nameTest, func(t *testing.T) {
-			attachmentEntry := NewAttachmentEntry(tt.inputData, *attachmentTmp)
+			attachmentEntry, err := NewAttachmentEntry(tt.inputData, *attachmentTmp)
+			if err != nil {
+				t.Fatalf("NewAttachmentEntry: %v", err)
+			}
 
 			if attachmentEntry.isWithMetaData() != tt.resultIsWithMetaData {
 				t.Errorf("isWithMetaData() got \"%v\", want \"%v\"", attachmentEntry.isWithMetaData(), tt.resultIsWithMetaData)
@@ -76,7 +82,7 @@ func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *tes
 				t.Errorf("toDataForSignal() got \"%v\", want \"%v\"", attachmentEntry.toDataForSignal(), tt.toDataForSignal)
 			}
 
-			err := attachmentEntry.storeBase64AsTemporaryFile()
+			err = attachmentEntry.storeBase64AsTemporaryFile()
 			if err != nil && tt.base64Valid {
 				t.Error("storeBase64AsTemporaryFile error: %w", err)
 				return
@@ -106,5 +112,121 @@ func Test_Attachment_ExtractMetadata_ShouldPrepareDataFor_toDataForSignal(t *tes
 				return
 			}
 		})
+	}
+}
+
+func Test_Attachment_ExtractMetadata_ParsesMimeParameters(t *testing.T) {
+	testCases := []struct {
+		nameTest         string
+		inputData        string
+		mimeInfoExpected string
+		fileNameExpected string
+	}{
+		{"quoted filename", `data:text/plain;filename="my file.txt";base64,aGVsbG8=`, "text/plain", "my file.txt"},
+		{"space before parameter", `data:text/plain; filename=file.txt;base64,aGVsbG8=`, "text/plain", "file.txt"},
+		{"RFC 2231 filename", `data:text/plain;filename*=utf-8''r%C3%A4ksm%C3%B6rg%C3%A5s.txt;base64,aGVsbG8=`, "text/plain", "räksmörgås.txt"},
+		{"mixed case media type", `data:Text/Plain;base64,aGVsbG8=`, "text/plain", ""},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.nameTest, func(t *testing.T) {
+			attachmentEntry, err := NewAttachmentEntry(tt.inputData, t.TempDir()+string(os.PathSeparator))
+			if err != nil {
+				t.Fatalf("NewAttachmentEntry: %v", err)
+			}
+			if attachmentEntry.MimeInfo != tt.mimeInfoExpected {
+				t.Errorf("MimeInfo got %q, want %q", attachmentEntry.MimeInfo, tt.mimeInfoExpected)
+			}
+			if attachmentEntry.FileName != tt.fileNameExpected {
+				t.Errorf("FileName got %q, want %q", attachmentEntry.FileName, tt.fileNameExpected)
+			}
+
+			again, err := NewAttachmentEntry(attachmentEntry.toDataForSignal(), "")
+			if err != nil {
+				t.Fatalf("NewAttachmentEntry(%q): %v", attachmentEntry.toDataForSignal(), err)
+			}
+			if again.MimeInfo != attachmentEntry.MimeInfo || again.FileName != attachmentEntry.FileName || again.Base64 != attachmentEntry.Base64 {
+				t.Errorf("toDataForSignal() = %q parses to %+v, want %+v", attachmentEntry.toDataForSignal(), again, attachmentEntry)
+			}
+		})
+	}
+}
+
+func Test_Attachment_ExtractMetadata_RejectsInvalidMimeParameters(t *testing.T) {
+	for _, inputData := range []string{
+		"data:text/plain;filename=my file.txt;base64,aGVsbG8=",
+		"data:text/plain;filename=räksmörgås.txt;base64,aGVsbG8=",
+		"data:text/plain;filename=../../outside;base64,aGVsbG8=",
+		"data:text/plain;filename=a.txt;filename=b.txt;base64,aGVsbG8=",
+		"data:text/plain;filename=a.txt;extra;base64,aGVsbG8=",
+		"data:;filename=a.txt;base64,aGVsbG8=",
+	} {
+		t.Run(inputData, func(t *testing.T) {
+			if attachmentEntry, err := NewAttachmentEntry(inputData, ""); err == nil {
+				t.Errorf("NewAttachmentEntry accepted it as %+v", attachmentEntry)
+			}
+		})
+	}
+}
+
+func Test_Attachment_StoreBase64AsTemporaryFile_RejectsFileNamesWithPaths(t *testing.T) {
+	for _, name := range []string{".", "..", "../../outside", "/outside", "dir/file", `dir\file`, "file\x00name"} {
+		t.Run(name, func(t *testing.T) {
+			parent := t.TempDir()
+			tmpDir := filepath.Join(parent, "tmp") + string(os.PathSeparator)
+			if err := os.Mkdir(tmpDir, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			outside := filepath.Join(parent, "outside")
+			if err := os.WriteFile(outside, []byte("original"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+
+			attachmentEntry := &AttachmentEntry{Base64: "aGVsbG8=", FileName: name, attachmentTmpDir: tmpDir}
+			if err := attachmentEntry.storeBase64AsTemporaryFile(); err == nil {
+				t.Errorf("storeBase64AsTemporaryFile accepted filename %q", name)
+			}
+			attachmentEntry.cleanUp()
+
+			entries, err := os.ReadDir(tmpDir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(entries) != 0 {
+				t.Errorf("attachment tmp dir has entries %v", entries)
+			}
+			content, err := os.ReadFile(outside)
+			if err != nil || string(content) != "original" {
+				t.Errorf("file next to the tmp dir got %q, %v; want \"original\"", content, err)
+			}
+		})
+	}
+}
+
+func Test_Send_RemovesAttachmentsWhenJsonRpcClientIsMissing(t *testing.T) {
+	tmpDir := t.TempDir() + string(os.PathSeparator)
+	signalClient := &SignalClient{
+		attachmentTmpDir: tmpDir,
+		signalCliMode:    JsonRpc,
+		jsonRpc2Clients:  map[string]*JsonRpc2Client{},
+	}
+
+	_, err := signalClient.send(ds.SignalCliSendRequest{
+		Number:            "+4915100000000",
+		Recipients:        []string{"+4915100000001"},
+		RecipientType:     ds.Number,
+		Message:           "hello",
+		Base64Attachments: []string{"data:text/plain;filename=hello.txt;base64,aGVsbG8="},
+	})
+	if err == nil {
+		t.Fatal("send succeeded without a JSON-RPC client")
+	}
+
+	entries, err := os.ReadDir(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Errorf("attachment tmp dir has entries %v after the failed send", entries)
 	}
 }
