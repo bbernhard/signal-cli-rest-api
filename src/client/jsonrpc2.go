@@ -247,6 +247,9 @@ func (r *JsonRpc2Client) ReceiveData(number string, receiveWebhookUrl string) {
 			}
 			connbuf = bufio.NewReader(r.conn)
 			log.Info("Successfully reconnected to signal-cli")
+			// signal-cli ends the subscriptions of a connection when it closes.
+			// Renew them in a goroutine, as the responses are read by this loop.
+			go r.renewReceiveSubscriptions()
 			continue
 		}
 		log.Debug("json-rpc received data: ", str)
@@ -324,6 +327,23 @@ func (r *JsonRpc2Client) unsubscribeReceive(account string, subscriptionId int64
 	}
 	_, err := r.getRaw("unsubscribeReceive", &account, unsubscribeReceiveArgs{Subscription: subscriptionId})
 	return err
+}
+
+// renewReceiveSubscriptions subscribes again for every account that still has
+// websocket subscribers attached, e.g. after the connection to signal-cli was lost.
+func (r *JsonRpc2Client) renewReceiveSubscriptions() {
+	r.receiveSubscriptionsMutex.Lock()
+	defer r.receiveSubscriptionsMutex.Unlock()
+
+	for account, sub := range r.receiveSubscriptions {
+		id, err := r.subscribeReceive(account)
+		if err != nil {
+			log.Errorf("Couldn't renew subscription for account %s: %s", account, err.Error())
+			continue
+		}
+		sub.id = id
+		log.Debugf("Renewed subscription for account %s (subscription=%d)", account, id)
+	}
 }
 
 func (r *JsonRpc2Client) acquireReceiveSubscription(account string) error {
