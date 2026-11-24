@@ -48,6 +48,10 @@ func run(receiveDir string) error {
 
 	updateReceiveSchemaRefs(definitions, titleByFile)
 
+	if err := addStyledTextProperties(definitions); err != nil {
+		return err
+	}
+
 	addEnvelopeWrapperDefinition(definitions)
 
 	if err := updateDocsGo(definitions); err != nil {
@@ -255,6 +259,29 @@ func rewriteSchemaRefs(value interface{}, titleByFile map[string]string) interfa
 	default:
 		return value
 	}
+}
+
+func addStyledTextProperties(definitions map[string]interface{}) error {
+	const description = "The text in the markup of text_mode 'styled' (e.g. **bold**), built from %s and textStyles. Only set when there are textStyles. Added by signal-cli-rest-api."
+	for _, field := range []struct{ definition, textKey, styledKey string }{
+		{"DataMessage", "message", "styledMessage"},
+		{"SyncDataMessage", "message", "styledMessage"},
+		{"Quote", "text", "styledText"},
+	} {
+		definition, ok := definitions[receivePrefix+field.definition].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("missing receive schema %q", field.definition)
+		}
+		properties, err := getObject(definition, "properties")
+		if err != nil {
+			return fmt.Errorf("receive schema %q: %w", field.definition, err)
+		}
+		properties[field.styledKey] = map[string]interface{}{
+			"type":        "string",
+			"description": fmt.Sprintf(description, field.textKey),
+		}
+	}
+	return nil
 }
 
 func addEnvelopeWrapperDefinition(definitions map[string]interface{}) {
