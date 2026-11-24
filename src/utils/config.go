@@ -69,5 +69,5 @@ func (c *JsonRpc2ClientConfig) Persist(path string) error {
 		return err
 	}
 
-	return ioutil.WriteFile(path, out, 0644)
+	return writeFileAtomic(path, out, 0644)
 }
