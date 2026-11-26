@@ -55,3 +55,20 @@ func TestAccountIdentifierFromParam(t *testing.T) {
 		}
 	})
 }
+
+// An ACI has no phone number to send a code to, so it can only be registered with a recovery key and never verified.
+func TestRegisterByACIRequiresRecoveryKey(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	aci := gin.Params{{Key: "number", Value: "11111111-1111-4111-8111-111111111111"}, {Key: "token", Value: "123456"}}
+
+	for name, handler := range map[string]gin.HandlerFunc{"register": NewApi(nil).RegisterNumber, "verify": NewApi(nil).VerifyRegisteredNumber} {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = aci
+		c.Request = httptest.NewRequest(http.MethodPost, "/", strings.NewReader("{}"))
+		handler(c)
+		if w.Code != 400 || !strings.Contains(w.Body.String(), "recovery_key") {
+			t.Fatalf("%s: status = %d, body %s", name, w.Code, w.Body.String())
+		}
+	}
+}

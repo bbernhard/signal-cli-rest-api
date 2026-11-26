@@ -85,12 +85,14 @@ type SignalCliApiConfigEntries struct {
 }
 
 type SignalCliApiConfig struct {
-	config SignalCliApiConfigEntries
-	path   string
+	config             SignalCliApiConfigEntries
+	path               string
+	signalCliConfigDir string
 }
 
-func NewSignalCliApiConfig() *SignalCliApiConfig {
-	return &SignalCliApiConfig{}
+// NewSignalCliApiConfig creates the API config. signalCliConfigDir is used to key accounts canonically (see CanonicalAccount).
+func NewSignalCliApiConfig(signalCliConfigDir string) *SignalCliApiConfig {
+	return &SignalCliApiConfig{signalCliConfigDir: signalCliConfigDir}
 }
 
 func (c *SignalCliApiConfig) Load(path string) error {
@@ -110,7 +112,10 @@ func (c *SignalCliApiConfig) Load(path string) error {
 	return nil
 }
 
+// GetTrustModeForNumber and SetTrustModeForNumber key by CanonicalAccount, so the setting
+// applies whether a numbered account is addressed by its phone number or its ACI.
 func (c *SignalCliApiConfig) GetTrustModeForNumber(number string) (SignalCliTrustMode, error) {
+	number = CanonicalAccount(c.signalCliConfigDir, number)
 	if val, ok := c.config.Entries[number]; ok {
 		return val.TrustMode, nil
 	}
@@ -119,6 +124,7 @@ func (c *SignalCliApiConfig) GetTrustModeForNumber(number string) (SignalCliTrus
 }
 
 func (c *SignalCliApiConfig) SetTrustModeForNumber(number string, trustMode SignalCliTrustMode) {
+	number = CanonicalAccount(c.signalCliConfigDir, number)
 	if c.config.Entries == nil {
 		c.config.Entries = make(map[string]SignalCliApiConfigEntry)
 	}
